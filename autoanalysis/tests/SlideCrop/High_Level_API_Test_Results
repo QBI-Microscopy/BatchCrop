@@ -1,0 +1,161 @@
+function create_dataset() Results
+       - Used with params, size= 400
+
+    Memory
+
+    Line #    Mem usage    Increment   Line Contents
+    ================================================
+        37     58.8 MiB      0.0 MiB   @profile
+        38                             def create_dataset(path, size):
+        39     59.0 MiB      0.2 MiB       F = h5py.File(path)
+        40
+        41                                 # Create standard, random dataset
+        42    303.2 MiB    244.2 MiB       r_set  = np.random.randint(0, 1000, size=(size,size, size), dtype='i')
+        43    303.4 MiB      0.3 MiB       F.create_dataset("standard", (size,size, size), dtype = 'i', data = r_set)
+        44
+        45                                 # float dataset
+        46    791.7 MiB    488.3 MiB       f_set = np.random.rand(size,size, size)
+        47    792.7 MiB      1.0 MiB       F.create_dataset("float", (size,size, size), dtype='f', data=f_set)
+        48
+        49                                 #Create New Group
+        50    792.8 MiB      0.0 MiB       sub = F.create_group("subgroup")
+        51                                 # chunked dataset
+        52   1036.9 MiB    244.1 MiB       c_set = np.random.randint(0, 1000, size=(size,size, size), dtype='i')
+        53   1064.6 MiB     27.7 MiB       sub.create_dataset("chunked", (size,size, size), dtype='i', data= c_set, chunks=(10,10,10))
+        54
+        55                                 #Create Nested Group
+        56   1064.6 MiB      0.0 MiB       nest = sub.create_group("nested")
+        57
+        58                                 # Compressed Dataset
+        59   1067.5 MiB      2.8 MiB       nest.create_dataset("compressed", (size,size, size), dtype= 'i', data= r_set, compression="gzip", compression_opts=3)
+        60   1053.0 MiB    -14.4 MiB       F.close()
+
+
+    - Time Usage with and without compression line 59: contributes to 67.7% of time usage. 32.4s with and 0.6 s without compression
+
+        Line #      Hits         Time  Per Hit   % Time  Line Contents
+        ==============================================================
+            38                                           def create_dataset(path, size):
+            39        10       397976  39797.6      0.1      F = h5py.File(path)
+            40
+            41                                               # Create standard, random dataset
+            42        10      8532118 853211.8      2.2      r_set  = np.random.randint(0, 1000, size=(size,size, size), dtype='i')
+            43        10     53029624 5302962.4     13.8      F.create_dataset("standard", (size,size, size), dtype = 'i', data = r_set)
+            44
+            45                                               # float dataset
+            46        10     17823072 1782307.2      4.6      f_set = np.random.rand(size,size, size)
+            47        10      5784914 578491.4      1.5      F.create_dataset("float", (size,size, size), dtype='f', data=f_set)
+            48
+            49                                               #Create New Group
+            50        10         2064    206.4      0.0      sub = F.create_group("subgroup")
+            51                                               # chunked dataset
+            52        10      8627527 862752.7      2.2      c_set = np.random.randint(0, 1000, size=(size,size, size), dtype='i')
+            53        10     29557285 2955728.5      7.7      sub.create_dataset("chunked", (size,size, size), dtype='i', data= c_set, chunks=(10,10,10))
+            54
+            55                                               #Create Nested Group
+            56        10         2484    248.4      0.0      nest = sub.create_group("nested")
+            57
+            58                                               # Compressed Dataset
+            59        10    260383341 26038334.1     67.7      nest.create_dataset("compressed", (size,size, size), dtype= 'i', data= r_set, compression="gzip", compression_opts=3)
+            60        10       620511  62051.1      0.2      F.close()
+
+    - Time Usage without compression
+
+    Line #      Hits         Time  Per Hit   % Time  Line Contents
+    ==============================================================
+        38                                           def create_dataset(path, size):
+        39        10       263433  26343.3      0.2      F = h5py.File(path)
+        40
+        41                                               # Create standard, random dataset
+        42        10      8978881 897888.1      5.2      r_set  = np.random.randint(0, 1000, size=(size,size, size), dtype='i')
+        43        10    100704816 10070481.6     57.8      F.create_dataset("standard", (size,size, size), dtype = 'i', data = r_set)
+        44
+        45                                               # float dataset
+        46        10     18511178 1851117.8     10.6      f_set = np.random.rand(size,size, size)
+        47        10      6488280 648828.0      3.7      F.create_dataset("float", (size,size, size), dtype='f', data=f_set)
+        48
+        49                                               #Create New Group
+        50        10         2100    210.0      0.0      sub = F.create_group("subgroup")
+        51                                               # chunked dataset
+        52        10      8901694 890169.4      5.1      c_set = np.random.randint(0, 1000, size=(size,size, size), dtype='i')
+        53        10     29981499 2998149.9     17.2      sub.create_dataset("chunked", (size,size, size), dtype='i', data= c_set, chunks=(10,10,10))
+        54
+        55                                               #Create Nested Group
+        56        10         2525    252.5      0.0      nest = sub.create_group("nested")
+        57
+        58                                               # Compressed Dataset
+        59                                               #nest.create_dataset("compressed", (size,size, size), dtype= 'i', data= r_set, compression="gzip", compression_opts=3)
+        60        10       433454  43345.4      0.2      F.close()
+
+
+========================================================================================================================
+========================================================================================================================
+
+Function: slicing_and_operating_datasets()
+
+    Memory:
+        Line #    Mem usage    Increment   Line Contents
+    ================================================
+            65     50.1 MiB      0.0 MiB   @profile
+            66                             def slicing_and_operating_datasets(PATH):
+            67     50.8 MiB      0.7 MiB       file = h5py.File(PATH, "r+")
+            68
+            69                                 #Slicing sequential data
+            70     51.0 MiB      0.2 MiB       r_set= file.get("standard")
+            71     51.2 MiB      0.2 MiB       slicer1 = r_set[0,0,:]
+            72     51.2 MiB      0.0 MiB       slicer2 = r_set[0,:,0]
+            73     51.2 MiB      0.0 MiB       slicer3 = r_set[:,0,0]
+            74     51.4 MiB      0.3 MiB       slicer4 = r_set[:,1:20,1:20]
+            75     51.7 MiB      0.3 MiB       slicer5 = r_set[1:20,1:20, :]
+            76
+            77                                 # Slicing compressed Data
+            78     51.7 MiB      0.0 MiB       c_set = file.get("subgroup/nested/compressed")
+            79     51.8 MiB      0.1 MiB       slicec1 = c_set[0, 0, :]
+            80     51.8 MiB      0.0 MiB       slicec2 = c_set[0, :, 0]
+            81     51.8 MiB      0.0 MiB       slicec3 = c_set[:, 0, 0]
+            82     52.1 MiB      0.3 MiB       slicec4 = c_set[:, 1:20, 1:20]
+            83     52.4 MiB      0.3 MiB       slicec5 = c_set[1:20, 1:20, :]
+            84
+            85                                 #Slicing chunked Data
+            86     52.4 MiB      0.0 MiB       ch_set = file.get("subgroup/chunked")
+            87     52.8 MiB      0.4 MiB       slicech1 = ch_set[0, 0, :]
+            88     53.3 MiB      0.6 MiB       slicech2 = ch_set[0, :, 0]
+            89     54.4 MiB      1.1 MiB       slicech3 = ch_set[:, 0, 0]
+            90     56.2 MiB      1.7 MiB       slicech4 = ch_set[:, 1:20, 1:20]
+            91     56.7 MiB      0.5 MiB       slicech5 = ch_set[1:20, 1:20, :]
+
+
+    Time:
+        Line #      Hits         Time  Per Hit   % Time  Line Contents
+        ==============================================================
+            64                                           def slicing_and_operating_datasets(PATH):
+            65        10        17365   1736.5      1.1      file = h5py.File(PATH, "r+")
+            66
+            67                                               #Slicing sequential data
+            68        10         3623    362.3      0.2      r_set= file.get("standard")
+            69        10         8416    841.6      0.5      slicer1 = r_set[0,0,:]
+            70        10         9839    983.9      0.6      slicer2 = r_set[0,:,0]
+            71        10       199152  19915.2     13.0      slicer3 = r_set[:,0,0]
+            72        10       211752  21175.2     13.8      slicer4 = r_set[:,1:20,1:20]
+            73        10        22593   2259.3      1.5      slicer5 = r_set[1:20,1:20, :]
+            74
+            75                                               # Slicing compressed Data
+            76        10         6297    629.7      0.4      c_set = file.get("subgroup/nested/compressed")
+            77        10       123427  12342.7      8.1      slicec1 = c_set[0, 0, :]
+            78        10       209026  20902.6     13.6      slicec2 = c_set[0, :, 0]
+            79        10       216920  21692.0     14.2      slicec3 = c_set[:, 0, 0]
+            80        10       220863  22086.3     14.4      slicec4 = c_set[:, 1:20, 1:20]
+            81        10       115423  11542.3      7.5      slicec5 = c_set[1:20, 1:20, :]
+            82
+            83                                               #Slicing chunked Data
+            84        10         4735    473.5      0.3      ch_set = file.get("subgroup/chunked")
+            85        10        14693   1469.3      1.0      slicech1 = ch_set[0, 0, :]
+            86        10        25074   2507.4      1.6      slicech2 = ch_set[0, :, 0]
+            87        10        34202   3420.2      2.2      slicech3 = ch_set[:, 0, 0]
+            88        10        53357   5335.7      3.5      slicech4 = ch_set[:, 1:20, 1:20]
+            89        10        35610   3561.0      2.3      slicech5 = ch_set[1:20, 1:20, :]
+
+
+    - Shows the use of chunking in situations is effective in reducing times (compare line 88,89 to 71,72)
+    - Compression increases read times
+    - Compressing increases time cost significantly, provides no major memory improvements, only disk benefits

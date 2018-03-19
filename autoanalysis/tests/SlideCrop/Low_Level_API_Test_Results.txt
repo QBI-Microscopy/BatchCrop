@@ -1,0 +1,288 @@
+function create_dataset() Results
+       - Used with params, size= 400
+
+    Memory
+        - Without Compression written to disk
+
+          Line #    Mem usage    Increment   Line Contents
+    ================================================
+        38     50.0 MiB      0.0 MiB   @profile
+        39                             def create_dataset(path, size):
+        40
+        41     50.7 MiB      0.8 MiB       F = h5py.h5f.create(path.encode())
+        42     50.7 MiB      0.0 MiB       dims = (size, size, size)
+        43                                 # Create standard, random dataset
+        44     50.7 MiB      0.0 MiB       r_space = h5py.h5s.create_simple(dims)
+        45
+        46    294.9 MiB    244.2 MiB       r_set  = np.random.randint(0, 1000, size=dims, dtype='i')
+        47    295.1 MiB      0.1 MiB       r_d_set = h5py.h5d.create(F, "standard".encode(), h5py.h5t.STD_U16LE, r_space)
+        48    296.1 MiB      1.1 MiB       r_d_set.write(r_space, r_space, r_set)
+        49
+        50                                 # float dataset
+        51    784.4 MiB    488.3 MiB       f_set = np.random.rand(size,size, size)
+        52    784.4 MiB      0.0 MiB       f_d_set = h5py.h5d.create(F, "float".encode(), h5py.h5t.IEEE_F32LE, r_space)
+        53    784.4 MiB      0.0 MiB       f_d_set.write(r_space, r_space, f_set)
+        54                                 #del f_set
+        55                                 #Create New Group
+        56    784.5 MiB      0.0 MiB       sub = h5py.h5g.create(F, "subgroup".encode())
+        57
+        58                                 # chunked dataset
+        59    784.5 MiB      0.0 MiB       chunk_dim = (10,10,10)
+        60   1028.6 MiB    244.1 MiB       c_set = np.random.randint(0, 1000, size=dims, dtype='i')
+        61
+        62                                 # Create the "dataset creation property list" and set the chunk size.
+        63   1028.6 MiB      0.0 MiB       dcpl = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        64   1028.6 MiB      0.0 MiB       dcpl.set_chunk(chunk_dim)
+        65
+        66   1028.6 MiB      0.0 MiB       c_d_set = h5py.h5d.create(sub, "chunked".encode(), h5py.h5t.STD_U16LE, r_space, dcpl)
+        67   1057.2 MiB     28.6 MiB       c_d_set.write(r_space, r_space, c_set)
+        68                                 #del c_set
+        69
+        70                                 #Create Nested Group
+        71   1057.2 MiB      0.0 MiB       nest = h5py.h5g.create(sub, "nested".encode())
+        72
+        73                                 # Compressed Dataset
+        74   1057.2 MiB      0.0 MiB       dcpl_comp = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        75   1057.2 MiB      0.0 MiB       dcpl_comp.set_chunk((200,200,200))
+        76   1057.2 MiB      0.0 MiB       dcpl_comp.set_deflate(3)
+        77
+        78   1057.2 MiB      0.0 MiB       co_d_set = h5py.h5d.create(nest, "compressed".encode(), h5py.h5t.STD_U16LE, r_space, dcpl_comp)
+        79                                 #co_d_set.write(r_space, r_space, r_set)
+        80   1057.2 MiB      0.0 MiB       F.close()
+
+    - with compression
+        Line #    Mem usage    Increment   Line Contents
+    ================================================
+        38     50.5 MiB      0.0 MiB   @profile
+        39                             def create_dataset(path, size):
+        40
+        41     51.3 MiB      0.7 MiB       F = h5py.h5f.create(path.encode())
+        42     51.3 MiB      0.0 MiB       dims = (size, size, size)
+        43                                 # Create standard, random dataset
+        44     51.3 MiB      0.0 MiB       r_space = h5py.h5s.create_simple(dims)
+        45
+        46    295.5 MiB    244.2 MiB       r_set  = np.random.randint(0, 1000, size=dims, dtype='i')
+        47    295.6 MiB      0.2 MiB       r_d_set = h5py.h5d.create(F, "standard".encode(), h5py.h5t.STD_U16LE, r_space)
+        48    296.7 MiB      1.1 MiB       r_d_set.write(r_space, r_space, r_set)
+        49
+        50                                 # float dataset
+        51    785.0 MiB    488.3 MiB       f_set = np.random.rand(size,size, size)
+        52    785.0 MiB      0.0 MiB       f_d_set = h5py.h5d.create(F, "float".encode(), h5py.h5t.IEEE_F32LE, r_space)
+        53    785.0 MiB      0.0 MiB       f_d_set.write(r_space, r_space, f_set)
+        54                                 #del f_set
+        55                                 #Create New Group
+        56    785.0 MiB      0.0 MiB       sub = h5py.h5g.create(F, "subgroup".encode())
+        57
+        58                                 # chunked dataset
+        59    785.0 MiB      0.0 MiB       chunk_dim = (10,10,10)
+        60   1029.2 MiB    244.1 MiB       c_set = np.random.randint(0, 1000, size=dims, dtype='i')
+        61
+        62                                 # Create the "dataset creation property list" and set the chunk size.
+        63   1029.2 MiB      0.0 MiB       dcpl = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        64   1029.2 MiB      0.0 MiB       dcpl.set_chunk(chunk_dim)
+        65
+        66   1029.2 MiB      0.0 MiB       c_d_set = h5py.h5d.create(sub, "chunked".encode(), h5py.h5t.STD_U16LE, r_space, dcpl)
+        67   1059.4 MiB     30.2 MiB       c_d_set.write(r_space, r_space, c_set)
+        68                                 #del c_set
+        69
+        70                                 #Create Nested Group
+        71   1059.4 MiB      0.0 MiB       nest = h5py.h5g.create(sub, "nested".encode())
+        72
+        73                                 # Compressed Dataset
+        74   1059.4 MiB      0.0 MiB       dcpl_comp = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        75   1059.4 MiB      0.0 MiB       dcpl_comp.set_chunk((200,200,200))
+        76   1059.4 MiB      0.0 MiB       dcpl_comp.set_deflate(3)
+        77
+        78   1059.4 MiB      0.0 MiB       co_d_set = h5py.h5d.create(nest, "compressed".encode(), h5py.h5t.STD_U16LE, r_space, dcpl_comp)
+        79   1059.7 MiB      0.3 MiB       co_d_set.write(r_space, r_space, r_set)
+        80   1059.8 MiB      0.0 MiB       F.close()
+
+
+    Time:
+
+    With_Compression:
+    - 104.906 for 10 iteratons
+
+        Line #      Hits         Time  Per Hit   % Time  Line Contents
+    ==============================================================
+        39                                           def create_dataset(path, size):
+        40
+        41        10       177036  17703.6      0.1      F = h5py.h5f.create(path.encode())
+        42        10           52      5.2      0.0      dims = (size, size, size)
+        43                                               # Create standard, random dataset
+        44        10          342     34.2      0.0      r_space = h5py.h5s.create_simple(dims)
+        45
+        46        10      8712783 871278.3      3.9      r_set  = np.random.randint(0, 1000, size=dims, dtype='i')
+        47        10         2340    234.0      0.0      r_d_set = h5py.h5d.create(F, "standard".encode(), h5py.h5t.STD_U16LE, r_space)
+        48        10      2999448 299944.8      1.3      r_d_set.write(r_space, r_space, r_set)
+        49
+        50                                               # float dataset
+        51        10     18273507 1827350.7      8.1      f_set = np.random.rand(size,size, size)
+        52        10         2264    226.4      0.0      f_d_set = h5py.h5d.create(F, "float".encode(), h5py.h5t.IEEE_F32LE, r_space)
+        53        10      5845188 584518.8      2.6      f_d_set.write(r_space, r_space, f_set)
+        54        10       674986  67498.6      0.3      del f_set
+        55                                               #Create New Group
+        56        10         7640    764.0      0.0      sub = h5py.h5g.create(F, "subgroup".encode())
+        57
+        58                                               # chunked dataset
+        59        10           52      5.2      0.0      chunk_dim = (10,10,10)
+        60        10      8819325 881932.5      3.9      c_set = np.random.randint(0, 1000, size=dims, dtype='i')
+        61
+        62                                               # Create the "dataset creation property list" and set the chunk size.
+        63        10         1043    104.3      0.0      dcpl = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        64        10          409     40.9      0.0      dcpl.set_chunk(chunk_dim)
+        65
+        66        10         2171    217.1      0.0      c_d_set = h5py.h5d.create(sub, "chunked".encode(), h5py.h5t.STD_U16LE, r_space, dcpl)
+        67        10     30069416 3006941.6     13.4      c_d_set.write(r_space, r_space, c_set)
+        68        10       295657  29565.7      0.1      del c_set
+        69
+        70                                               #Create Nested Group
+        71        10        10572   1057.2      0.0      nest = h5py.h5g.create(sub, "nested".encode())
+        72
+        73                                               # Compressed Dataset
+        74        10         1172    117.2      0.0      dcpl_comp = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        75        10          838     83.8      0.0      dcpl_comp.set_chunk((200,200,200))
+        76        10          390     39.0      0.0      dcpl_comp.set_deflate(3)
+        77
+        78        10         3949    394.9      0.0      co_d_set = h5py.h5d.create(nest, "compressed".encode(), h5py.h5t.STD_U16LE, r_space, dcpl_comp)
+        79        10    148971711 14897171.1     66.2      co_d_set.write(r_space, r_space, r_set)
+        80        10         1604    160.4      0.0      F.close()
+
+
+
+    Without Compression:
+        -49.8s for 10 iterations
+
+        Line #      Hits         Time  Per Hit   % Time  Line Contents
+    ==============================================================
+        39                                           def create_dataset(path, size):
+        40
+        41        10       152582  15258.2      0.1      F = h5py.h5f.create(path.encode())
+        42        10           65      6.5      0.0      dims = (size, size, size)
+        43                                               # Create standard, random dataset
+        44        10          385     38.5      0.0      r_space = h5py.h5s.create_simple(dims)
+        45
+        46        10      8622349 862234.9      8.1      r_set  = np.random.randint(0, 1000, size=dims, dtype='i')
+        47        10         2654    265.4      0.0      r_d_set = h5py.h5d.create(F, "standard".encode(), h5py.h5t.STD_U16LE, r_space)
+        48        10     10140204 1014020.4      9.5      r_d_set.write(r_space, r_space, r_set)
+        49
+        50                                               # float dataset
+        51        10     17925713 1792571.3     16.8      f_set = np.random.rand(size,size, size)
+        52        10         2248    224.8      0.0      f_d_set = h5py.h5d.create(F, "float".encode(), h5py.h5t.IEEE_F32LE, r_space)
+        53        10     29529012 2952901.2     27.6      f_d_set.write(r_space, r_space, f_set)
+        54
+        55                                               #Create New Group
+        56        10         2633    263.3      0.0      sub = h5py.h5g.create(F, "subgroup".encode())
+        57
+        58                                               # chunked dataset
+        59        10           34      3.4      0.0      chunk_dim = (10,10,10)
+        60        10      8763307 876330.7      8.2      c_set = np.random.randint(0, 1000, size=dims, dtype='i')
+        61
+        62                                               # Create the "dataset creation property list" and set the chunk size.
+        63        10         1081    108.1      0.0      dcpl = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        64        10          430     43.0      0.0      dcpl.set_chunk(chunk_dim)
+        65
+        66        10         2228    222.8      0.0      c_d_set = h5py.h5d.create(sub, "chunked".encode(), h5py.h5t.STD_U16LE, r_space, dcpl)
+        67        10     31710544 3171054.4     29.7      c_d_set.write(r_space, r_space, c_set)
+        68
+        69
+        70                                               #Create Nested Group
+        71        10         4049    404.9      0.0      nest = h5py.h5g.create(sub, "nested".encode())
+        72
+        73                                               # Compressed Dataset
+        74        10          470     47.0      0.0      dcpl_comp = h5py.h5p.create(h5py.h5p.DATASET_CREATE)
+        75        10          317     31.7      0.0      dcpl_comp.set_chunk((1,1,1))
+        76        10          165     16.5      0.0      dcpl_comp.set_deflate(3)
+        77
+        78        10         1638    163.8      0.0      h5py.h5d.create(nest, "compressed".encode(), h5py.h5t.STD_U16LE, r_space, dcpl_comp)
+        79        10          781     78.1      0.0      F.close()
+
+========================================================================================================================
+========================================================================================================================
+
+Function: slicing_and_operating_datasets()
+
+    Memory:
+        Line #    Mem usage    Increment   Line Contents
+    ================================================
+        83     50.4 MiB      0.0 MiB   @profile
+        84                             def slicing_and_operating_datasets(PATH):
+        85     51.1 MiB      0.7 MiB       file = h5py.File(PATH, "r+")
+        86
+        87                                 #Slicing sequential data
+        88     51.3 MiB      0.2 MiB       r_set= file.get("standard")
+        89     51.5 MiB      0.1 MiB       slicer1 = r_set[0,0,:]
+        90     51.5 MiB      0.0 MiB       slicer2 = r_set[0,:,0]
+        91     51.5 MiB      0.0 MiB       slicer3 = r_set[:,0,0]
+        92     51.7 MiB      0.3 MiB       slicer4 = r_set[:,1:20,1:20]
+        93     52.0 MiB      0.3 MiB       slicer5 = r_set[1:20,1:20, :]
+        94
+        95                                 # Slicing compressed Data
+        96     52.0 MiB      0.0 MiB       c_set = file.get("subgroup/nested/compressed")
+        97     52.1 MiB      0.1 MiB       slicec1 = c_set[0, 0, :]
+        98     52.1 MiB      0.0 MiB       slicec2 = c_set[0, :, 0]
+        99     52.1 MiB      0.0 MiB       slicec3 = c_set[:, 0, 0]
+       100     52.4 MiB      0.3 MiB       slicec4 = c_set[:, 1:20, 1:20]
+       101     52.7 MiB      0.3 MiB       slicec5 = c_set[1:20, 1:20, :]
+       102
+       103                                 #Slicing chunked Data
+       104     52.7 MiB      0.0 MiB       ch_set = file.get("subgroup/chunked")
+       105     53.0 MiB      0.3 MiB       slicech1 = ch_set[0, 0, :]
+       106     53.5 MiB      0.6 MiB       slicech2 = ch_set[0, :, 0]
+       107     54.6 MiB      1.1 MiB       slicech3 = ch_set[:, 0, 0]
+       108     56.5 MiB      1.8 MiB       slicech4 = ch_set[:, 1:20, 1:20]
+       109     57.0 MiB      0.5 MiB       slicech5 = ch_set[1:20, 1:20, :]
+       110     53.8 MiB     -3.2 MiB       file.close()
+
+
+    Time:
+    - 10 iterations: 10.75s
+
+    Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    84                                           def slicing_and_operating_datasets(PATH):
+    85        10        19654   1965.4      0.1      file = h5py.File(PATH, "r+")
+    86
+    87                                               #Slicing sequential data
+    88        10         3582    358.2      0.0      r_set= file.get("standard")
+    89        10         7516    751.6      0.0      slicer1 = r_set[0,0,:]
+    90        10         6801    680.1      0.0      slicer2 = r_set[0,:,0]
+    91        10       179546  17954.6      0.8      slicer3 = r_set[:,0,0]
+    92        10       185783  18578.3      0.8      slicer4 = r_set[:,1:20,1:20]
+    93        10        18027   1802.7      0.1      slicer5 = r_set[1:20,1:20, :]
+    94
+    95                                               # Slicing compressed Data
+    96        10         5581    558.1      0.0      c_set = file.get("subgroup/nested/compressed")
+    97        10      4505954 450595.4     19.5      slicec1 = c_set[0, 0, :]
+    98        10      4451473 445147.3     19.3      slicec2 = c_set[0, :, 0]
+    99        10      4464522 446452.2     19.4      slicec3 = c_set[:, 0, 0]
+   100        10      4500785 450078.5     19.5      slicec4 = c_set[:, 1:20, 1:20]
+   101        10      4532023 453202.3     19.7      slicec5 = c_set[1:20, 1:20, :]
+   102
+   103                                               #Slicing chunked Data
+   104        10         6882    688.2      0.0      ch_set = file.get("subgroup/chunked")
+   105        10        17899   1789.9      0.1      slicech1 = ch_set[0, 0, :]
+   106        10        25033   2503.3      0.1      slicech2 = ch_set[0, :, 0]
+   107        10        35028   3502.8      0.2      slicech3 = ch_set[:, 0, 0]
+   108        10        44981   4498.1      0.2      slicech4 = ch_set[:, 1:20, 1:20]
+   109        10        28071   2807.1      0.1      slicech5 = ch_set[1:20, 1:20, :]
+   110        10        19494   1949.4      0.1      file.close()
+
+
+    ===========================Time Results============================
+    ===================================================================
+    |           Method               | Low Level API | High Level API |
+    | slicing_and_operating_datasets |     1.07      |     0.064      |
+    |  create_dataset wo compression |     4.98      |     8.2        |
+    |  create_dataset w compression  |     10.49     |     18.3       |
+
+
+    ==========================Memory Results ==========================
+    |           Method               | Low Level API | High Level API |
+    | slicing_and_operating_datasets |     6.6       |     6.6        |
+    |  create_dataset wo compression |     1007.2    |     991.4      |
+    |  create_dataset w compression  |     1004.3    |     994.2      |
+
+    Ultimately using the low level API has an improved effect on speed but requires additional overhead memory usage:
+    the main problem associated with the first edition of slideCropper. Regardless, neither bring great benefit to
+    optimising the new application.

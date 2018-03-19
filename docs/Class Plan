@@ -1,0 +1,76 @@
+Class InputImage
+    - Abstract interface for input image files with metadata and multiple images/resolutions
+    - Defines methods to prepare and set up image, return metadata and image data.
+
+Class ImarisImage
+    - Concrete subclass of InputImage for the data of an Imaris image and its metadata
+
+Class ImageSegmentation
+    - Data Class to store the segmentation (crop boxes)
+
+Class ImageSegmenter
+    - Produces an ImageSegmentation object from an 2D image array
+
+Class ImageCropper
+    - Abstract interface for applying a ImageSegmentation object to an InputImage object for an outputted file format
+
+Class TIFFImageCropper
+    - Concrete Class to implement ImageCropper methods. Output to TIFF format.
+
+########################################################################################################################
+#################################################### Class Methods #####################################################
+########################################################################################################################
+
+Class: InputImage
+Dependencies: None
+Methods:    Constructor
+            get_data(r,z=0,c=0,t=0, region=[:,:]) -> ndarray
+            get_data_in_channel(r, c, t=0) -> nd array
+            get_low_res_image() -> 2d array
+            image_dimensions() -> [x,y,z,c,t]
+            image_resolutions() -> 2x(size(resolution_levels)) array
+            resolution_dimensions(r) -> [x,y,z,c,t]
+            metadata_json() -> JSON
+            metadata_from_path(path) -> metadata
+
+Class: ImarisImage
+Dependencies: Input Image
+Methods:    datasetinfo_time() -> dict
+            datasetinfo_capture() -> dict
+            datasetinfo_log() -> dict
+            datasetinfo_imarisdataset() -> dict
+            datasetinfo_imaris() -> dict
+            datasetinfo_image() -> dict
+            dataSet_channels() -> dict
+            datasetinfo_channels() -> dict
+            get_channel_data() -> dict
+
+Class: ImageSegmentation
+Dependencies: None
+Methods:    Constructor()
+            add_segmentation(x,y,w,h)
+            get_scaled_segments(width, height) -> [[x,y,w,h], [x,y,w,h],..., [x,y,w,h]]
+            get_relative_segments(width, height) -> [[x,y,w,h], [x,y,w,h],..., [x,y,w,h]]
+
+Class: ImageSegmenter
+Dependencies: ImageSegmentation
+Methods:    segment_image(image) -> ImageSegmentation
+
+Class: ImageCropper
+Dependencies: ImageSegmentation, InputImage
+Methods:    crop_input_images(InputImage, Output_path)
+
+Class: TIFFImageCropper
+Dependencies: ImageCropper, ImageSegmentation, ImarisImage
+
+########################################################################################################################
+################################################## Development Plan ####################################################
+########################################################################################################################
+1. Initial Plan and Interface
+2. Test Suites and Implementation for ImarisImage, ImageSegmentation, ImageSegmenter
+2. Test Suites and Implementation for TIFFImageCropper
+3  Time, Memory Optimisation for ImageCropper and Segmentation Accuracy Testing
+4  Large DataSet Testing
+5  Implement Metadata transfer
+6  Front End Application Testing
+7  User Experience testing and Feedback

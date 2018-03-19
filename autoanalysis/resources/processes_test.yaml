@@ -1,0 +1,27 @@
+process1:
+  caption: 1. Filter Data
+  href: filter
+  description: For each cell, filter data within range specified in config
+  output: local
+  filesin: DATA_FILENAME
+  filesout: FILTERED_FILENAME
+  modulename: autoanalysis.processmodules.Filter
+  classname: AutoFilter
+process2:
+  caption: 2. Generate Histograms
+  href: histogram
+  description: For each cell, generate relative frequency histograms
+  filesin: FILTERED_FILENAME
+  output: local
+  filesout: HISTOGRAM_FILENAME
+  modulename: autoanalysis.processmodules.AutoHistogram
+  classname: AutoHistogram
+process3:
+  caption: 3. Batch Data
+  href: compile
+  description: Compiles all filtered data
+  filesin: FILTERED_FILENAME
+  output: batch
+  filesout: BATCH_FILENAME
+  modulename: autoanalysis.processmodules.Batch
+  classname: AutoBatch

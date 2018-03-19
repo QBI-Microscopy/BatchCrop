@@ -1,0 +1,19 @@
+process1:
+  caption: 1. Crop Slide into Images
+  href: crop
+  description: Load an image of serial sections in IMS format. Individual sections will be detected and separated into images.
+  output: individual
+  filesin: IMAGE_TYPE
+  filesout: CROPPED_IMAGE_FILE
+  modulename: autoanalysis.processmodules.SlideCropperAPI
+  classname: SlideCropperAPI
+process2:
+  caption: 2. Orientate Images
+  href: orientate
+  description: Attempts to orientate sections the same way.  TO BE IMPLEMENTED.
+  filesin: CROPPED_IMAGE_FILE
+  output: batch
+  filesout: ORIENTED_IMAGE_FILE
+  modulename: autoanalysis.processmodules.Filter
+  classname: Filter
+
