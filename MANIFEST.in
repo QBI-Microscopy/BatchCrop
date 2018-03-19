@@ -1,0 +1,2 @@
+recursive-include autoanalysis/processmodules *.py
+include autoanalysis/resources *.*

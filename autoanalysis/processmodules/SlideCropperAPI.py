@@ -5,11 +5,11 @@ import sys
 from multiprocessing import Process
 from os.path import join
 from collections import OrderedDict
-from autoanalysis.processmodules.SlideCrop.ImageSegmenter import ImageSegmenter
-from autoanalysis.processmodules.SlideCrop.InputImage import InputImage
-from autoanalysis.processmodules.SlideCrop.TIFFImageCropper import TIFFImageCropper
+from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
+from autoanalysis.processmodules.imagecrop.InputImage import InputImage
+from autoanalysis.processmodules.imagecrop.TIFFImageCropper import TIFFImageCropper
 
-import autoanalysis.processmodules.SlideCrop.ImarisImage as I
+import autoanalysis.processmodules.imagecrop.ImarisImage as I
 
 #DEFAULT_LOGGING_FILEPATH = "SlideCropperLog.txt"
 #FORMAT = '|%(thread)d |%(filename)s |%(funcName)s |%(lineno)d ||%(message)s||'
@@ -54,7 +54,7 @@ class SlideCropperAPI(object):
         cfg = OrderedDict()
         cfg['BORDER_FACTOR']=1.3
         cfg['IMAGE_TYPE'] = '.ims'
-        cfg['CROPPED_IMAGE_FILE'] = '_cropped.tif'
+        cfg['CROPPED_IMAGE_FILES'] = 'cropped'
         return cfg
 
     def setConfigurables(self,cfg):
@@ -93,8 +93,8 @@ class SlideCropperAPI(object):
                 image.close_file()
 
 
-    @classmethod
-    def crop_single_image(cls, file_path, output_path):
+
+    def crop_single_image(self, file_path, output_path):
         """
         Encapsulation method for cropping an individual image.
         :param file_path: String path to the desired file. Assumed to be .ims extension
@@ -103,9 +103,9 @@ class SlideCropperAPI(object):
         """
 
         print("Starting to crop: {0}".format(file_path))
-
+        border_factor = float(self.cfg['BORDER_FACTOR'])
         image = I.ImarisImage(file_path)
-        segmentations = ImageSegmenter.segment_image(image.get_multichannel_segmentation_image())
+        segmentations = ImageSegmenter.segment_image(border_factor,image.get_multichannel_segmentation_image())
         image.close_file()
         print("Finished Segmenting of image: starting crop.")
         TIFFImageCropper.crop_input_images(file_path, segmentations, output_path)

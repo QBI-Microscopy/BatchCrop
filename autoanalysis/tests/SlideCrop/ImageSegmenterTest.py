@@ -5,7 +5,7 @@ import numpy as np
 from version_two.src.SlideCrop.ImageSegmentation import ImageSegmentation as ImageSegmentation
 from version_two.src.SlideCrop.ImarisImage import ImarisImage as ImarisImage
 
-from autoanalysis.processmodules.SlideCrop import ImageSegmenter as ImageSegmenter
+from autoanalysis.processmodules.imagecrop import ImageSegmenter as ImageSegmenter
 
 TESTFILE1 = "E:/testfile.ims"
 MAXIMUM_ERROR = 0.1 # i.e 10% greater
