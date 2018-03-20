@@ -91,81 +91,6 @@ hevent = threading.Event()
 
 
 ####################################################################################################
-class TestThread(threading.Thread):
-    def __init__(self, controller, filenames, outputdir, output, processname, module, classname, config):
-        """Init Worker Thread Class."""
-        threading.Thread.__init__(self)
-        self.controller = controller
-        self.filenames = filenames
-        self.output = output
-        self.processname = processname
-        self.module_name = module
-        self.class_name = classname
-        self.outputdir = outputdir
-        self.config = config
-
-    def run(self):
-        i = 0
-        try:
-            event.set()
-            lock.acquire(True)
-            # Do work
-            q = dict()
-            files = self.filenames
-            total_files = len(files)
-
-            # Loop through each
-            for i in range(total_files):
-                tcount = ((i + 1) * 100) / total_files
-                msg = "%s run: tcount=%d of %d (%d\%)" % (self.processname, i, total_files, tcount)
-                print(msg)
-                self.processData(files[i], q)
-
-        except Exception as e:
-            print(e)
-        finally:
-            print('Finished TestThread')
-            # self.terminate()
-            lock.release()
-            event.clear()
-
-    def processData(self, filename, q):
-        """
-        Activate filter process - multithreaded
-        :param datafile:
-        :param q:
-        :return:
-        """
-        print("Process Data for file: ", filename)
-
-        # create local subdir for output
-        if self.output == 'individual':
-            outputdir = join(dirname(filename), 'cropped')
-            if not exists(outputdir):
-                mkdir(outputdir)
-        else:
-            outputdir = self.outputdir
-        # Instantiate module
-        module = importlib.import_module(self.module_name)
-        class_ = getattr(module, self.class_name)
-        print('Filename: ', filename)
-        mod = class_(filename, outputdir, sheet=self.config['SHEET'],
-                     skiprows=self.config['SKIPROWS'],
-                     headers=self.config['HEADERS'])
-        print('Module instantiated: ', self.class_name)
-        cfg = mod.getConfigurables()
-        for c in cfg.keys():
-            cfg[c] = self.controller.db.getConfigByName(self.controller.currentconfig, c)
-            print("config set: ", cfg[c])
-        mod.setConfigurables(cfg)
-        if mod.data is not None:
-            print("running mod ..")
-            q[filename] = mod.run()
-        else:
-            q[filename] = None
-
-
-####################################################################################################
 
 class ProcessThread(threading.Thread):
     """Multi Worker Thread Class."""
@@ -209,12 +134,12 @@ class ProcessThread(threading.Thread):
                     self.processname, i + 1, total_files, tcount)
                     print(msg)
                     logger.info(msg)
-                    # TODO fix this
                     wx.PostEvent(self.wxObject, ResultEvent((tcount, self.row, i + 1, total_files, self.processname)))
                     self.processBatch(self.filenames[group], q, group)
                     i += 1
 
             else:
+                # Single crop
                 batch = False
                 files = self.filenames
                 total_files = len(files)
