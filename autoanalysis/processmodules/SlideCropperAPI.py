@@ -2,17 +2,12 @@ import argparse
 import logging
 import os
 import sys
-from multiprocessing import Process
 from os.path import join
 from collections import OrderedDict
 from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
 from autoanalysis.processmodules.imagecrop.InputImage import InputImage
 from autoanalysis.processmodules.imagecrop.TIFFImageCropper import TIFFImageCropper
-
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
-
-#DEFAULT_LOGGING_FILEPATH = "SlideCropperLog.txt"
-#FORMAT = '|%(thread)d |%(filename)s |%(funcName)s |%(lineno)d ||%(message)s||'
 
 class SlideCropperAPI(object):
     """
@@ -69,11 +64,29 @@ class SlideCropperAPI(object):
             self.cfg[cf]= cfg[cf]
         print("Config loaded")
 
-    def run(self):
+
+    def segment_run(self):
+        border_factor = float(self.cfg['BORDER_FACTOR'])
+        image = I.ImarisImage(self.data)
+        segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
+        image.close_file()
+        return segmentations
+
+    def crop_run(self, segments):
         if self.data is not None:
-            self.crop_single_image(self.data,self.outputdir)
+            TIFFImageCropper.crop_input_images(self.data, segments, self.outputdir)
         else:
             raise ValueError('Error: Run failed: Image not loaded')
+
+
+    def run(self):
+        if self.data is not None:
+            segments = self.segment_run()
+            self.crop_run(segments)
+        else:
+            raise ValueError('Error: Run failed: Image not loaded')
+
+
 
     def _loadImage(self,file_path):
         '''
@@ -102,14 +115,11 @@ class SlideCropperAPI(object):
         :return: 
         """
 
-        print("Starting to crop: {0}".format(file_path))
         border_factor = float(self.cfg['BORDER_FACTOR'])
         image = I.ImarisImage(file_path)
-        segmentations = ImageSegmenter.segment_image(border_factor,image.get_multichannel_segmentation_image())
+        segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
         image.close_file()
-        print("Finished Segmenting of image: starting crop.")
         TIFFImageCropper.crop_input_images(file_path, segmentations, output_path)
-        print("Finished Cropping of image.")
 
 
     @classmethod
@@ -134,21 +144,6 @@ class SlideCropperAPI(object):
             for proc in pid_list:
                 proc.join()
 
-
-    """
-    Helper Method for Multiprocessing image cropping. Currently not in use. 
-    """
-    @classmethod
-    def spawn_crop_process(cls, file_path, output_path):
-        """
-        Handles creating and starting a new process to crop an individual file. 
-        :param file_path: Tpo
-        :param output_path: 
-        :return: 
-        """
-        cropper = Process(target=SlideCropperAPI.crop_single_image, args=(file_path, output_path))
-        cropper.start()
-        return cropper
 
 
 """
@@ -187,7 +182,7 @@ def create_parser():
     parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2005f 32~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="Z:\\Micro Admin\\Jack\\output")
     parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\Adam")
-    parser.add_argument('--logfile', action='store', help='Input directory', default="..\\..\\logs\\SlideCropperLog.txt")
+    parser.add_argument('--logfile', action='store', help='Input directory', default="E:/SlideCropperLog.txt")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
 
     return parser

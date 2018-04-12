@@ -7,6 +7,8 @@ from multiprocessing import freeze_support
 from os import access, R_OK, mkdir
 from os.path import join, dirname, exists, split, expanduser
 
+from autoanalysis.ImageSegmentPopUp import ImageSegmentDialog
+from .test_popup import TestPopup
 import wx
 import yaml
 
@@ -120,13 +122,16 @@ class ProcessThread(threading.Thread):
             event.set()
             lock.acquire(True)
             q = dict()
+
             # connect to db
             self.db.getconn()
             if isinstance(self.filenames, dict):
+
                 batch = True
                 total_files = len(self.filenames) - 1
                 i = 0
                 for group in self.filenames.keys():
+
                     if group == 'all' or len(self.filenames[group]) <= 0:
                         continue
                     tcount = (i + 1 / total_files) * 100
@@ -155,7 +160,6 @@ class ProcessThread(threading.Thread):
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
         except Exception as e:
             wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i + 1, total_files, self.processname)))
-            logging.error(e)
         finally:
             logger.info('Finished ProcessThread')
             # self.terminate()
@@ -173,6 +177,7 @@ class ProcessThread(threading.Thread):
         :return:
         """
         logger.info("Process Data with file: %s", filename)
+
         # create local subdir for output
         if self.output == 'individual':
             inputdir = dirname(filename)
@@ -184,10 +189,14 @@ class ProcessThread(threading.Thread):
                 mkdir(outputdir)
         else:
             outputdir = self.output
+
         # Instantiate module
         module = importlib.import_module(self.module_name)
         class_ = getattr(module, self.class_name)
+
+        # This is a slidecropperAPI class show plots is whether to show boxes
         mod = class_(filename, outputdir, showplots=self.showplots)
+
         # Load all params required for module - get list from module
         cfg = mod.getConfigurables()
         for c in cfg.keys():
@@ -195,11 +204,22 @@ class ProcessThread(threading.Thread):
             msg = "Process Data: config set: %s=%s" % (c, str(cfg[c]))
             print(msg)
             logger.debug(msg)
+
+        # set config across
         mod.setConfigurables(cfg)
+        # run cropping process
+        self.handleRun(mod, q)
+
+    def handleRun(self, mod, q):
+        """
+        Encapsulated error handling for running the module. 
+        :param mod: configured SlideCropperAPI module to run. 
+        :param q: queue for results
+        """
         if mod.data is not None:
-            q[filename] = mod.run()
+            q[mod.data] = mod.run()
         else:
-            q[filename] = None
+            q[mod.data] = None
 
     def processBatch(self, filelist, q, group=None):
         """
@@ -332,7 +352,6 @@ class Controller():
         :param row:
         :return:
         """
-
         type = self.processes[process]['href']
         processname = self.processes[process]['caption']
         filesIn = []
@@ -342,7 +361,9 @@ class Controller():
                 filesIn.append(fin)
             else:
                 filesIn.append(f)
-        filenames = CheckFilenames(filenames, filesIn)
+
+        # TODO: not passing CheckFilenames
+        filenames = filenames #CheckFilenames(filenames, filesIn)
         # filesout = self.processes[process]['filesout'] #TODO link up with module config?
         # suffix = self.db.getConfigByName(self.currentconfig,filesout)
         if self.processes[process]['output'] == 'individual':

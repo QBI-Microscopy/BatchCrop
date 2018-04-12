@@ -10,6 +10,8 @@ from autoanalysis.db.dbquery import DBI
 # TkAgg causes Runtime errors in Thread
 import matplotlib
 
+from autoanalysis.test_popup import TestPopup
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -410,6 +412,7 @@ class ProcessRunPanel(ProcessPanel):
         self.m_stTitle.SetLabelText(event.String)
         self.m_stDescription.Clear()
         self.m_stDescription.WriteText(desc[0])
+        print(filesIn)
         self.m_stFilesin.SetLabelText(", ".join(filesIn))
         self.m_stFilesout.SetLabelText(", ".join(filesOut))
         self.Layout()
@@ -518,7 +521,7 @@ class ProcessRunPanel(ProcessPanel):
                         if self.controller.processes[p]['caption']==pcaption:
                             break
                     print("processname =", p)
-                    self.controller.RunProcess(self, p, outputdir,filenames, row, showplots)
+                    self.controller.RunProcess(self, p, outputdir, filenames, row, showplots)
                     row = row + 1
 
             else:
@@ -680,6 +683,7 @@ class AppFrame(wx.Frame):
 
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
+    # TODO: Run DB setup if not already done
     app = wx.App()
     frame = AppFrame()
     app.MainLoop()

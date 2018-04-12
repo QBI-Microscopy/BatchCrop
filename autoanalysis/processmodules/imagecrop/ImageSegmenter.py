@@ -1,4 +1,5 @@
 import logging
+from psutil import virtual_memory
 
 import numpy as np
 import scipy.misc as misc
@@ -28,7 +29,7 @@ class ImageSegmenter(object):
     """
 
     @staticmethod
-    def segment_image(border_factor,image_array):
+    def segment_image(border_factor, image_array):
         """
         Segments the image by means of mathematical morphology.
         :param image_array: a 2D image array to be cropped with an optional channel dimension Shape in form (c,y,x)
@@ -37,14 +38,11 @@ class ImageSegmenter(object):
         """
         # Step 1
         binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
-
         # Step 2
         closed_image = ImageSegmenter._noise_reduction(binary_image)
         opened_image = ImageSegmenter._image_dilation(closed_image)
-
         # Step 3 & 4
         segments = ImageSegmenter._apply_object_detection(opened_image).change_segment_bounds(border_factor)
-        logging.info("Segments created from image. Segments are: {}".format(segments))
         return segments
 
     @staticmethod
@@ -363,4 +361,6 @@ class ImageSegmenter(object):
             prev_len = curr_len
             curr_len = len(box_slices)
             i = 0
+
+        max_size = (virtual_memory().total)
         return box_slices
