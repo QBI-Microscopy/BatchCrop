@@ -1,7 +1,10 @@
-Revert Software prior to API split
+Revert Software prior to API split. DONE.
+
+
 Create post event class and handler
 Create subscriber design pattern to GUI
 Provide end of proccess handling to GUI
+
 Set up Queue based image processing for XML output
 configure GUI pane to have slot for image outputs
 Configure xml output strategy

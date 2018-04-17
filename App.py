@@ -5,12 +5,22 @@ import re
 import time
 from glob import iglob
 from os.path import join, expanduser, isdir, sep
+from collections import deque
+
+import numpy
+import scipy
+import skimage.external.tifffile as tf
+import os
+
+import sys
+from wx.lib.pubsub import pub as Publisher
+
 from autoanalysis.db.dbquery import DBI
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 import matplotlib
 
-from autoanalysis.test_popup import TestPopup
+from autoanalysis.gui.ImageSegmentOrderingPanel import ImageSegmentOrderingPanel
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -370,8 +380,6 @@ class FileSelectPanel(FilesPanel):
         print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
 
-
-
 ########################################################################
 class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
@@ -379,6 +387,13 @@ class ProcessRunPanel(ProcessPanel):
         self.loadController()
         self.db = DBI(self.controller.configfile)
         self.db.getconn()
+        #
+        # bSizer22 = wx.BoxSizer(wx.HORIZONTAL)
+        # self.bSizer19.Add(bSizer22, 2, wx.EXPAND, 10)
+
+        self.ImageOrderingPanel = ImageSegmentOrderingPanel(self)
+        self.bSizer18.Add(self.ImageOrderingPanel)
+        # bSizer22.Add(self.ImageOrderingPanel)
         # self.controller = parent.controller
         # Bind timer event
         # self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
@@ -389,6 +404,7 @@ class ProcessRunPanel(ProcessPanel):
         # EVT_CANCEL(self, self.stopfunc)
         # Set timer handler
         self.start = {}
+
 
     def loadController(self):
         self.controller = self.Parent.controller
@@ -665,7 +681,7 @@ class AppFrame(wx.Frame):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "Auto Analysis Application",
-                          size=(900, 700)
+                          size=(1300, 700)
                           )
 
         # self.timer = wx.Timer(self)

@@ -5,10 +5,9 @@ from glob import iglob
 from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support
 from os import access, R_OK, mkdir
-from os.path import join, dirname, exists, split, expanduser
+from os.path import join, dirname, exists, split, expanduser, splitext, basename
+from wx.lib.pubsub import pub as Publisher
 
-from autoanalysis.ImageSegmentPopUp import ImageSegmentDialog
-from .test_popup import TestPopup
 import wx
 import yaml
 
@@ -41,6 +40,20 @@ class ResultEvent(wx.PyEvent):
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_RESULT_ID)
         self.data = data
+
+
+class ImageCropFinishData(object):
+    """ Simple encapsulation of data to be sent to the main GUI thread after an image has been cropped. """
+
+    def __init__(self, filepath):
+        """
+        Constructor. 
+        :param filepath: Filepath to folder with cropped outputs.  
+        """
+        self.filepath = filepath
+
+    def __str__(self):
+        return str(self.filepath)
 
 
 class DataEvent(wx.PyEvent):
@@ -179,6 +192,8 @@ class ProcessThread(threading.Thread):
         logger.info("Process Data with file: %s", filename)
 
         # create local subdir for output
+        # TODO: Shouldn't this be derived from output directory. User has the choice of putting it in the cropped folder.
+        # Default folder could be this????
         if self.output == 'individual':
             inputdir = dirname(filename)
             if 'cropped' in inputdir:
@@ -196,7 +211,7 @@ class ProcessThread(threading.Thread):
 
         # This is a slidecropperAPI class show plots is whether to show boxes
         mod = class_(filename, outputdir, showplots=self.showplots)
-
+        print("outputdir", mod.outputdir)
         # Load all params required for module - get list from module
         cfg = mod.getConfigurables()
         for c in cfg.keys():
@@ -207,17 +222,14 @@ class ProcessThread(threading.Thread):
 
         # set config across
         mod.setConfigurables(cfg)
-        # run cropping process
-        self.handleRun(mod, q)
+        print("outputdir", mod.outputdir)
 
-    def handleRun(self, mod, q):
-        """
-        Encapsulated error handling for running the module. 
-        :param mod: configured SlideCropperAPI module to run. 
-        :param q: queue for results
-        """
+        # run cropping process
         if mod.data is not None:
-            q[mod.data] = mod.run()
+            # q[mod.data] = mod.run()
+            if mod.getConfigurables()['SEND_TO_CROP_PANEL']:
+                newOutputDir= join(outputdir, basename(splitext(filename)[0]))
+                Publisher.sendMessage("Image_Cropped_Finished", details = ImageCropFinishData(newOutputDir))
         else:
             q[mod.data] = None
 
@@ -245,6 +257,9 @@ class ProcessThread(threading.Thread):
         if group is not None:
             mod.prefix = group
             q[group] = mod.run()
+            if mod.getConfigurables['SEND_TO_CROP_PANEL']:
+                Publisher.sendMessage("Image_Cropped_Finished", ImageCropFinishData(mod.data))
+                print("Publisher.sendMessage('Image_Cropped_Finished', ImageCropFinishData(mod.data))")
         else:
             q[mod.base] = mod.run()
 

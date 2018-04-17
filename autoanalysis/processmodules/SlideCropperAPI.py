@@ -50,6 +50,7 @@ class SlideCropperAPI(object):
         cfg['BORDER_FACTOR']=1.3
         cfg['IMAGE_TYPE'] = '.ims'
         cfg['CROPPED_IMAGE_FILES'] = 'cropped'
+        cfg['SEND_TO_CROP_PANEL'] = True
         return cfg
 
     def setConfigurables(self,cfg):
@@ -62,6 +63,8 @@ class SlideCropperAPI(object):
             self.cfg = self.getConfigurables()
         for cf in cfg.keys():
             self.cfg[cf]= cfg[cf]
+        cfg['CROPPED_IMAGE_FILES'] = 'cropped'
+        cfg['SEND_TO_CROP_PANEL'] = True
         print("Config loaded")
 
 
@@ -85,6 +88,7 @@ class SlideCropperAPI(object):
             self.crop_run(segments)
         else:
             raise ValueError('Error: Run failed: Image not loaded')
+        print("COMPLETE: done API crop running ")
 
 
 

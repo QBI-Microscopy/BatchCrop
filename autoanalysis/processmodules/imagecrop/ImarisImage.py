@@ -199,6 +199,9 @@ class ImarisImage(InputImage):
         """
         pass
 
+    def __del__(self):
+        self.close_file()
+
     def close_file(self):
         """
         Closes the associated file of the image. Good memory practice before removing this object or reference. 

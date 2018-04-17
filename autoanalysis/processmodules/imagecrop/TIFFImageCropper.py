@@ -73,7 +73,6 @@ class TIFFImageCropper(object):
 
             # Only Save as AppendedTiff
             # TODO Provide option to save back to inputdir? if so,
-            # outputfile = input_image.get_name() + "_" + str(box_index) + "_full.tiff"
             outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index) + "_full.tiff")
             print("Generating file: ", outputfile)
             with TIFF(outputfile, False) as tf:
@@ -83,7 +82,7 @@ class TIFFImageCropper(object):
                     tf.newFrame()
                     im.close()
                 except Exception as e:
-                    logging.error("Could not create multi-page TIFF. Couldn't compile file: {0}".format(str(e)))
+                    logging.error("Could not create multi-page TIFF. Couldn't compile file: {}".format(str(e)))
             del image_data
         logging.info("Finished saving image %d from %s.", box_index, input_path)
 
