@@ -394,9 +394,10 @@ class FilesPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
 		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 882,747 ), style = wx.TAB_TRAVERSAL )
-		
+
+		self.sizer = wx.GridSizer(2, 10, 10)
 		bSizer5 = wx.BoxSizer( wx.VERTICAL )
-		
+		self.sizer.Add(bSizer5 )
 		self.m_staticText23 = wx.StaticText( self, wx.ID_ANY, u"Select Files for analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText23.Wrap( -1 )
 		self.m_staticText23.SetFont( wx.Font( 14, 71, 90, 90, False, wx.EmptyString ) )
@@ -517,10 +518,11 @@ class FilesPanel ( wx.Panel ):
 		bSizer5.Add( bSizer18, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
 		
 		
-		self.SetSizer( bSizer5 )
+		self.SetSizer( self.sizer )
 		self.Layout()
 		
 		# Connect Events
+		self.m_dataViewListCtrl1.Bind(wx.dataview.EVT_DATAVIEW_SELECTION_CHANGED, self.OnFileClicked)
 		self.m_button18.Bind( wx.EVT_BUTTON, self.OnInputdir )
 		self.m_button19.Bind( wx.EVT_BUTTON, self.OnOutputdir )
 		self.btnAutoFind.Bind( wx.EVT_BUTTON, self.OnAutofind )
@@ -534,8 +536,12 @@ class FilesPanel ( wx.Panel ):
 	def __del__( self ):
 		pass
 	
-	
+
+
 	# Virtual event handlers, overide them in your derived class
+	def OnFileClicked(self, event):
+		event.Skip()
+
 	def OnInputdir( self, event ):
 		event.Skip()
 	

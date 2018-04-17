@@ -199,8 +199,6 @@ class ImarisImage(InputImage):
         """
         pass
 
-    def __del__(self):
-        self.close_file()
 
     def close_file(self):
         """

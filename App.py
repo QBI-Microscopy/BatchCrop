@@ -21,6 +21,7 @@ from autoanalysis.db.dbquery import DBI
 import matplotlib
 
 from autoanalysis.gui.ImageSegmentOrderingPanel import ImageSegmentOrderingPanel
+from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -34,6 +35,7 @@ from glob import iglob
 import shutil
 from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel,dlgLogViewer
+from wx.lib.scrolledpanel import ScrolledPanel
 
 __version__ = '1.0.0'
 
@@ -233,7 +235,6 @@ class MyFileDropTarget(wx.FileDropTarget):
         self.target.Parent.m_status.SetLabelText(status)
         return len(filenames)
 
-
 ########################################################################
 class FileSelectPanel(FilesPanel):
     def __init__(self, parent):
@@ -244,6 +245,19 @@ class FileSelectPanel(FilesPanel):
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
         # self.col_file.SetSortable(True)
         # self.col_group.SetSortable(True)
+        self.preview_thumbnail = None
+        self.panel_right = wx.Panel(self, size=wx.Size(580,650))
+        # self.panel_right.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.sizer.Add(self.panel_right)
+
+    def OnFileClicked(self, event):
+        row = self.m_dataViewListCtrl1.ItemToRow(event.GetItem())
+        filepath = self.m_dataViewListCtrl1.GetTextValue(row, 2)
+        if self.preview_thumbnail is not None:
+            self.preview_thumbnail.Destroy()
+        self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(650, 580))
+        self.sizer.Add(self.preview_thumbnail, wx.CENTER)
+
 
     def OnColClick(self, event):
         print("header clicked: ", event.GetColumn())

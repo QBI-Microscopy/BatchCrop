@@ -1,7 +1,5 @@
-import wx
 from collections import deque
-
-import skimage.external.tifffile as tf
+import wx
 import os
 
 from wx.lib.pubsub import pub as Publisher
@@ -10,6 +8,10 @@ from autoanalysis.gui.ImageThumbnail import *
 
 
 class ImageSegmentOrderingPanel(wx.Panel):
+    """
+    Widget to display the segments of a cropped image for the user to order and produce an XML that it ultimately able
+     to help stack the slices in FIJI/ImageJ
+    """
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.Size(500, 500), style=wx.TAB_TRAVERSAL)
@@ -18,20 +20,20 @@ class ImageSegmentOrderingPanel(wx.Panel):
         Publisher.subscribe(self.updateSegmentOrderQueue, "Image_Cropped_Finished")
         self.parent = parent
         self.bSizer1 = wx.BoxSizer(wx.VERTICAL)
-
+        self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
 
         self.submit = wx.Button(self, wx.ID_ANY, u"Confirm", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.bSizer1.Add(self.submit, 0, wx.ALL, 5)
+        self.bSizer2.Add(self.submit, 0, wx.ALL, 5)
         self.submit.Bind(wx.EVT_BUTTON, self.confirmSegmentOrder)
 
         self.SetSizer(self.bSizer1)
         self.image_sizer = wx.BoxSizer(wx.VERTICAL)
         self.bSizer1.Add(self.image_sizer, 0, wx.ALL, 5)
+        self.bSizer1.Add(self.bSizer2)
         self.Layout()
 
         self.images = []
 
-        self.Centre(wx.BOTH)
 
     def confirmSegmentOrder(self, event):
         self.generateSegmentOrderFile()
@@ -53,19 +55,15 @@ class ImageSegmentOrderingPanel(wx.Panel):
                     image = MultiPageTiffImageThumbnail(self, filepath)
                     self.bitmaps.append(image)
                     self.image_sizer.Add(image)
-            # self.image_sizer.AddMany(self.bitmaps)
 
         except Exception as e:
             print(str(e))
 
 
     def updatesegmentUI(self):
-        print("ss")
-
         if self.segmentOrderQueue is None:
             return
         if len(self.segmentOrderQueue) != 0:
-            print('in')
             next_image = self.segmentOrderQueue.pop()
             self.loadSegmentImages(next_image)
 
@@ -76,11 +74,9 @@ class ImageSegmentOrderingPanel(wx.Panel):
         for the application will trigger the initial UI change. 
         :param details: 
         """
-        print("Subscriber is working AGAIN", details)
         if self.segmentOrderQueue is None:
             self.segmentOrderQueue = deque()
             self.segmentOrderQueue.appendleft(details)
             self.updatesegmentUI()
-
         else:
             self.segmentOrderQueue.appendleft(details)
