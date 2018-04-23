@@ -167,7 +167,7 @@ class MyFileDropTarget(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         group = ''
         for fname in filenames:
-            self.target.AppendItem([True, group, fname])
+            self.target.AppendItem([True, fname])
         # Update status bar
         status = 'Total files loaded: %s' % self.target.Parent.m_dataViewListCtrl1.GetItemCount()
         self.target.Parent.m_status.SetLabelText(status)
@@ -177,26 +177,41 @@ class MyFileDropTarget(wx.FileDropTarget):
 class FileSelectPanel(FilesPanel):
     def __init__(self, parent):
         super(FileSelectPanel, self).__init__(parent)
-        #self.col_file.SetMinWidth(200)
         self.loadController()
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
-        # self.col_file.SetSortable(True)
-        # self.col_group.SetSortable(True)
-        #self.preview_thumbnail = None
+
         #TODO - Move to template - Done
         #self.panel_right = wx.Panel(self, size=wx.Size(580,650))
         # self.panel_right.SetBackgroundColour(wx.Colour(255, 255, 255))
         #self.sizer.Add(self.panel_right)
+        self.inputdir = None
+
+    #
+    # @property
+    # def inputdir(self):
+    #     return self._inputdir
+    #
+    # @inputdir.setter
+    # def inputdir(self, input):
+    #     print(input)
+    #     self._inputdir = input
 
     def OnFileClicked(self, event):
-        print('File clicked: ', event.GetEventObject())
         row = self.m_dataViewListCtrl1.ItemToRow(event.GetItem())
         filepath = self.m_dataViewListCtrl1.GetTextValue(row, 1)
+        print('File clicked: ', filepath)
+
         if self.preview_thumbnail is not None:
             self.preview_thumbnail.Destroy()
-        self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(650, 580))
-        self.panel_right.Sizer.Add(self.preview_thumbnail, wx.CENTER)
+
+        try:
+            W,H = self.panel_right.GetSize()
+            self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(H, W))
+            self.panel_right.Sizer.Add(self.preview_thumbnail, wx.CENTER)
+        except Exception as e :
+            print("Could not open file {0} as an IMS image. Error is {1}".format(filepath, str(e)))
+            self.preview_thumbnail = None
         #self.Layout()
 
 
@@ -284,20 +299,24 @@ class FileSelectPanel(FilesPanel):
         :return:
         """
         self.btnAutoFind.Disable()
-        self.m_status.SetLabelText("Finding files ... please wait")
-        allfiles = [y for y in iglob(join(self.inputdir, '**'), recursive=True)]
-        searchtext = self.m_tcSearch.GetValue()
-        if (len(searchtext) > 0):
-            filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+        if self.inputdir is not None:
+            self.m_status.SetLabelText("Finding files ... please wait")
+            allfiles = [y for y in iglob(join(self.inputdir, '**'), recursive=True)]
+            searchtext = self.m_tcSearch.GetValue()
+            if (len(searchtext) > 0):
+                filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+            else:
+                filenames = [f for f in allfiles if not isdir(f)]
+
+            for fname in filenames:
+                self.m_dataViewListCtrl1.AppendItem([True, fname])
+
+            #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
+            msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
+            self.m_status.SetLabelText(msg)
         else:
-            filenames = [f for f in allfiles if not isdir(f)]
+            print("Cannot autofind files when no directory is selected. Please select Top Level Directory.")
 
-        for fname in filenames:
-            self.m_dataViewListCtrl1.AppendItem([True, fname])
-
-        #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
-        msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
-        self.m_status.SetLabelText(msg)
         self.btnAutoFind.Enable(True)
         #TODO Start generating thumbnails for display (bg thread)
 
