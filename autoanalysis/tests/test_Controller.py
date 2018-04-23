@@ -1,9 +1,11 @@
+import importlib
 from os.path import join
 
 import unittest2 as unittest
-import importlib
-from autoanalysis.db.dbquery import DBI
+
 from autoanalysis.controller import Controller, TestThread
+from autoanalysis.resources.dbquery import DBI
+
 
 class TestController(unittest.TestCase): #TODO: REWRITE FOR SLIDE CROPPER
     def setUp(self):

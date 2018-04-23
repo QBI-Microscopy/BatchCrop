@@ -1,14 +1,11 @@
-from os.path import join
-
 import unittest2 as unittest
 
-from autoanalysis.db.dbquery import DBI
+from autoanalysis.resources.dbquery import DBI
 
 
 class TestDBquery(unittest.TestCase):
     def setUp(self):
-        configdb = join('..','resources', 'autoconfig_test.db')
-        self.dbi = DBI(configdb)
+        self.dbi = DBI(test=True)
         self.dbi.getconn()
 
     def tearDown(self):
@@ -74,3 +71,49 @@ class TestDBquery(unittest.TestCase):
         cnt = self.dbi.addConfig(configid,configlist)
         expected = len(configlist)
         self.assertEqual(expected,cnt)
+
+    def test_getCaptions(self):
+        data = self.dbi.getCaptions()
+        expected = 0
+        print('Captions: ', data)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), expected)
+
+    def test_getRefs(self):
+        data = self.dbi.getRefs()
+        expected = 0
+        print('Refs: ', data)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), expected)
+
+    def test_getDescription(self):
+        ref = 'Crop Slide into Images'
+        data = self.dbi.getDescription(ref)
+        expected = 0
+        print('Description: ', data)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), expected)
+
+    def test_getCaption(self):
+        ref = 'crop'
+        data = self.dbi.getCaption(ref)
+        expected = 0
+        print('Caption: ', data)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), expected)
+
+    def test_getProcessModule(self):
+        ref = 'crop'
+        data = self.dbi.getProcessModule(ref)
+        expected = 0
+        print('Module: ', data)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), expected)
+
+    def test_getProcessClass(self):
+        ref = 'crop'
+        data = self.dbi.getProcessClass(ref)
+        expected = 0
+        print('Class: ', data)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), expected)

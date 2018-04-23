@@ -14,11 +14,14 @@ class SlideCropperAPI(object):
     Main Class for using SlideCropper functionality. All methods are class method based.     
     """
     def __init__(self, datafile,outputdir,showplots=False):
-        # Load data
+        # Set config values
+        self.cfg = self.getConfigurables()
+        self.showplots = showplots
         try:
+            # Load data
             if os.access(datafile,os.R_OK):
                 ext_check = InputImage.get_extension(datafile)
-                if ext_check != ".ims":
+                if ext_check != self.cfg['IMAGE_TYPE']: #".ims":
                     raise TypeError("{} is currently not a supported file type".format(ext_check))
                 self.data = datafile
             else:
@@ -27,13 +30,11 @@ class SlideCropperAPI(object):
             msg = "SlideCropper: Image file loaded from %s" % self.data
             print(msg)
             # Output
-            if os.access(outputdir, os.R_OK):
+            if os.access(outputdir, os.W_OK):
                 self.outputdir = outputdir
             else:
                 raise IOError('Unable to access output directory: {0}'.format(outputdir))
-            # Set config defaults
-            self.cfg = self.getConfigurables()
-            self.showplots = showplots
+
         except IOError as e:
             print(e.args[0])
             raise e
@@ -50,7 +51,7 @@ class SlideCropperAPI(object):
         cfg['BORDER_FACTOR']=1.3
         cfg['IMAGE_TYPE'] = '.ims'
         cfg['CROPPED_IMAGE_FILES'] = 'cropped'
-        cfg['SEND_TO_CROP_PANEL'] = True
+        #cfg['SEND_TO_CROP_PANEL'] = True
         return cfg
 
     def setConfigurables(self,cfg):
@@ -63,8 +64,8 @@ class SlideCropperAPI(object):
             self.cfg = self.getConfigurables()
         for cf in cfg.keys():
             self.cfg[cf]= cfg[cf]
-        cfg['CROPPED_IMAGE_FILES'] = 'cropped'
-        cfg['SEND_TO_CROP_PANEL'] = True
+        # cfg['CROPPED_IMAGE_FILES'] = 'cropped'
+        # cfg['SEND_TO_CROP_PANEL'] = True
         print("Config loaded")
 
 

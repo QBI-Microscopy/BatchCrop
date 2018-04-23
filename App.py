@@ -1,27 +1,33 @@
-# import images
-# import logging
+'''
+    QBI Batch Crop APP: Batch cropping of high resolution microscopy images
+
+    QBI Software Team
+    *******************************************************************************
+    Copyright (C) 2018  QBI Software, The University of Queensland
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+'''
+
 import csv
 import re
 import time
-from glob import iglob
-from os.path import join, expanduser, isdir, sep
-from collections import deque
+from os.path import join, isdir, sep
 
-import numpy
-import scipy
-import skimage.external.tifffile as tf
-import os
-
-import sys
-from wx.lib.pubsub import pub as Publisher
-
-from autoanalysis.db.dbquery import DBI
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 import matplotlib
 
 from autoanalysis.gui.ImageSegmentOrderingPanel import ImageSegmentOrderingPanel
 from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
+from autoanalysis.resources.dbquery import DBI
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -29,28 +35,12 @@ import matplotlib.pyplot as plt
 plt.style.use('seaborn-paper')
 import wx
 import wx.html2
-from os.path import abspath, dirname, commonpath
-from os import access,R_OK, mkdir
 from glob import iglob
-import shutil
-from autoanalysis.controller import EVT_RESULT, Controller
+from autoanalysis.controller import EVT_RESULT, EVT_DATA, Controller
+from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel,dlgLogViewer
-from wx.lib.scrolledpanel import ScrolledPanel
 
-__version__ = '1.0.0'
-
-
-##### Global functions
-def findResourceDir():
-    allfiles = [y for y in iglob(join('.', '**', "resources"), recursive=True)]
-    files = [f for f in allfiles if not 'build' in f]
-    resource_dir = commonpath(files)
-    if len(resource_dir) > 0:
-        print("Resource directory located to: ", resource_dir)
-    else:
-        resource_dir =join('autoanalysis','resources')
-
-    return abspath(resource_dir)
+__version__ = '1.0.0alpha'
 
 
 ########################################################################
@@ -121,77 +111,32 @@ class Config(ConfigPanel):
     def __init__(self, parent):
         super(Config, self).__init__(parent)
         self.parent = parent
-        self.configdb = self.parent.configfile
-        self.dbi = DBI(self.configdb)
         self.loadController()
 
     def loadController(self):
         self.controller = self.parent.controller
-        self.currentconfig = self.parent.controller.currentconfig
         self.OnLoadData()
 
     def OnLoadData(self):
-        self.dbi.getconn()
+        self.controller.db.connect()
         #load config values
-        cids = self.dbi.getConfigIds()
-        if len(cids)>0:
-            self.cboConfigid.Set(cids)
-            #configid = self.cboConfigid.GetStringSelection()
-            rownum =0
-            if self.currentconfig in cids:
-                selection = self.cboConfigid.FindString(self.currentconfig)
-                self.cboConfigid.SetSelection(selection)
-                conf = self.dbi.getConfigALL(self.currentconfig)
-            else:
-                selection = self.cboConfigid.FindString(cids[0])
-                self.cboConfigid.SetSelection(selection)
-                conf = self.dbi.getConfigALL(cids[0])
-            if conf is not None:
-                for k in conf.keys():
-                    self.m_grid1.SetCellValue(rownum, 0, k)
-                    self.m_grid1.SetCellValue(rownum, 1, conf[k][0])
-                    if conf[k][1] is not None:
-                        self.m_grid1.SetCellValue(rownum, 2, conf[k][1])
-                    rownum += 1
-                self.m_grid1.AutoSizeColumns()
-                self.m_grid1.AutoSize()
-        self.dbi.closeconn()
-
-    def OnLoadConfig(self,event):
-        self.dbi.getconn()
-        #load config values
-        configid = self.cboConfigid.GetValue()
-        try:
-            rownum =0
-            conf = self.dbi.getConfigALL(configid)
-            if conf is not None:
-                self.m_grid1.ClearGrid()
-                for k in conf.keys():
-                    self.m_grid1.SetCellValue(rownum, 0, k)
-                    self.m_grid1.SetCellValue(rownum, 1, conf[k][0])
-                    if conf[k][1] is not None:
-                        self.m_grid1.SetCellValue(rownum, 2, conf[k][1])
-                    rownum += 1
-                self.m_grid1.AutoSizeColumns()
-                self.m_grid1.AutoSize()
-            #Notify other controllers
-            self.parent.controller.currentconfig = configid
-            # reload other panels
-            for fp in self.parent.Children:
-                if isinstance(fp, wx.Panel) and self.__class__ != fp.__class__:
-                    fp.loadController()
-            # notification
-            msg = "Config loaded: %s" % configid
-            self.Parent.Warn(msg)
-        except Exception as e:
-            self.Parent.Warn(e.args[0])
-        finally:
-            self.dbi.closeconn()
+        rownum =0
+        conf = self.controller.db.getConfigALL(self.controller.currentconfig)
+        if conf is not None:
+            for k in conf.keys():
+                self.m_grid1.SetCellValue(rownum, 0, k)
+                self.m_grid1.SetCellValue(rownum, 1, conf[k][0])
+                if conf[k][1] is not None:
+                    self.m_grid1.SetCellValue(rownum, 2, conf[k][1])
+                rownum += 1
+            self.m_grid1.AutoSizeColumns()
+            self.m_grid1.AutoSize()
+        self.controller.db.closeconn()
 
 
     def OnSaveConfig(self, event):
-        self.dbi.getconn()
-        configid = self.cboConfigid.GetValue()
+        self.controller.db.getconn()
+        configid = self.controller.currentconfig
         configlist=[]
         data = self.m_grid1.GetTable()
         for rownum in range(0, data.GetRowsCount()):
@@ -199,15 +144,8 @@ class Config(ConfigPanel):
                 configlist.append((self.m_grid1.GetCellValue(rownum, 0),self.m_grid1.GetCellValue(rownum, 1),configid,self.m_grid1.GetCellValue(rownum, 2)))
         #print('Saved config:', configlist)
         # Save to DB
-        cnt = self.dbi.addConfig(configid,configlist)
-        # Load as options
-        cids = self.dbi.getConfigIds()
-        if len(cids) > 0:
-            self.cboConfigid.Set(cids)
-            selection = self.cboConfigid.FindString(configid)
-            self.cboConfigid.SetSelection(selection)
-        # Load controller
-        self.parent.controller.currentconfig = configid
+        cnt = self.controller.db.addConfig(configid,configlist)
+
         #reload other panels
         for fp in self.parent.Children:
             if isinstance(fp, wx.Panel) and self.__class__ != fp.__class__:
@@ -215,7 +153,7 @@ class Config(ConfigPanel):
         #notification
         msg = "Config saved: %s" % configid
         self.Parent.Warn(msg)
-        self.dbi.closeconn()
+        self.controller.db.closeconn()
 
     def OnAddRow(self, event):
         self.m_grid1.AppendRows(1, True)
@@ -239,24 +177,27 @@ class MyFileDropTarget(wx.FileDropTarget):
 class FileSelectPanel(FilesPanel):
     def __init__(self, parent):
         super(FileSelectPanel, self).__init__(parent)
-        self.col_file.SetMinWidth(200)
+        #self.col_file.SetMinWidth(200)
         self.loadController()
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
         # self.col_file.SetSortable(True)
         # self.col_group.SetSortable(True)
-        self.preview_thumbnail = None
-        self.panel_right = wx.Panel(self, size=wx.Size(580,650))
+        #self.preview_thumbnail = None
+        #TODO - Move to template - Done
+        #self.panel_right = wx.Panel(self, size=wx.Size(580,650))
         # self.panel_right.SetBackgroundColour(wx.Colour(255, 255, 255))
-        self.sizer.Add(self.panel_right)
+        #self.sizer.Add(self.panel_right)
 
     def OnFileClicked(self, event):
+        print('File clicked: ', event.GetEventObject())
         row = self.m_dataViewListCtrl1.ItemToRow(event.GetItem())
-        filepath = self.m_dataViewListCtrl1.GetTextValue(row, 2)
+        filepath = self.m_dataViewListCtrl1.GetTextValue(row, 1)
         if self.preview_thumbnail is not None:
             self.preview_thumbnail.Destroy()
         self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(650, 580))
-        self.sizer.Add(self.preview_thumbnail, wx.CENTER)
+        self.panel_right.Sizer.Add(self.preview_thumbnail, wx.CENTER)
+        #self.Layout()
 
 
     def OnColClick(self, event):
@@ -266,12 +207,7 @@ class FileSelectPanel(FilesPanel):
 
     def loadController(self):
         self.controller = self.Parent.controller
-        datagroups = []
-        config = self.controller.db.getConfig(self.controller.currentconfig)
-        for c in config.keys():
-            if c.startswith('GROUP'):
-                datagroups.append(config[c])
-        self.m_cbGroups.SetItems(datagroups)
+
 
 
     def OnInputdir(self, e):
@@ -291,18 +227,6 @@ class FileSelectPanel(FilesPanel):
 
         dlg.Destroy()
 
-    def OnAssignGroup(self, event):
-        """
-        Allow user to assign groups to selected files
-        :param event:
-        :return:
-        """
-        num_files = self.m_dataViewListCtrl1.GetItemCount()
-        group = self.m_cbGroups.GetStringSelection()
-        for i in range(0, num_files):
-            if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                self.m_dataViewListCtrl1.SetValue(group, i, 1)
-                print('Setting %s with group %s', self.m_dataViewListCtrl1.GetValue(i, 2), group)
 
     def OnSaveList(self, event):
         """
@@ -321,8 +245,7 @@ class FileSelectPanel(FilesPanel):
 
                     for i in range(0, num_files):
                         if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                            swriter.writerow(
-                                [self.m_dataViewListCtrl1.GetValue(i, 1), self.m_dataViewListCtrl1.GetValue(i, 2)])
+                            swriter.writerow([self.m_dataViewListCtrl1.GetValue(i, 1)])
         except Exception as e:
             self.Parent.Warn("Save list error:" + e.args[0])
         finally:
@@ -345,7 +268,7 @@ class FileSelectPanel(FilesPanel):
                     self.m_dataViewListCtrl1.DeleteAllItems()
                     for row in sreader:
                         if len(row) > 0:
-                            self.m_dataViewListCtrl1.AppendItem([True, row[0], row[1]])
+                            self.m_dataViewListCtrl1.AppendItem([True, row[0]])
                 msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
                 self.m_status.SetLabelText(msg)
         except Exception as e:
@@ -368,22 +291,15 @@ class FileSelectPanel(FilesPanel):
             filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
         else:
             filenames = [f for f in allfiles if not isdir(f)]
-        #Assign files to group based on filenames
-        groups = self.m_cbGroups.GetItems()
-        for fname in filenames:
-            group = ''
-            # group if available
-            for g in groups:
-                group = ''
-                if g.upper() in fname.upper().split(sep):
-                    group = g
-                    break
-            self.m_dataViewListCtrl1.AppendItem([True, group, fname])
 
-        self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
+        for fname in filenames:
+            self.m_dataViewListCtrl1.AppendItem([True, fname])
+
+        #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
         msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
         self.m_status.SetLabelText(msg)
         self.btnAutoFind.Enable(True)
+        #TODO Start generating thumbnails for display (bg thread)
 
     def OnSelectall(self, event):
         for i in range(0, self.m_dataViewListCtrl1.GetItemCount()):
@@ -399,14 +315,12 @@ class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
-        self.db = DBI(self.controller.configfile)
-        self.db.getconn()
         #
         # bSizer22 = wx.BoxSizer(wx.HORIZONTAL)
         # self.bSizer19.Add(bSizer22, 2, wx.EXPAND, 10)
-
-        self.ImageOrderingPanel = ImageSegmentOrderingPanel(self)
-        self.bSizer18.Add(self.ImageOrderingPanel)
+        #TODO Add to template
+        self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
+        #self.bSizer18.Add(self.ImageOrderingPanel)
         # bSizer22.Add(self.ImageOrderingPanel)
         # self.controller = parent.controller
         # Bind timer event
@@ -415,36 +329,29 @@ class ProcessRunPanel(ProcessPanel):
         # self.m_checkListProcess.AppendItems(processes)
         # Set up event handler for any worker thread results
         EVT_RESULT(self, self.progressfunc)
+        EVT_DATA(self,self.showresults)
         # EVT_CANCEL(self, self.stopfunc)
         # Set timer handler
         self.start = {}
 
-
     def loadController(self):
         self.controller = self.Parent.controller
-        processes = [self.controller.processes[p]['caption'] for p in self.controller.processes]
+
+    def loadCaptions(self):
+        self.controller.db.getconn()
+        processes = self.controller.db.getCaptions() #[self.controller.processes[p]['caption'] for p in self.controller.processes]
         self.m_checkListProcess.Clear()
         self.m_checkListProcess.AppendItems(processes)
+        self.controller.db.closeconn()
 
     def OnShowDescription(self, event):
-        print(event.String)
+        ref = self.controller.db.getRef(event.String)
+        desc = self.controller.db.getDescription(ref)
 
-        desc = [self.controller.processes[p]['description'] for p in self.controller.processes if
-                self.controller.processes[p]['caption'] == event.String]
-        filesIn = [self.controller.processes[p]['filesin'] for p in self.controller.processes if
-                   self.controller.processes[p]['caption'] == event.String]
-        filesOut = [self.controller.processes[p]['filesout'] for p in self.controller.processes if
-                    self.controller.processes[p]['caption'] == event.String]
-        # Load from Config
-        filesIn = [self.controller.db.getConfigByName(self.controller.currentconfig,f) for f in filesIn[0].split(", ")]
-        filesOut = [self.controller.db.getConfigByName(self.controller.currentconfig,f) for f in filesOut[0].split(", ")]
-        # Load to GUI
         self.m_stTitle.SetLabelText(event.String)
         self.m_stDescription.Clear()
         self.m_stDescription.WriteText(desc[0])
-        print(filesIn)
-        self.m_stFilesin.SetLabelText(", ".join(filesIn))
-        self.m_stFilesout.SetLabelText(", ".join(filesOut))
+
         self.Layout()
 
     def progressfunc(self, msg):
@@ -479,6 +386,11 @@ class ProcessRunPanel(ProcessPanel):
             self.m_btnRunProcess.Enable()
             self.m_stOutputlog.SetLabelText("Completed process %s" % process)
 
+    def showresults(self,filename):
+        #TODO link to Image Ordering Panel
+        self.m_stOutputlog.SetLabelText("Processed %s" % filename)
+
+
     def getFilePanel(self):
         """
         Get access to filepanel
@@ -502,6 +414,15 @@ class ProcessRunPanel(ProcessPanel):
         print("Cancel multiprocessor")
         event.Skip()
 
+    def getDefaultOutputdir(self):
+        subdir = 'cropped'
+        sdir = ''
+        if self.controller is not None and self.controller.db is not None:
+            sdir = self.controller.db.getConfigByName(self.controller.currentconfig, 'CROPPED_IMAGE_FILES')
+        if len(sdir) > 0:
+            subdir = sdir
+        return subdir
+
     def OnRunScripts(self, event):
         """
         Run selected scripts sequentially - updating progress bars
@@ -511,7 +432,6 @@ class ProcessRunPanel(ProcessPanel):
         # Clear processing window
         self.m_dataViewListCtrlRunning.DeleteAllItems()
         # Disable Run button
-        # self.m_btnRunProcess.Disable()
         btn = event.GetEventObject()
         btn.Disable()
         # Get selected processes
@@ -520,40 +440,32 @@ class ProcessRunPanel(ProcessPanel):
         showplots = self.m_cbShowplots.GetValue()
         # Get data from other panels
         filepanel = self.getFilePanel()
-        filenames = {'all': []}
-        groups = filepanel.m_cbGroups.GetItems()
-        for g in groups:
-            filenames[g]=[]
-
+        filenames =[]
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
-        outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
-        print('All Files:', num_files)
+        outputdir = filepanel.txtOutputdir.GetValue()
+        # if blank will use subdir in inputdir
+        if len(outputdir) <=0:
+            outputdir = join(filepanel.txtInputdir,self.getDefaultOutputdir())
+        print('PROCESSPANEL: All Files:', num_files)
         try:
-            self.db.getconn()
             if len(selections) > 0 and num_files > 0:
                 # Get selected files and sort into groups
                 for i in range(0, num_files):
                     if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                        fname = filepanel.m_dataViewListCtrl1.GetValue(i, 2)
-                        group = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
+                        fname = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
                         if not isdir(fname):
-                            filenames['all'].append(fname)
-                            if len(group) > 0:
-                                filenames[group].append(fname)
-                print('Selected Files:', len(filenames['all']))
+                            filenames.append(fname)
+                print('PROCESSPANEL: Selected Files:', len(filenames))
                 if len(filenames) <= 0:
                     raise ValueError("No files selected in Files Panel")
 
                 row = 0
                 # For each process
                 for pcaption in selections:
-                    for p in self.controller.processes.keys():
-                        if self.controller.processes[p]['caption']==pcaption:
-                            break
-                    print("processname =", p)
+                    p = self.controller.db.getRef(pcaption)
+                    print("PROCESSPANEL: Running processname =", p)
                     self.controller.RunProcess(self, p, outputdir, filenames, row, showplots)
                     row = row + 1
-
             else:
                 if len(selections) <= 0:
                     raise ValueError("No processes selected")
@@ -564,8 +476,8 @@ class ProcessRunPanel(ProcessPanel):
             # Enable Run button
             self.m_btnRunProcess.Enable()
         finally:
-            if self.db is not None:
-                self.db.closeconn()
+            if self.controller.db is not None:
+                self.controller.db.closeconn()
 
     def OnShowLog(self, event):
         """
@@ -587,29 +499,15 @@ class AppMain(wx.Listbook):
     def __init__(self, parent):
         """Constructor"""
         wx.Listbook.__init__(self, parent, wx.ID_ANY, style=wx.BK_DEFAULT)
-        self.resourcesdir = findResourceDir()
-        self.processfile = join(self.resourcesdir, 'processes.yaml')
-        self.configfile = self.getConfigdb()
-        self.currentconfig = 'original'
-        self.controller = Controller(self.configfile, self.currentconfig, self.processfile)
+        #self.resourcesdir = findResourceDir()
+        # self.processfile = join(self.resourcesdir, 'processes.yaml')
+        # self.configfile = self.getConfigdb()
+        #self.currentconfig = 'default'
+        self.controller = Controller()
 
         self.InitUI()
         self.Centre(wx.BOTH)
         self.Show()
-
-    def getConfigdb(self):
-        # Save config db to user's home dir or else will be overwritten with updates
-        self.userconfigdir = join(expanduser('~'), '.qbi_autoanalysis')
-        dbname = 'autoconfig.db'
-        if not access(self.userconfigdir, R_OK):
-            mkdir(self.userconfigdir)
-        configdb = join(self.userconfigdir,dbname)
-        if not access(configdb, R_OK):
-            defaultdb = join(self.resourcesdir, dbname)
-            shutil.copy(defaultdb,configdb)
-
-        return configdb
-
 
     def InitUI(self):
 
@@ -694,8 +592,8 @@ class AppFrame(wx.Frame):
     def __init__(self):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
-                          "Auto Analysis Application",
-                          size=(1300, 700)
+                          "Batch Crop Application",
+                          size=(1300, 720)
                           )
 
         # self.timer = wx.Timer(self)
