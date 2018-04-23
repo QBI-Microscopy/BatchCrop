@@ -334,6 +334,7 @@ class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
+        self.loadCaptions()
         #
         # bSizer22 = wx.BoxSizer(wx.HORIZONTAL)
         # self.bSizer19.Add(bSizer22, 2, wx.EXPAND, 10)
