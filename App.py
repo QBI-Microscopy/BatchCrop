@@ -17,6 +17,7 @@
 '''
 
 import csv
+import os
 import re
 import time
 from os.path import join, isdir, sep
@@ -167,7 +168,9 @@ class MyFileDropTarget(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         group = ''
         for fname in filenames:
+            print(os.stat(fname))
             self.target.AppendItem([True, fname])
+
         # Update status bar
         status = 'Total files loaded: %s' % self.target.Parent.m_dataViewListCtrl1.GetItemCount()
         self.target.Parent.m_status.SetLabelText(status)
@@ -266,6 +269,10 @@ class FileSelectPanel(FilesPanel):
         finally:
             print('Save list complete')
 
+    def loadFileToPanel(self, filepath):
+        self.m_dataViewListCtrl1.AppendItem([True, filepath])
+        print(os.stat(filepath))
+
     def OnLoadList(self, event):
         """
         Load saved list
@@ -283,7 +290,7 @@ class FileSelectPanel(FilesPanel):
                     self.m_dataViewListCtrl1.DeleteAllItems()
                     for row in sreader:
                         if len(row) > 0:
-                            self.m_dataViewListCtrl1.AppendItem([True, row[0]])
+                            self.loadFileToPanel(row[0])
                 msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
                 self.m_status.SetLabelText(msg)
         except Exception as e:
@@ -309,10 +316,10 @@ class FileSelectPanel(FilesPanel):
                 filenames = [f for f in allfiles if not isdir(f)]
 
             for fname in filenames:
-                self.m_dataViewListCtrl1.AppendItem([True, fname])
+                self.loadFileToPanel(fname)
 
             #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
-            msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
+            msg = "Total Files loaded: %d" % len(fname)
             self.m_status.SetLabelText(msg)
         else:
             print("Cannot autofind files when no directory is selected. Please select Top Level Directory.")
@@ -358,7 +365,7 @@ class ProcessRunPanel(ProcessPanel):
         self.controller = self.Parent.controller
 
     def loadCaptions(self):
-        self.controller.db.getconn()
+        self.controller.db.connect()
         processes = self.controller.db.getCaptions() #[self.controller.processes[p]['caption'] for p in self.controller.processes]
         self.m_checkListProcess.Clear()
         self.m_checkListProcess.AppendItems(processes)
@@ -370,7 +377,7 @@ class ProcessRunPanel(ProcessPanel):
 
         self.m_stTitle.SetLabelText(event.String)
         self.m_stDescription.Clear()
-        self.m_stDescription.WriteText(desc[0])
+        self.m_stDescription.WriteText(desc)
 
         self.Layout()
 
@@ -465,7 +472,8 @@ class ProcessRunPanel(ProcessPanel):
         outputdir = filepanel.txtOutputdir.GetValue()
         # if blank will use subdir in inputdir
         if len(outputdir) <=0:
-            outputdir = join(filepanel.txtInputdir,self.getDefaultOutputdir())
+            #TODO: change first argument to string not TextCtrl
+            outputdir = join(filepanel.txtInputdir.GetLineText(0),self.getDefaultOutputdir())
         print('PROCESSPANEL: All Files:', num_files)
         try:
             if len(selections) > 0 and num_files > 0:

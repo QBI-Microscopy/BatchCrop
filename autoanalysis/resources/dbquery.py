@@ -162,10 +162,10 @@ class DBI():
         data = [d[0] for d in qry]
         return data
 
-    def getDescription(self, caption):
+    def getDescription(self, ref):
         if self.c is None:
             self.connect()
-        self.c.execute("SELECT description FROM processes WHERE process=?", (self.validstring(caption),))
+        self.c.execute("SELECT description FROM processes WHERE ref=?", (self.validstring(ref),))
         data = self.c.fetchone()
         if data is not None:
             data = data[0]

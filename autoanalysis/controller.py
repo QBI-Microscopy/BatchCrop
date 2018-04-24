@@ -157,7 +157,7 @@ class ProcessThread(threading.Thread):
         # run cropping process
         if mod.data is not None:
             print('PROCESSTHREAD: Module running')
-            q[mod.data] = mod.run()
+            # q[mod.data] = mod.run()
             if mod.showplots:
                 newOutputDir= join(mod.outputdir, basename(splitext(filename)[0]))
                 wx.PostEvent(self.wxObject, DataEvent((newOutputDir)))
@@ -214,7 +214,7 @@ class Controller():
         self.currentconfig = 'default'  # maybe future multiple configs possible
         # connect to db
         self.db = DBI()
-        #self.db.getconn()
+        self.db.connect()
 
     # def loadProcesses(self):
     #     pf = None
@@ -269,7 +269,7 @@ class Controller():
         :param showplots:
         :return:
         """
-        self.db.getconn()
+        self.db.connect()
         processname = self.db.getCaption(processref)
         processmodule = self.db.getProcessModule(processref)
         processclass = self.db.getProcessClass(processref)
