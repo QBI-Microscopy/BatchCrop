@@ -14,14 +14,13 @@ class ImageSegmentOrderingPanel(wx.Panel):
     """
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.Size(500, 500), style=wx.TAB_TRAVERSAL)
+        wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.Size(wx.MAXIMIZE, wx.MAXIMIZE), style=wx.TAB_TRAVERSAL)
         self.SetBackgroundColour((111, 111, 111))
-        self.segmentOrderQueue = None
+        self.segmentOrderQueue = deque()
         Publisher.subscribe(self.updateSegmentOrderQueue, "Image_Cropped_Finished")
         self.parent = parent
         self.bSizer1 = wx.BoxSizer(wx.VERTICAL)
         self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
-
         self.submit = wx.Button(self, wx.ID_ANY, u"Confirm", wx.DefaultPosition, wx.DefaultSize, 0)
         self.bSizer2.Add(self.submit, 0, wx.ALL, 5)
         self.submit.Bind(wx.EVT_BUTTON, self.confirmSegmentOrder)
@@ -31,11 +30,13 @@ class ImageSegmentOrderingPanel(wx.Panel):
         self.bSizer1.Add(self.image_sizer, 0, wx.ALL, 5)
         self.bSizer1.Add(self.bSizer2)
         self.Layout()
+        self.SetSizer(self.bSizer1)
+        self.bitmaps = []
 
-        self.images = []
 
 
     def confirmSegmentOrder(self, event):
+        ignore = [print(bit) for bit in self.bitmaps]
         self.generateSegmentOrderFile()
         self.deleteSegmentImages()
         self.updatesegmentUI()
@@ -44,17 +45,23 @@ class ImageSegmentOrderingPanel(wx.Panel):
         pass
 
     def deleteSegmentImages(self):
-        pass
-
+        print("deleting segment images")
+        if len(self.bitmaps) > 0:
+            for bitmap in self.bitmaps:
+                bitmap.Destroy()
+        self.bitmaps = []
 
     def loadSegmentImages(self, Image):
         try:
+            print("load segment images {0}".format(Image.filepath))
             self.bitmaps = []
             for file in os.listdir(Image.filepath):
                     filepath = os.path.join(Image.filepath, file)
                     image = MultiPageTiffImageThumbnail(self, filepath)
                     self.bitmaps.append(image)
-                    self.image_sizer.Add(image)
+                    # self.AddChild(image)
+                    # self.image_sizer.Add(image)
+            # self.image_sizer.AddMany(self.bitmaps)
 
         except Exception as e:
             print(str(e))
@@ -62,11 +69,14 @@ class ImageSegmentOrderingPanel(wx.Panel):
 
     def updatesegmentUI(self):
         if self.segmentOrderQueue is None:
-            return
-        if len(self.segmentOrderQueue) != 0:
-            next_image = self.segmentOrderQueue.pop()
-            self.loadSegmentImages(next_image)
+            print("update segment Queue UI is None")
 
+        elif len(self.segmentOrderQueue) != 0:
+            next_image = self.segmentOrderQueue.pop()
+            print(next_image.filepath)
+            self.loadSegmentImages(next_image)
+        else:
+            print("length of queue is 0")
 
     def updateSegmentOrderQueue(self, details):
         """
@@ -74,9 +84,7 @@ class ImageSegmentOrderingPanel(wx.Panel):
         for the application will trigger the initial UI change. 
         :param details: 
         """
-        if self.segmentOrderQueue is None:
-            self.segmentOrderQueue = deque()
-            self.segmentOrderQueue.appendleft(details)
+        self.segmentOrderQueue.appendleft(details)
+        if len(self.segmentOrderQueue) > 0 and len(self.bitmaps) == 0:
+            print("DETSILS", details)
             self.updatesegmentUI()
-        else:
-            self.segmentOrderQueue.appendleft(details)

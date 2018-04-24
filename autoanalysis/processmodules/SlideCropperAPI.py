@@ -13,7 +13,7 @@ class SlideCropperAPI(object):
     """
     Main Class for using SlideCropper functionality. All methods are class method based.     
     """
-    def __init__(self, datafile,outputdir,showplots=False):
+    def __init__(self, datafile, outputdir,showplots=False):
         # Set config values
         self.cfg = self.getConfigurables()
         self.showplots = showplots

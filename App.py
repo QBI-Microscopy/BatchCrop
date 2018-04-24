@@ -342,19 +342,13 @@ class ProcessRunPanel(ProcessPanel):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
         self.loadCaptions()
-        #
-        # bSizer22 = wx.BoxSizer(wx.HORIZONTAL)
-        # self.bSizer19.Add(bSizer22, 2, wx.EXPAND, 10)
-        #TODO Add to template
+
+        # TODO Add to template
         self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
-        #self.bSizer18.Add(self.ImageOrderingPanel)
-        # bSizer22.Add(self.ImageOrderingPanel)
-        # self.controller = parent.controller
-        # Bind timer event
-        # self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
-        # processes = [p['caption'] for p in self.controller.processes]
-        # self.m_checkListProcess.AppendItems(processes)
-        # Set up event handler for any worker thread results
+        self.m_panelImageOrder.Layout()
+        self.panelMainSizer.Add(self.m_panelImageOrder,  0, wx.ALL|wx.EXPAND, 5 )
+
+
         EVT_RESULT(self, self.progressfunc)
         EVT_DATA(self,self.showresults)
         # EVT_CANCEL(self, self.stopfunc)
@@ -372,14 +366,15 @@ class ProcessRunPanel(ProcessPanel):
         self.controller.db.closeconn()
 
     def OnShowDescription(self, event):
+        self.controller.db.connect()
         ref = self.controller.db.getRef(event.String)
         desc = self.controller.db.getDescription(ref)
 
         self.m_stTitle.SetLabelText(event.String)
         self.m_stDescription.Clear()
         self.m_stDescription.WriteText(desc)
-
         self.Layout()
+        self.controller.db.closeconn()
 
     def progressfunc(self, msg):
         """
@@ -445,7 +440,9 @@ class ProcessRunPanel(ProcessPanel):
         subdir = 'cropped'
         sdir = ''
         if self.controller is not None and self.controller.db is not None:
+            self.controller.db.connect()
             sdir = self.controller.db.getConfigByName(self.controller.currentconfig, 'CROPPED_IMAGE_FILES')
+            self.controller.db.closeconn()
         if len(sdir) > 0:
             subdir = sdir
         return subdir

@@ -3,15 +3,14 @@ import logging
 import threading
 from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support
-from os import access, R_OK,W_OK, mkdir
-from os.path import join, expanduser, splitext, basename
+from os import access, R_OK, W_OK, mkdir
+from os.path import join, expanduser, splitext, basename, split
 
 import wx
 
 from autoanalysis.resources.dbquery import DBI
 from autoanalysis.utils import findResourceDir
-
-# from wx.lib.pubsub import pub as Publisher
+from wx.lib.pubsub import pub as Publisher
 
 #FORMAT = '|%(thread)d |%(filename)s |%(funcName)s |%(lineno)d ||%(message)s||'
 FORMAT = '[ %(asctime)s %(levelname)-4s ]|%(threadName)-9s |%(filename)s |%(funcName)s |%(lineno)d ||%(message)s||'
@@ -134,36 +133,44 @@ class ProcessThread(threading.Thread):
         :param q: queue for results
         :return:
         """
-        logger.info("PROCESSTHREAD:Process Data with file: %s", filename)
+        try:
+            logger.info("PROCESSTHREAD:Process Data with file: %s", filename)
 
-        # Instantiate module
-        module = importlib.import_module(self.module_name)
-        class_ = getattr(module, self.class_name)
+            # Instantiate module
+            module = importlib.import_module(self.module_name)
+            class_ = getattr(module, self.class_name)
 
-        # This is a slidecropperAPI class show plots is whether to show boxes
-        mod = class_(filename, self.output, showplots=self.showplots)
-        print("PROCESSTHREAD: outputdir", mod.outputdir)
-        # Load all params required for module - get list from module
-        cfg = mod.getConfigurables()
-        for c in cfg.keys():
-            cfg[c] = self.db.getConfigByName(self.configid,c)
-            msg = "PROCESSTHREAD:Process Data: config set: %s=%s" % (c, str(cfg[c]))
-            print(msg)
-            logger.debug(msg)
+            # This is a slidecropperAPI class show plots is whether to show boxes
+            mod = class_(filename, self.output, showplots=self.showplots)
+            print("PROCESSTHREAD: outputdir", mod.outputdir)
+            # Load all params required for module - get list from module
+            cfg = mod.getConfigurables()
+            for c in cfg.keys():
+                self.db.connect()
+                cfg[c] = self.db.getConfigByName(self.configID,c)
+                msg = "PROCESSTHREAD:Process Data: config set: %s=%s" % (c, str(cfg[c]))
+                print(msg)
+                logger.debug(msg)
+                self.db.closeconn()
 
-        # set config across
-        mod.setConfigurables(cfg)
+            # set config across
+            mod.setConfigurables(cfg)
+            print("11111")
 
-        # run cropping process
-        if mod.data is not None:
-            print('PROCESSTHREAD: Module running')
-            # q[mod.data] = mod.run()
-            if mod.showplots:
-                newOutputDir= join(mod.outputdir, basename(splitext(filename)[0]))
-                wx.PostEvent(self.wxObject, DataEvent((newOutputDir)))
-                #Publisher.sendMessage("Image_Cropped_Finished", details = ImageCropFinishData(newOutputDir))
-        else:
-            q[mod.data] = None
+            # run cropping process
+            if mod.data is not None:
+                print('PROCESSTHREAD: Module running')
+                # q[mod.data] = mod.run()
+                if mod.showplots or True :
+                    newOutputDir= join(split(self.filenames[0])[0], mod.outputdir, basename(splitext(filename)[0]))
+                    print(newOutputDir)
+                    wx.PostEvent(self.wxObject, DataEvent((newOutputDir)))
+                    Publisher.sendMessage("Image_Cropped_Finished", details = ImageCropFinishData(newOutputDir))
+            else:
+                print("no mod.data ERROR")
+                q[mod.data] = None
+        except Exception as e:
+            print("ERROR in cropping", str(e))
 
     # def processBatch(self, filelist, q, group=None):
     #     """

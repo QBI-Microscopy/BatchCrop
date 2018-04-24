@@ -43,7 +43,8 @@ class DBI():
         self.c = self.conn.cursor()
 
     def closeconn(self):
-        self.conn.close()
+        pass
+        # self.conn.close()
 
     def validstring(self, ref):
         if not isinstance(ref, str) and not isinstance(ref, unicode):

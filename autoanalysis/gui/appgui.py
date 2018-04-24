@@ -116,17 +116,19 @@ class ProcessPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
 		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 1277,941 ), style = wx.TAB_TRAVERSAL )
-		
-		bSizer19 = wx.BoxSizer( wx.VERTICAL )
-		
+
+		self.panelMainSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.bSizer19  = wx.BoxSizer( wx.VERTICAL )
+		self.panelMainSizer.Add(self.bSizer19)
+
 		self.m_staticText85 = wx.StaticText( self, wx.ID_ANY, u"Run Selected Processes", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText85.Wrap( -1 )
 		self.m_staticText85.SetFont( wx.Font( 14, 74, 90, 90, False, "Arial" ) )
 		
-		bSizer19.Add( self.m_staticText85, 0, wx.ALL, 5 )
+		self.bSizer19 .Add( self.m_staticText85, 0, wx.ALL, 5 )
 		
 		self.m_staticline7 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		bSizer19.Add( self.m_staticline7, 0, wx.EXPAND |wx.ALL, 5 )
+		self.bSizer19 .Add( self.m_staticline7, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		bSizer20 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -177,7 +179,7 @@ class ProcessPanel ( wx.Panel ):
 		bSizer20.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		
-		bSizer19.Add( bSizer20, 1, wx.EXPAND, 5 )
+		self.bSizer19 .Add( bSizer20, 1, wx.EXPAND, 5 )
 		
 		bSizer21 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -190,14 +192,14 @@ class ProcessPanel ( wx.Panel ):
 		bSizer21.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		bSizer19.Add( bSizer21, 1, wx.EXPAND, 5 )
+		self.bSizer19 .Add( bSizer21, 1, wx.EXPAND, 5 )
 		
 		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"View processing output in log file", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_stOutputlog.Wrap( -1 )
-		bSizer19.Add( self.m_stOutputlog, 0, wx.ALL, 5 )
+		self.bSizer19 .Add( self.m_stOutputlog, 0, wx.ALL, 5 )
 		
 		
-		self.SetSizer( bSizer19 )
+		self.SetSizer( self.panelMainSizer  )
 		self.Layout()
 		
 		# Connect Events
