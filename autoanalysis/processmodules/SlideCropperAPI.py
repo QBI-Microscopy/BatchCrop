@@ -13,10 +13,11 @@ class SlideCropperAPI(object):
     """
     Main Class for using SlideCropper functionality. All methods are class method based.     
     """
-    def __init__(self, datafile, outputdir,showplots=False):
+    def __init__(self, datafile, outputdir):
         # Set config values
         self.cfg = self.getConfigurables()
-        self.showplots = showplots
+        self.status = 0
+
         try:
             # Load data
             if os.access(datafile,os.R_OK):
@@ -69,6 +70,9 @@ class SlideCropperAPI(object):
         print("Config loaded")
 
 
+    def isRunning(self):
+        return self.status == 1
+
     def segment_run(self):
         border_factor = float(self.cfg['BORDER_FACTOR'])
         image = I.ImarisImage(self.data)
@@ -85,9 +89,12 @@ class SlideCropperAPI(object):
 
     def run(self):
         if self.data is not None:
+            self.status = 1
             segments = self.segment_run()
             self.crop_run(segments)
+            self.status = 0
         else:
+            self.status = 0
             raise ValueError('Error: Run failed: Image not loaded')
         print("COMPLETE: done API crop running ")
 
@@ -127,27 +134,27 @@ class SlideCropperAPI(object):
         TIFFImageCropper.crop_input_images(file_path, segmentations, output_path)
 
 
-    @classmethod
-    def crop_all_in_folder(cls, folder_path, output_path, concurrent = False):
-        """
-        Handler to crop all images in a given folder. Will ignore non-compatible file types 
-        :param folder_path: Path to the files wanted to be 
-        :param output_path: Folder path to create all new folders and images in. 
-        :param concurrent: Whether to multiprocess each file. (Current has not been tested) 
-        """
-        if concurrent:
-            pid_list = []
-
-        for filename in os.listdir(folder_path):
-            file_path = "{}/{}".format(folder_path, filename)
-            if concurrent:
-                pid_list.append(SlideCropperAPI.spawn_crop_process(file_path, output_path))
-            else:
-                SlideCropperAPI.crop_single_image(file_path, output_path)
-
-        if concurrent:
-            for proc in pid_list:
-                proc.join()
+    # @classmethod
+    # def crop_all_in_folder(cls, folder_path, output_path, concurrent = False):
+    #     """
+    #     Handler to crop all images in a given folder. Will ignore non-compatible file types
+    #     :param folder_path: Path to the files wanted to be
+    #     :param output_path: Folder path to create all new folders and images in.
+    #     :param concurrent: Whether to multiprocess each file. (Current has not been tested)
+    #     """
+    #     if concurrent:
+    #         pid_list = []
+    #
+    #     for filename in os.listdir(folder_path):
+    #         file_path = "{}/{}".format(folder_path, filename)
+    #         if concurrent:
+    #             pid_list.append(SlideCropperAPI.spawn_crop_process(file_path, output_path))
+    #         else:
+    #             SlideCropperAPI.crop_single_image(file_path, output_path)
+    #
+    #     if concurrent:
+    #         for proc in pid_list:
+    #             proc.join()
 
 
 

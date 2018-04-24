@@ -1,6 +1,7 @@
 import importlib
 import logging
 import threading
+import time
 from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support
 from os import access, R_OK, W_OK, mkdir
@@ -80,22 +81,28 @@ class ProcessThread(threading.Thread):
     """Multi Worker Thread Class."""
 
     # ----------------------------------------------------------------------
-    def __init__(self, wxObject, configid,processname,processmodule,processclass, outputdir, filenames, row,  showplots):
+    def __init__(self, wxObject, configid,processname,processmodule,processclass, outputdir, filename, row):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         # self.controller = controller
         self.configID = configid
         self.db = DBI()
         self.wxObject = wxObject
-        self.filenames = filenames
+        self.filename = filename
         self.output = outputdir
         self.row = row
-        self.showplots = showplots
+        #self.showplots = showplots
         self.processname = processname
-        self.module_name = processmodule
-        self.class_name = processclass
+        #self.module_name = processmodule
+        #self.class_name = processclass
         logger = logging.getLogger(processname)
-        # self.start()  # start the thread
+        # Instantiate module
+        module = importlib.import_module(processmodule)
+        self.class_ = getattr(module, processclass)
+        # This is a slidecropperAPI class show plots is whether to show boxes
+        self.mod = self.class_(filename, outputdir)
+
+
 
     # ----------------------------------------------------------------------
     def run(self):
@@ -105,20 +112,29 @@ class ProcessThread(threading.Thread):
             event.set()
             lock.acquire(True)
             q = dict()
-            total_files = len(self.filenames)
-            for i in range(total_files):
-                tcount = (i + 1 / total_files) * 100
-                msg = "PROCESS THREAD: %s run: tcount=%d of %d (%d percent)" % (self.processname, i + 1, total_files, tcount)
+            self.processData(self.filename, q)
+
+            tcount = 150 #secs per file?use filesize
+            ctr = 5
+
+            while self.mod.isRunning():
+                time.sleep(5)
+                progress = 100 *(ctr/tcount)
+                msg = "PROCESS THREAD: %s (%s) (%d percent)" % (self.processname, self.filename, progress)
                 print(msg)
                 logger.info(msg)
-                wx.PostEvent(self.wxObject, ResultEvent((tcount, self.row, i + 1, total_files, self.processname)))
-                #process each file ?or batch
-                self.processData(self.filenames[i], q)
+                #count, row, process, filename
+                wx.PostEvent(self.wxObject, ResultEvent((progress, self.row, self.processname, self.filename)))
+                ctr += 5
+                #reset ??
+                if ctr == tcount:
+                    ctr = 5
 
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
+            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, self.processname, self.filename)))
         except Exception as e:
-            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i + 1, total_files, self.processname)))
+            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, self.processname, self.filename)))
         finally:
+
             logger.info('Finished ProcessThread')
             # self.terminate()
             lock.release()
@@ -136,39 +152,29 @@ class ProcessThread(threading.Thread):
         try:
             logger.info("PROCESSTHREAD:Process Data with file: %s", filename)
 
-            # Instantiate module
-            module = importlib.import_module(self.module_name)
-            class_ = getattr(module, self.class_name)
-
-            # This is a slidecropperAPI class show plots is whether to show boxes
-            mod = class_(filename, self.output, showplots=self.showplots)
-            print("PROCESSTHREAD: outputdir", mod.outputdir)
-            # Load all params required for module - get list from module
-            cfg = mod.getConfigurables()
+            # Load all configurable params required for module - get list from module
+            cfg = self.mod.getConfigurables()
+            self.db.connect()
             for c in cfg.keys():
-                self.db.connect()
                 cfg[c] = self.db.getConfigByName(self.configID,c)
                 msg = "PROCESSTHREAD:Process Data: config set: %s=%s" % (c, str(cfg[c]))
                 print(msg)
                 logger.debug(msg)
-                self.db.closeconn()
-
-            # set config across
-            mod.setConfigurables(cfg)
-            print("11111")
+            self.db.closeconn()
+            self.mod.setConfigurables(cfg)
 
             # run cropping process
-            if mod.data is not None:
+            if self.mod.data is not None:
                 print('PROCESSTHREAD: Module running')
-                # q[mod.data] = mod.run()
-                if mod.showplots or True :
-                    newOutputDir= join(split(self.filenames[0])[0], mod.outputdir, basename(splitext(filename)[0]))
-                    print(newOutputDir)
-                    wx.PostEvent(self.wxObject, DataEvent((newOutputDir)))
-                    Publisher.sendMessage("Image_Cropped_Finished", details = ImageCropFinishData(newOutputDir))
+                q[self.mod.data] =self.mod.run()
+                # if self.showplots:
+                #     newOutputDir= join(split(self.filenames[0])[0], mod.outputdir, basename(splitext(filename)[0]))
+                #     print(newOutputDir)
+                #     wx.PostEvent(self.wxObject, DataEvent((newOutputDir)))
+                #     #Publisher.sendMessage("Image_Cropped_Finished", details = ImageCropFinishData(newOutputDir))
             else:
                 print("no mod.data ERROR")
-                q[mod.data] = None
+                q[self.mod.data] = None
         except Exception as e:
             print("ERROR in cropping", str(e))
 
@@ -214,33 +220,11 @@ class Controller():
     def __init__(self):
         self.logfile = None
         self.logger = self.loadLogger()
-        #self.resourcesdir = findResourceDir()
-        #self.processfile = processfile
-        #self.cmodules = self.loadProcesses()
-        #self.configfile = configfile
         self.currentconfig = 'default'  # maybe future multiple configs possible
         # connect to db
         self.db = DBI()
         self.db.connect()
 
-    # def loadProcesses(self):
-    #     pf = None
-    #     try:
-    #         pf = open(self.processfile, 'rb')
-    #         self.processes = yaml.load(pf)
-    #         cmodules = {}
-    #         for p in self.processes:
-    #             msg = "Controller:LoadProcessors: loading %s=%s" % (p, self.processes[p]['caption'])
-    #             logging.debug(msg)
-    #             module_name = self.processes[p]['modulename']
-    #             class_name = self.processes[p]['classname']
-    #             cmodules[p] = (module_name, class_name)
-    #         return cmodules
-    #     except Exception as e:
-    #         raise e
-    #     finally:
-    #         if pf is not None:
-    #             pf.close()
 
 
     def loadLogger(self, outputdir=None):
@@ -265,7 +249,7 @@ class Controller():
         return logger
 
     # ----------------------------------------------------------------------
-    def RunProcess(self, wxGui, processref, outputdir, filenames, row, showplots=False):
+    def RunProcess(self, wxGui, processref, outputdir, filenames):
         """
 
         :param wxGui:
@@ -273,7 +257,6 @@ class Controller():
         :param outputdir:
         :param filenames:
         :param row:
-        :param showplots:
         :return:
         """
         self.db.connect()
@@ -283,11 +266,16 @@ class Controller():
         self.db.closeconn()
 
         if len(filenames) > 0:
-            logger.info("Load Process Threads: %s [row: %d]", processname, row)
-            wx.PostEvent(wxGui, ResultEvent((0, row, 0, len(filenames), processname)))
-            t = ProcessThread(wxGui, self.currentconfig, processname, processmodule,processclass, outputdir, filenames, row, showplots)
-            t.start()
-            logger.info("Running Thread: %s", processname)
+            row = 0
+            #One thread per file
+            for filename in filenames:
+                msg = "Load Process Threads: %s %s [row: %d]" % (processname, filename, row)
+                print(msg)
+                #TODO use outputfile directory rather than filename for progress bar output
+                wx.PostEvent(wxGui, ResultEvent((0, row, processname, filename)))
+                t = ProcessThread(wxGui, self.currentconfig, processname, processmodule,processclass, outputdir, filename, row)
+                t.start()
+                row += 1
         else:
             logger.error("No files to process")
             raise ValueError("No matched files to process")

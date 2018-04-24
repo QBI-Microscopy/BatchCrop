@@ -14,8 +14,8 @@ class ImageSegmentOrderingPanel(wx.Panel):
     """
 
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.Size(wx.MAXIMIZE, wx.MAXIMIZE), style=wx.TAB_TRAVERSAL)
-        self.SetBackgroundColour((111, 111, 111))
+        wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition)
+        #self.SetBackgroundColour((111, 111, 111))
         self.segmentOrderQueue = deque()
         Publisher.subscribe(self.updateSegmentOrderQueue, "Image_Cropped_Finished")
         self.parent = parent

@@ -116,27 +116,27 @@ class ProcessPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
 		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 1277,941 ), style = wx.TAB_TRAVERSAL )
-
-		self.panelMainSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.bSizer19  = wx.BoxSizer( wx.VERTICAL )
-		self.panelMainSizer.Add(self.bSizer19)
-
+		
+		panelMainSizer = wx.BoxSizer( wx.HORIZONTAL )
+		
+		bSizer19 = wx.BoxSizer( wx.VERTICAL )
+		
 		self.m_staticText85 = wx.StaticText( self, wx.ID_ANY, u"Run Selected Processes", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText85.Wrap( -1 )
 		self.m_staticText85.SetFont( wx.Font( 14, 74, 90, 90, False, "Arial" ) )
 		
-		self.bSizer19 .Add( self.m_staticText85, 0, wx.ALL, 5 )
+		bSizer19.Add( self.m_staticText85, 0, wx.ALL, 5 )
 		
 		self.m_staticline7 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		self.bSizer19 .Add( self.m_staticline7, 0, wx.EXPAND |wx.ALL, 5 )
+		bSizer19.Add( self.m_staticline7, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		bSizer20 = wx.BoxSizer( wx.HORIZONTAL )
 		
+		bSizer15 = wx.BoxSizer( wx.VERTICAL )
+		
 		m_checkListProcessChoices = []
 		self.m_checkListProcess = wx.CheckListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkListProcessChoices, wx.LB_MULTIPLE )
-		bSizer20.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
-		
-		bSizer15 = wx.BoxSizer( wx.VERTICAL )
+		bSizer15.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
 		
 		self.m_stTitle = wx.StaticText( self, wx.ID_ANY, u"TITLE", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_stTitle.Wrap( -1 )
@@ -145,9 +145,12 @@ class ProcessPanel ( wx.Panel ):
 		bSizer15.Add( self.m_stTitle, 0, wx.ALL, 5 )
 		
 		self.m_stDescription = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
-		self.m_stDescription.SetMinSize( wx.Size( -1,100 ) )
-		
 		bSizer15.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
+		
+		
+		bSizer20.Add( bSizer15, 1, wx.EXPAND, 5 )
+		
+		bSizer21 = wx.BoxSizer( wx.VERTICAL )
 		
 		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -160,46 +163,41 @@ class ProcessPanel ( wx.Panel ):
 		self.btnLog = wx.Button( self, wx.ID_ANY, u"Show Log", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer16.Add( self.btnLog, 0, wx.ALL, 5 )
 		
-		self.m_button15 = wx.Button( self, wx.ID_ANY, u"Clear Window", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button15 = wx.Button( self, wx.ID_ANY, u"Clear Results", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer16.Add( self.m_button15, 0, wx.ALL, 5 )
 		
-		self.m_cbShowplots = wx.CheckBox( self, wx.ID_ANY, u"Display Interactive", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_cbShowplots.SetValue(True) 
-		self.m_cbShowplots.SetToolTipString( u"Image results can be shown during processing although this will be much slower." )
 		
-		bSizer16.Add( self.m_cbShowplots, 0, wx.ALL, 5 )
-		
-		
-		bSizer15.Add( bSizer16, 1, wx.ALL, 5 )
-		
-		
-		bSizer20.Add( bSizer15, 1, wx.EXPAND, 5 )
-		
-		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		bSizer20.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
-		
-		
-		self.bSizer19 .Add( bSizer20, 1, wx.EXPAND, 5 )
-		
-		bSizer21 = wx.BoxSizer( wx.VERTICAL )
+		bSizer21.Add( bSizer16, 1, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.FULL_REPAINT_ON_RESIZE|wx.VSCROLL )
 		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,400 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
+		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
 		self.m_dataViewListColumnStatus = self.m_dataViewListCtrlRunning.AppendProgressColumn( u"Status" )
 		self.m_dataViewListColumnOutput = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Output" )
 		bSizer21.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		self.bSizer19 .Add( bSizer21, 1, wx.EXPAND, 5 )
+		bSizer20.Add( bSizer21, 1, wx.EXPAND, 5 )
 		
-		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"View processing output in log file", wx.DefaultPosition, wx.DefaultSize, 0 )
+		
+		bSizer19.Add( bSizer20, 1, wx.EXPAND, 5 )
+		
+		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+		
+		bSizer19.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"Processing status", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_stOutputlog.Wrap( -1 )
-		self.bSizer19 .Add( self.m_stOutputlog, 0, wx.ALL, 5 )
+		bSizer19.Add( self.m_stOutputlog, 0, wx.ALL, 5 )
 		
 		
-		self.SetSizer( self.panelMainSizer  )
+		panelMainSizer.Add( bSizer19, 1, wx.EXPAND, 5 )
+		
+		
+		self.SetSizer( panelMainSizer )
 		self.Layout()
 		
 		# Connect Events
@@ -208,6 +206,7 @@ class ProcessPanel ( wx.Panel ):
 		self.m_btnRunProcess.Bind( wx.EVT_BUTTON, self.OnRunScripts )
 		self.btnLog.Bind( wx.EVT_BUTTON, self.OnShowLog )
 		self.m_button15.Bind( wx.EVT_BUTTON, self.OnClearWindow )
+		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnShowResults, id = wx.ID_ANY )
 	
 	def __del__( self ):
 		pass
@@ -225,6 +224,9 @@ class ProcessPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnClearWindow( self, event ):
+		event.Skip()
+	
+	def OnShowResults( self, event ):
 		event.Skip()
 	
 
@@ -483,6 +485,7 @@ class FilesPanel ( wx.Panel ):
 		
 		self.col_selected = self.m_dataViewListCtrl1.AppendToggleColumn( u"Select" )
 		self.col_file = self.m_dataViewListCtrl1.AppendTextColumn( u"File" )
+		self.col_size = self.m_dataViewListCtrl1.AppendTextColumn( u"size (GB)" )
 		bSizer18.Add( self.m_dataViewListCtrl1, 0, wx.ALIGN_TOP|wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_status = wx.StaticText( self, wx.ID_ANY, u"Select required files then go to Run Processes", wx.DefaultPosition, wx.DefaultSize, 0 )

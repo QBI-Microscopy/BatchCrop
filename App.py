@@ -21,6 +21,7 @@ import os
 import re
 import time
 from os.path import join, isdir, sep
+from os import mkdir,access,R_OK,W_OK
 
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
@@ -183,11 +184,6 @@ class FileSelectPanel(FilesPanel):
         self.loadController()
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
-
-        #TODO - Move to template - Done
-        #self.panel_right = wx.Panel(self, size=wx.Size(580,650))
-        # self.panel_right.SetBackgroundColour(wx.Colour(255, 255, 255))
-        #self.sizer.Add(self.panel_right)
         self.inputdir = None
 
     #
@@ -218,15 +214,13 @@ class FileSelectPanel(FilesPanel):
         #self.Layout()
 
 
-    def OnColClick(self, event):
-        print("header clicked: ", event.GetColumn())
-        # colidx = event.GetColumn()
-        # self.m_dataViewListCtrl1.GetModel().Resort()
+    # def OnColClick(self, event):
+    #     print("header clicked: ", event.GetColumn())
+    #     # colidx = event.GetColumn()
+    #     # self.m_dataViewListCtrl1.GetModel().Resort()
 
     def loadController(self):
         self.controller = self.Parent.controller
-
-
 
     def OnInputdir(self, e):
         """ Open a file"""
@@ -263,14 +257,14 @@ class FileSelectPanel(FilesPanel):
 
                     for i in range(0, num_files):
                         if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                            swriter.writerow([self.m_dataViewListCtrl1.GetValue(i, 1)])
+                            swriter.writerow([self.m_dataViewListCtrl1.GetValue(i, 1),self.m_dataViewListCtrl1.GetValue(i, 2)])
         except Exception as e:
             self.Parent.Warn("Save list error:" + e.args[0])
         finally:
             print('Save list complete')
 
-    def loadFileToPanel(self, filepath):
-        self.m_dataViewListCtrl1.AppendItem([True, filepath])
+    def loadFileToPanel(self, filepath,fsize):
+        self.m_dataViewListCtrl1.AppendItem([True, filepath,fsize])
         print(os.stat(filepath))
 
     def OnLoadList(self, event):
@@ -290,7 +284,7 @@ class FileSelectPanel(FilesPanel):
                     self.m_dataViewListCtrl1.DeleteAllItems()
                     for row in sreader:
                         if len(row) > 0:
-                            self.loadFileToPanel(row[0])
+                            self.loadFileToPanel(row[0],row[1])
                 msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
                 self.m_status.SetLabelText(msg)
         except Exception as e:
@@ -308,7 +302,12 @@ class FileSelectPanel(FilesPanel):
         self.btnAutoFind.Disable()
         if self.inputdir is not None:
             self.m_status.SetLabelText("Finding files ... please wait")
-            allfiles = [y for y in iglob(join(self.inputdir, '**'), recursive=True)]
+            imgtype = self.controller.db.getConfigByName(self.controller.currentconfig,'IMAGE_TYPE')
+            if imgtype is None:
+                imgtype ='*.ims'
+            else:
+                imgtype ='*' + imgtype
+            allfiles = [y for y in iglob(join(self.inputdir, '**',imgtype), recursive=True)]
             searchtext = self.m_tcSearch.GetValue()
             if (len(searchtext) > 0):
                 filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
@@ -316,7 +315,9 @@ class FileSelectPanel(FilesPanel):
                 filenames = [f for f in allfiles if not isdir(f)]
 
             for fname in filenames:
-                self.loadFileToPanel(fname)
+                # touch file (archive)
+                size =os.stat(fname).st_size / 10e8
+                self.loadFileToPanel(fname,size)
 
             #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
             msg = "Total Files loaded: %d" % len(fname)
@@ -325,7 +326,6 @@ class FileSelectPanel(FilesPanel):
             print("Cannot autofind files when no directory is selected. Please select Top Level Directory.")
 
         self.btnAutoFind.Enable(True)
-        #TODO Start generating thumbnails for display (bg thread)
 
     def OnSelectall(self, event):
         for i in range(0, self.m_dataViewListCtrl1.GetItemCount()):
@@ -346,11 +346,11 @@ class ProcessRunPanel(ProcessPanel):
         # TODO Add to template
         self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
         self.m_panelImageOrder.Layout()
-        self.panelMainSizer.Add(self.m_panelImageOrder,  0, wx.ALL|wx.EXPAND, 5 )
+        #self.Sizer.Add(self.m_panelImageOrder,  0, wx.ALL|wx.EXPAND, 5 )
 
 
         EVT_RESULT(self, self.progressfunc)
-        EVT_DATA(self,self.showresults)
+        #EVT_DATA(self,self.showresults)
         # EVT_CANCEL(self, self.stopfunc)
         # Set timer handler
         self.start = {}
@@ -384,12 +384,11 @@ class ProcessRunPanel(ProcessPanel):
         :param col:
         :return:
         """
-        (count, row, i, total, process) = msg.data
-        status = "%d of %d files " % (i, total)
-        msg = "\nProgress updated: %s count=%d status=%s" % (time.ctime(), count, status)
+        (count, row, process, filename) = msg.data
+        msg = "\nProgress updated: %s file=%s status=%s percent" % (time.ctime(), filename,count)
         print(msg)
         if count == 0:
-            self.m_dataViewListCtrlRunning.AppendItem([process, count, "Pending"])
+            self.m_dataViewListCtrlRunning.AppendItem([process, filename, count, "Pending"])
             self.start[process] = time.time()
         elif count < 0:
             self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=2)
@@ -408,7 +407,10 @@ class ProcessRunPanel(ProcessPanel):
             self.m_btnRunProcess.Enable()
             self.m_stOutputlog.SetLabelText("Completed process %s" % process)
 
-    def showresults(self,filename):
+    def OnShowResults(self,event):
+        row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
+        filename = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
+        print('File results clicked: ', filename)
         #TODO link to Image Ordering Panel
         self.m_stOutputlog.SetLabelText("Processed %s" % filename)
 
@@ -461,7 +463,7 @@ class ProcessRunPanel(ProcessPanel):
         # Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
-        showplots = self.m_cbShowplots.GetValue()
+        #showplots = self.m_cbShowplots.GetValue()
         # Get data from other panels
         filepanel = self.getFilePanel()
         filenames =[]
@@ -469,8 +471,9 @@ class ProcessRunPanel(ProcessPanel):
         outputdir = filepanel.txtOutputdir.GetValue()
         # if blank will use subdir in inputdir
         if len(outputdir) <=0:
-            #TODO: change first argument to string not TextCtrl
-            outputdir = join(filepanel.txtInputdir.GetLineText(0),self.getDefaultOutputdir())
+            outputdir = join(filepanel.txtInputdir.GetValue(),self.getDefaultOutputdir())
+            if not access(outputdir,W_OK):
+                mkdir(outputdir)
         print('PROCESSPANEL: All Files:', num_files)
         try:
             if len(selections) > 0 and num_files > 0:
@@ -484,13 +487,13 @@ class ProcessRunPanel(ProcessPanel):
                 if len(filenames) <= 0:
                     raise ValueError("No files selected in Files Panel")
 
-                row = 0
+                #row = 0
                 # For each process
                 for pcaption in selections:
                     p = self.controller.db.getRef(pcaption)
                     print("PROCESSPANEL: Running processname =", p)
-                    self.controller.RunProcess(self, p, outputdir, filenames, row, showplots)
-                    row = row + 1
+                    self.controller.RunProcess(self, p, outputdir, filenames)
+                    #row = row + 1
             else:
                 if len(selections) <= 0:
                     raise ValueError("No processes selected")
