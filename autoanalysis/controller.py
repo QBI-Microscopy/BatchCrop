@@ -114,21 +114,21 @@ class ProcessThread(threading.Thread):
             q = dict()
             self.processData(self.filename, q)
 
-            tcount = 150 #secs per file?use filesize
-            ctr = 5
-
-            while self.mod.isRunning():
-                time.sleep(5)
-                progress = 100 *(ctr/tcount)
-                msg = "PROCESS THREAD: %s (%s) (%d percent)" % (self.processname, self.filename, progress)
-                print(msg)
-                logger.info(msg)
-                #count, row, process, filename
-                wx.PostEvent(self.wxObject, ResultEvent((progress, self.row, self.processname, self.filename)))
-                ctr += 5
-                #reset ??
-                if ctr == tcount:
-                    ctr = 5
+            # tcount = 150 #secs per file?use filesize
+            # ctr = 5
+            #
+            # while self.mod.isRunning():
+            #     time.sleep(5)
+            #     progress = 100 *(ctr/tcount)
+            #     msg = "PROCESS THREAD: %s (%s) (%d percent)" % (self.processname, self.filename, progress)
+            #     print(msg)
+            #     logger.info(msg)
+            #     #count, row, process, filename
+            #     wx.PostEvent(self.wxObject, ResultEvent((progress, self.row, self.processname, self.filename)))
+            #     ctr += 5
+            #     #reset ??
+            #     if ctr == tcount:
+            #         ctr = 5
 
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, self.processname, self.filename)))
         except Exception as e:
@@ -150,8 +150,8 @@ class ProcessThread(threading.Thread):
         :return:
         """
         try:
-            logger.info("PROCESSTHREAD:Process Data with file: %s", filename)
-
+            msg ="PROCESSTHREAD:Process Data with file: %s" % filename
+            print(msg)
             # Load all configurable params required for module - get list from module
             cfg = self.mod.getConfigurables()
             self.db.connect()
@@ -167,6 +167,21 @@ class ProcessThread(threading.Thread):
             if self.mod.data is not None:
                 print('PROCESSTHREAD: Module running')
                 q[self.mod.data] =self.mod.run()
+                tcount = 150  # secs per file?use filesize
+                ctr = 5
+
+                while self.mod.isRunning():
+                    time.sleep(5)
+                    progress = 100 * (ctr / tcount)
+                    msg = "PROCESS THREAD: %s (%s) (%d percent)" % (self.processname, self.filename, progress)
+                    print(msg)
+                    logger.info(msg)
+                    # count, row, process, filename
+                    wx.PostEvent(self.wxObject, ResultEvent((progress, self.row, self.processname, self.filename)))
+                    ctr += 5
+                    # reset ??
+                    if ctr == tcount:
+                        ctr = 5
                 # if self.showplots:
                 #     newOutputDir= join(split(self.filenames[0])[0], mod.outputdir, basename(splitext(filename)[0]))
                 #     print(newOutputDir)
@@ -251,7 +266,6 @@ class Controller():
     # ----------------------------------------------------------------------
     def RunProcess(self, wxGui, processref, outputdir, filenames):
         """
-
         :param wxGui:
         :param processref:
         :param outputdir:
@@ -272,7 +286,8 @@ class Controller():
                 msg = "Load Process Threads: %s %s [row: %d]" % (processname, filename, row)
                 print(msg)
                 #TODO use outputfile directory rather than filename for progress bar output
-                wx.PostEvent(wxGui, ResultEvent((0, row, processname, filename)))
+                outfile = join(outputdir,basename(filename).splitext()[0])
+                wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfile)))
                 t = ProcessThread(wxGui, self.currentconfig, processname, processmodule,processclass, outputdir, filename, row)
                 t.start()
                 row += 1

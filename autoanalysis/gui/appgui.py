@@ -145,6 +145,8 @@ class ProcessPanel ( wx.Panel ):
 		bSizer15.Add( self.m_stTitle, 0, wx.ALL, 5 )
 		
 		self.m_stDescription = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+		self.m_stDescription.SetMaxSize( wx.Size( -1,150 ) )
+		
 		bSizer15.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		
@@ -170,7 +172,7 @@ class ProcessPanel ( wx.Panel ):
 		bSizer21.Add( bSizer16, 1, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.FULL_REPAINT_ON_RESIZE|wx.VSCROLL )
-		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,400 ) )
+		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,200 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
 		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
@@ -476,7 +478,7 @@ class FilesPanel ( wx.Panel ):
 		
 		bSizer18.Add( fgSizer4, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
 		
-		self.m_staticText252 = wx.StaticText( self, wx.ID_ANY, u"Click on filename to view thumbnail", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText252 = wx.StaticText( self, wx.ID_ANY, u"Click on filename to view thumbnail (may be delay if file is on archived storage)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText252.Wrap( -1 )
 		bSizer18.Add( self.m_staticText252, 0, wx.ALL, 5 )
 		

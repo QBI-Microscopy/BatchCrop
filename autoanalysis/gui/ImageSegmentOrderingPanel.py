@@ -33,7 +33,8 @@ class ImageSegmentOrderingPanel(wx.Panel):
         self.SetSizer(self.bSizer1)
         self.bitmaps = []
 
-
+    def OnShowResults(self,event):
+        print('processing panel results')
 
     def confirmSegmentOrder(self, event):
         ignore = [print(bit) for bit in self.bitmaps]

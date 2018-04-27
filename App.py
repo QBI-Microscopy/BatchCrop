@@ -395,12 +395,12 @@ class ProcessRunPanel(ProcessPanel):
             self.m_btnRunProcess.Enable()
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
-            self.m_dataViewListCtrlRunning.SetValue("Running " + status, row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("Running " + filename, row=row, col=2)
             self.m_stOutputlog.SetLabelText("Running: %s ...please wait" % process)
         else:
             if process in self.start:
                 endtime = time.time() - self.start[process]
-                status = "%s (%d secs)" % (status, endtime)
+                status = "%s (%d secs)" % (filename, endtime)
             print(status)
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Done " + status, row=row, col=2)
