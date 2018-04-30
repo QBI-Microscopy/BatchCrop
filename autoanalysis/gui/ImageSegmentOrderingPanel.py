@@ -1,8 +1,9 @@
 from collections import deque
 import wx
 import os
-
-from wx.lib.pubsub import pub as Publisher
+from glob import iglob
+from os.path import join
+#from wx.lib.pubsub import pub as Publisher
 
 from autoanalysis.gui.ImageThumbnail import *
 
@@ -17,24 +18,25 @@ class ImageSegmentOrderingPanel(wx.Panel):
         wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition)
         #self.SetBackgroundColour((111, 111, 111))
         self.segmentOrderQueue = deque()
-        Publisher.subscribe(self.updateSegmentOrderQueue, "Image_Cropped_Finished")
+        #Publisher.subscribe(self.updateSegmentOrderQueue, "Image_Cropped_Finished")
         self.parent = parent
-        self.bSizer1 = wx.BoxSizer(wx.VERTICAL)
-        self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
-        self.submit = wx.Button(self, wx.ID_ANY, u"Confirm", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.bSizer2.Add(self.submit, 0, wx.ALL, 5)
-        self.submit.Bind(wx.EVT_BUTTON, self.confirmSegmentOrder)
+        # self.bSizer1 = wx.BoxSizer(wx.VERTICAL)
+        # self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
+        # self.submit = wx.Button(self, wx.ID_ANY, u"Confirm", wx.DefaultPosition, wx.DefaultSize, 0)
+        # self.bSizer2.Add(self.submit, 0, wx.ALL, 5)
+        # self.submit.Bind(wx.EVT_BUTTON, self.confirmSegmentOrder)
+        #
+        # self.SetSizer(self.bSizer1)
+        # self.image_sizer = wx.BoxSizer(wx.VERTICAL)
+        # self.bSizer1.Add(self.image_sizer, 0, wx.ALL, 5)
+        # self.bSizer1.Add(self.bSizer2)
+        # self.Layout()
+        # self.SetSizer(self.bSizer1)
+        self.bitmaps = {}
 
-        self.SetSizer(self.bSizer1)
-        self.image_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.bSizer1.Add(self.image_sizer, 0, wx.ALL, 5)
-        self.bSizer1.Add(self.bSizer2)
-        self.Layout()
-        self.SetSizer(self.bSizer1)
-        self.bitmaps = []
+    def OnShowResults(self,event,filedir):
+        print('ImageSegmentPanel: processing panel results')
 
-    def OnShowResults(self,event):
-        print('processing panel results')
 
     def confirmSegmentOrder(self, event):
         ignore = [print(bit) for bit in self.bitmaps]
@@ -87,5 +89,5 @@ class ImageSegmentOrderingPanel(wx.Panel):
         """
         self.segmentOrderQueue.appendleft(details)
         if len(self.segmentOrderQueue) > 0 and len(self.bitmaps) == 0:
-            print("DETSILS", details)
+            print("DETAILS", details)
             self.updatesegmentUI()

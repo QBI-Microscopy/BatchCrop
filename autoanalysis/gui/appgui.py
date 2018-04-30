@@ -10,8 +10,8 @@
 import wx
 import wx.xrc
 import wx.grid
-import wx.richtext
 import wx.dataview
+import wx.richtext
 
 ###########################################################################
 ## Class ConfigPanel
@@ -117,42 +117,53 @@ class ProcessPanel ( wx.Panel ):
 	def __init__( self, parent ):
 		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 1277,941 ), style = wx.TAB_TRAVERSAL )
 		
-		panelMainSizer = wx.BoxSizer( wx.HORIZONTAL )
-		
-		bSizer19 = wx.BoxSizer( wx.VERTICAL )
+		panelMainSizer = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_staticText85 = wx.StaticText( self, wx.ID_ANY, u"Run Selected Processes", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText85.Wrap( -1 )
 		self.m_staticText85.SetFont( wx.Font( 14, 74, 90, 90, False, "Arial" ) )
 		
-		bSizer19.Add( self.m_staticText85, 0, wx.ALL, 5 )
+		panelMainSizer.Add( self.m_staticText85, 0, wx.ALL, 5 )
 		
 		self.m_staticline7 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		bSizer19.Add( self.m_staticline7, 0, wx.EXPAND |wx.ALL, 5 )
+		panelMainSizer.Add( self.m_staticline7, 0, wx.EXPAND |wx.ALL, 5 )
 		
-		bSizer20 = wx.BoxSizer( wx.HORIZONTAL )
+		bSizer19 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		bSizer15 = wx.BoxSizer( wx.VERTICAL )
+		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+		
+		bSizer201 = wx.BoxSizer( wx.VERTICAL )
+		
+		self.m_imageViewer = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_imageViewer.SetMinSize( wx.Size( 600,800 ) )
+		
+		self.m_colOrder = self.m_imageViewer.AppendTextColumn( u"Order" )
+		self.m_colThumb = self.m_imageViewer.AppendIconTextColumn( u"Thumbnail" )
+		bSizer201.Add( self.m_imageViewer, 0, wx.ALL, 5 )
+		
+		
+		self.m_panelImageOrder.SetSizer( bSizer201 )
+		self.m_panelImageOrder.Layout()
+		bSizer201.Fit( self.m_panelImageOrder )
+		bSizer19.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
+		
+		bSizer20 = wx.BoxSizer( wx.VERTICAL )
 		
 		m_checkListProcessChoices = []
 		self.m_checkListProcess = wx.CheckListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkListProcessChoices, wx.LB_MULTIPLE )
-		bSizer15.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
+		bSizer20.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
 		
 		self.m_stTitle = wx.StaticText( self, wx.ID_ANY, u"TITLE", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_stTitle.Wrap( -1 )
 		self.m_stTitle.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 90, 92, False, wx.EmptyString ) )
 		
-		bSizer15.Add( self.m_stTitle, 0, wx.ALL, 5 )
+		bSizer20.Add( self.m_stTitle, 0, wx.ALL, 5 )
 		
 		self.m_stDescription = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
 		self.m_stDescription.SetMaxSize( wx.Size( -1,150 ) )
 		
-		bSizer15.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
-		
-		
-		bSizer20.Add( bSizer15, 1, wx.EXPAND, 5 )
-		
-		bSizer21 = wx.BoxSizer( wx.VERTICAL )
+		bSizer20.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -168,32 +179,33 @@ class ProcessPanel ( wx.Panel ):
 		self.m_button15 = wx.Button( self, wx.ID_ANY, u"Clear Results", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer16.Add( self.m_button15, 0, wx.ALL, 5 )
 		
+		self.m_btnSaveOrder = wx.Button( self, wx.ID_ANY, u"Save Order", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer16.Add( self.m_btnSaveOrder, 0, wx.ALL, 5 )
 		
-		bSizer21.Add( bSizer16, 1, wx.ALL, 5 )
+		
+		bSizer20.Add( bSizer16, 1, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.FULL_REPAINT_ON_RESIZE|wx.VSCROLL )
+		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
 		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,200 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
 		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
 		self.m_dataViewListColumnStatus = self.m_dataViewListCtrlRunning.AppendProgressColumn( u"Status" )
 		self.m_dataViewListColumnOutput = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Output" )
-		bSizer21.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
+		bSizer20.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
 		
-		
-		bSizer20.Add( bSizer21, 1, wx.EXPAND, 5 )
+		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"Processing status", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_stOutputlog.Wrap( -1 )
+		bSizer20.Add( self.m_stOutputlog, 0, wx.ALL, 5 )
 		
 		
 		bSizer19.Add( bSizer20, 1, wx.EXPAND, 5 )
 		
-		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+		bSizer21 = wx.BoxSizer( wx.VERTICAL )
 		
-		bSizer19.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"Processing status", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_stOutputlog.Wrap( -1 )
-		bSizer19.Add( self.m_stOutputlog, 0, wx.ALL, 5 )
+		bSizer19.Add( bSizer21, 1, wx.EXPAND, 5 )
 		
 		
 		panelMainSizer.Add( bSizer19, 1, wx.EXPAND, 5 )
@@ -208,6 +220,7 @@ class ProcessPanel ( wx.Panel ):
 		self.m_btnRunProcess.Bind( wx.EVT_BUTTON, self.OnRunScripts )
 		self.btnLog.Bind( wx.EVT_BUTTON, self.OnShowLog )
 		self.m_button15.Bind( wx.EVT_BUTTON, self.OnClearWindow )
+		self.m_btnSaveOrder.Bind( wx.EVT_BUTTON, self.OnSaveOrder )
 		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnShowResults, id = wx.ID_ANY )
 	
 	def __del__( self ):
@@ -226,6 +239,9 @@ class ProcessPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnClearWindow( self, event ):
+		event.Skip()
+	
+	def OnSaveOrder( self, event ):
 		event.Skip()
 	
 	def OnShowResults( self, event ):

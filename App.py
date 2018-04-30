@@ -20,8 +20,8 @@ import csv
 import os
 import re
 import time
-from os.path import join, isdir, sep
-from os import mkdir,access,R_OK,W_OK
+from os.path import join, isdir, sep,exists
+from os import mkdir,access,R_OK,W_OK,rmdir
 
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
@@ -37,10 +37,13 @@ import matplotlib.pyplot as plt
 plt.style.use('seaborn-paper')
 import wx
 import wx.html2
+import wx.dataview
 from glob import iglob
-from autoanalysis.controller import EVT_RESULT, EVT_DATA, Controller
+import shutil
+from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel,dlgLogViewer
+from autoanalysis.gui.ImageThumbnail import MultiPageTiffImageThumbnail
 
 __version__ = '1.0.0alpha'
 
@@ -316,11 +319,15 @@ class FileSelectPanel(FilesPanel):
 
             for fname in filenames:
                 # touch file (archive)
+                fh = open(fname,'r')
+                fh.close()
                 size =os.stat(fname).st_size / 10e8
                 self.loadFileToPanel(fname,size)
+                msg = 'FilePanel loaded: %s' % fname
+                print(msg)
 
             #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
-            msg = "Total Files loaded: %d" % len(fname)
+            msg = "Total Files loaded: %d" % len(filenames)
             self.m_status.SetLabelText(msg)
         else:
             print("Cannot autofind files when no directory is selected. Please select Top Level Directory.")
@@ -342,25 +349,21 @@ class ProcessRunPanel(ProcessPanel):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
         self.loadCaptions()
-
-        # TODO Add to template
+        # Panel for sorted images
         self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
         self.m_panelImageOrder.Layout()
-        #self.Sizer.Add(self.m_panelImageOrder,  0, wx.ALL|wx.EXPAND, 5 )
-
-
+        # Bind progress update function
         EVT_RESULT(self, self.progressfunc)
-        #EVT_DATA(self,self.showresults)
-        # EVT_CANCEL(self, self.stopfunc)
         # Set timer handler
         self.start = {}
+        self.bitmaps = {}
 
     def loadController(self):
         self.controller = self.Parent.controller
 
     def loadCaptions(self):
         self.controller.db.connect()
-        processes = self.controller.db.getCaptions() #[self.controller.processes[p]['caption'] for p in self.controller.processes]
+        processes = self.controller.db.getCaptions()
         self.m_checkListProcess.Clear()
         self.m_checkListProcess.AppendItems(processes)
         self.controller.db.closeconn()
@@ -388,31 +391,67 @@ class ProcessRunPanel(ProcessPanel):
         msg = "\nProgress updated: %s file=%s status=%s percent" % (time.ctime(), filename,count)
         print(msg)
         if count == 0:
-            self.m_dataViewListCtrlRunning.AppendItem([process, filename, count, "Pending"])
+            self.m_dataViewListCtrlRunning.AppendItem([process, filename, count, "Starting"])
             self.start[process] = time.time()
         elif count < 0:
-            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
             self.m_btnRunProcess.Enable()
         elif count < 100:
-            self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
-            self.m_dataViewListCtrlRunning.SetValue("Running " + filename, row=row, col=2)
-            self.m_stOutputlog.SetLabelText("Running: %s ...please wait" % process)
+            self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("Running  - " + str(count), row=row, col=3)
+            self.m_dataViewListCtrlRunning.Refresh()
+            self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process,filename))
         else:
             if process in self.start:
                 endtime = time.time() - self.start[process]
-                status = "%s (%d secs)" % (filename, endtime)
+                status = "%s (%d secs)" % ("Done", endtime)
             print(status)
-            self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
-            self.m_dataViewListCtrlRunning.SetValue("Done " + status, row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue(status, row=row, col=3)
             self.m_btnRunProcess.Enable()
-            self.m_stOutputlog.SetLabelText("Completed process %s" % process)
+            self.m_stOutputlog.SetLabelText("Completed process %s . Double-click on file to view and reorder cropped images" % process)
 
     def OnShowResults(self,event):
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
-        filename = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
-        print('File results clicked: ', filename)
-        #TODO link to Image Ordering Panel
-        self.m_stOutputlog.SetLabelText("Processed %s" % filename)
+        filedir = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
+        print('File results clicked: ', filedir)
+        # Load thumbnails to Image Ordering Panel
+        imglist = [y for y in iglob(join(filedir, '*.tiff'), recursive=False)]
+        self.bitmaps = []
+        self.currentfile = filedir
+        idx = 0
+
+        for img in imglist:
+            #TODO - Why does this display in Panel?? Need to increase row and column sizes ?
+            thumb = MultiPageTiffImageThumbnail(self, img, max_size=[128,128])
+            self.bitmaps.append(img)
+            ico = wx.Icon(thumb.GetBitmap())
+            self.m_imageViewer.AppendItem([idx, wx.dataview.DataViewIconText(text=str(idx), icon=ico)])
+            idx += 1
+        print(self.bitmaps)
+        self.m_imageViewer.Fit()
+        self.m_panelImageOrder.Refresh()
+        self.m_stOutputlog.SetLabelText("Displayed %s" % filedir)
+
+    def OnSaveOrder(self):
+        if self.m_imageViewer.GetItemCount() > 0:
+            #make a temp dir ?locally
+            tmpdir = join(self.currentfile, 'reordered')
+            if exists(tmpdir,W_OK):
+                rmdir(tmpdir)
+            mkdir(tmpdir)
+            for i in range(self.m_imageViewer.GetItemCount()):
+                num = self.m_imageViewer.GetValue(i,0)
+                thumb_num = self.m_imageViewer.GetValue(i,1).GetText()
+                if num != thumb_num:
+                    oldfilename = self.bitmaps[thumb_num]
+                    newfilename = oldfilename.replace(str(thumb_num)+"_full", str(num)+"_full")
+                    shutil.copy(join(self.currentfile,oldfilename), join(tmpdir,newfilename))
+                    msg ='Filename replaced: %s to %s' % (oldfilename,newfilename)
+                    print(msg)
+            print('SaveOrder complete')
+        else:
+            print('Items not added yet')
 
 
     def getFilePanel(self):
@@ -474,6 +513,7 @@ class ProcessRunPanel(ProcessPanel):
             outputdir = join(filepanel.txtInputdir.GetValue(),self.getDefaultOutputdir())
             if not access(outputdir,W_OK):
                 mkdir(outputdir)
+        self.outputdir = outputdir
         print('PROCESSPANEL: All Files:', num_files)
         try:
             if len(selections) > 0 and num_files > 0:

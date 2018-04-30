@@ -16,7 +16,7 @@ class SlideCropperAPI(object):
     def __init__(self, datafile, outputdir):
         # Set config values
         self.cfg = self.getConfigurables()
-        self.status = 0
+        self.status = 1
 
         try:
             # Load data
@@ -74,29 +74,35 @@ class SlideCropperAPI(object):
         return self.status == 1
 
     def segment_run(self):
-        border_factor = float(self.cfg['BORDER_FACTOR'])
-        image = I.ImarisImage(self.data)
-        segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
-        image.close_file()
-        return segmentations
+        if self.data is not None:
+            border_factor = float(self.cfg['BORDER_FACTOR'])
+            image = I.ImarisImage(self.data)
+            segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
+            image.close_file()
+            return segmentations
+        else:
+            raise ValueError('SlideCropperAPI: Data is not set')
+
 
     def crop_run(self, segments):
+        #TODO - Combine with segment_run?
         if self.data is not None:
             TIFFImageCropper.crop_input_images(self.data, segments, self.outputdir)
         else:
-            raise ValueError('Error: Run failed: Image not loaded')
+            raise ValueError('SlideCropperAPI: Run failed: Image not loaded')
 
 
     def run(self):
-        if self.data is not None:
-            self.status = 1
+        try:
+            # self.status = 1
             segments = self.segment_run()
             self.crop_run(segments)
             self.status = 0
-        else:
+        except Exception as e:
+            raise e
+        finally:
             self.status = 0
-            raise ValueError('Error: Run failed: Image not loaded')
-        print("COMPLETE: done API crop running ")
+            print("SlideCropperAPI: exited")
 
 
 

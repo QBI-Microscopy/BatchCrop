@@ -16,24 +16,19 @@ from wx.lib.pubsub import pub as Publisher
 #FORMAT = '|%(thread)d |%(filename)s |%(funcName)s |%(lineno)d ||%(message)s||'
 FORMAT = '[ %(asctime)s %(levelname)-4s ]|%(threadName)-9s |%(filename)s |%(funcName)s |%(lineno)d ||%(message)s||'
     #FORMAT_0 ='[ %(asctime)s %(levelname)-4s ] (%(threadName)-9s) %(message)s'
-# Required for dist
-freeze_support()
-# Define notification event for thread completion
-EVT_RESULT_ID = wx.NewId()
-EVT_DATA_ID = wx.NewId()
 # global logger
 logger = logging.getLogger()
+
+# Required for dist
+freeze_support()
+###################################################################
+# Define notification event for thread completion
+EVT_RESULT_ID = wx.NewId()
 
 def EVT_RESULT(win, func):
     """Define Result Event."""
     win.Connect(-1, -1, EVT_RESULT_ID, func)
 
-
-def EVT_DATA(win, func):
-    """Define Result Event."""
-    win.Connect(-1, -1, EVT_DATA_ID, func)
-
-###################################################################
 class ResultEvent(wx.PyEvent):
     """Simple event to carry arbitrary result data."""
 
@@ -44,36 +39,25 @@ class ResultEvent(wx.PyEvent):
         self.data = data
 
 
-class ImageCropFinishData(object):
-    """ Simple encapsulation of data to be sent to the main GUI thread after an image has been cropped. """
+# class ImageCropFinishData(object):
+#     """ Simple encapsulation of data to be sent to the main GUI thread after an image has been cropped. """
+#
+#     def __init__(self, filepath):
+#         """
+#         Constructor.
+#         :param filepath: Filepath to folder with cropped outputs.
+#         """
+#         self.filepath = filepath
+#
+#     def __str__(self):
+#         return str(self.filepath)
 
-    def __init__(self, filepath):
-        """
-        Constructor. 
-        :param filepath: Filepath to folder with cropped outputs.  
-        """
-        self.filepath = filepath
-
-    def __str__(self):
-        return str(self.filepath)
-
-
-class DataEvent(wx.PyEvent):
-    """Simple event to carry arbitrary result data."""
-
-    def __init__(self, data):
-        """Init Result Event."""
-        wx.PyEvent.__init__(self)
-        self.SetEventType(EVT_DATA_ID)
-        self.data = data
 
 
 ########################################################################
 
 lock = threading.Lock()
 event = threading.Event()
-hevent = threading.Event()
-
 
 ####################################################################################################
 
@@ -90,6 +74,8 @@ class ProcessThread(threading.Thread):
         self.wxObject = wxObject
         self.filename = filename
         self.output = outputdir
+        # Use outputfile directory rather than filename for progress bar output
+        self.outfile = join(self.output, splitext(basename(self.filename))[0])
         self.row = row
         #self.showplots = showplots
         self.processname = processname
@@ -102,43 +88,42 @@ class ProcessThread(threading.Thread):
         # This is a slidecropperAPI class show plots is whether to show boxes
         self.mod = self.class_(filename, outputdir)
 
-
-
     # ----------------------------------------------------------------------
     def run(self):
         i = 0
         total_files = 0
         try:
-            event.set()
-            lock.acquire(True)
+            # event.set()
+            #lock.acquire(True)
             q = dict()
+            # Configure mod
+            self.configure()
             self.processData(self.filename, q)
 
-            # tcount = 150 #secs per file?use filesize
-            # ctr = 5
-            #
-            # while self.mod.isRunning():
-            #     time.sleep(5)
-            #     progress = 100 *(ctr/tcount)
-            #     msg = "PROCESS THREAD: %s (%s) (%d percent)" % (self.processname, self.filename, progress)
-            #     print(msg)
-            #     logger.info(msg)
-            #     #count, row, process, filename
-            #     wx.PostEvent(self.wxObject, ResultEvent((progress, self.row, self.processname, self.filename)))
-            #     ctr += 5
-            #     #reset ??
-            #     if ctr == tcount:
-            #         ctr = 5
-
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, self.processname, self.filename)))
         except Exception as e:
-            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, self.processname, self.filename)))
+            print(e)
+            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, self.processname, self.outfile)))
         finally:
-
-            logger.info('Finished ProcessThread')
+            print('Finished ProcessThread')
             # self.terminate()
-            lock.release()
-            event.clear()
+            #lock.release()
+            #event.clear()
+
+    def configure(self):
+        try:
+            msg = "PROCESSTHREAD:configuration set"
+            print(msg)
+            #logger.debug(msg)
+            # Load all configurable params required for module - get list from module
+            cfg = self.mod.getConfigurables()
+            self.db.connect()
+            for c in cfg.keys():
+                cfg[c] = self.db.getConfigByName(self.configID, c)
+
+            self.db.closeconn()
+            self.mod.setConfigurables(cfg)
+        except Exception as e:
+            print("PROCESSTHREAD:ERROR in configuration", str(e))
 
 
     # ----------------------------------------------------------------------
@@ -150,83 +135,21 @@ class ProcessThread(threading.Thread):
         :return:
         """
         try:
-            msg ="PROCESSTHREAD:Process Data with file: %s" % filename
-            print(msg)
-            # Load all configurable params required for module - get list from module
-            cfg = self.mod.getConfigurables()
-            self.db.connect()
-            for c in cfg.keys():
-                cfg[c] = self.db.getConfigByName(self.configID,c)
-                msg = "PROCESSTHREAD:Process Data: config set: %s=%s" % (c, str(cfg[c]))
-                print(msg)
-                logger.debug(msg)
-            self.db.closeconn()
-            self.mod.setConfigurables(cfg)
-
             # run cropping process
             if self.mod.data is not None:
                 print('PROCESSTHREAD: Module running')
-                q[self.mod.data] =self.mod.run()
-                tcount = 150  # secs per file?use filesize
-                ctr = 5
-
-                while self.mod.isRunning():
+                #fake loop
+                t=0
+                c = 100
+                while t < c:
                     time.sleep(5)
-                    progress = 100 * (ctr / tcount)
-                    msg = "PROCESS THREAD: %s (%s) (%d percent)" % (self.processname, self.filename, progress)
-                    print(msg)
-                    logger.info(msg)
-                    # count, row, process, filename
-                    wx.PostEvent(self.wxObject, ResultEvent((progress, self.row, self.processname, self.filename)))
-                    ctr += 5
-                    # reset ??
-                    if ctr == tcount:
-                        ctr = 5
-                # if self.showplots:
-                #     newOutputDir= join(split(self.filenames[0])[0], mod.outputdir, basename(splitext(filename)[0]))
-                #     print(newOutputDir)
-                #     wx.PostEvent(self.wxObject, DataEvent((newOutputDir)))
-                #     #Publisher.sendMessage("Image_Cropped_Finished", details = ImageCropFinishData(newOutputDir))
+                    t += 50
+                #q[filename] =self.mod.run()
             else:
                 print("no mod.data ERROR")
-                q[self.mod.data] = None
+                #q[filename] = None
         except Exception as e:
             print("ERROR in cropping", str(e))
-
-    # def processBatch(self, filelist, q, group=None):
-    #     """
-    #     Run module here - can modify according to class if needed
-    #     :param filelist: data file to process
-    #     :param q: queue for results
-    #     :return:
-    #     """
-    #     logger.info("Process Batch with filelist: %d", len(filelist))
-    #     outputdir = self.output
-    #
-    #     # Instantiate module
-    #     module = importlib.import_module(self.module_name)
-    #     class_ = getattr(module, self.class_name)
-    #     mod = class_(filelist, outputdir, showplots=self.showplots)
-    #     # Load all params required for module - get list from module
-    #     cfg = mod.getConfigurables()
-    #     for c in cfg.keys():
-    #         cfg[c] = self.db.getConfigByName(self.controller.currentconfig, c)
-    #         msg = "Process Batch: config set: %s=%s" % (c, str(cfg[c]))
-    #         logger.debug(msg)
-    #     mod.setConfigurables(cfg)
-    #     if group is not None:
-    #         mod.prefix = group
-    #         q[group] = mod.run()
-    #         if mod.getConfigurables['SEND_TO_CROP_PANEL']:
-    #             Publisher.sendMessage("Image_Cropped_Finished", ImageCropFinishData(mod.data))
-    #             print("Publisher.sendMessage('Image_Cropped_Finished', ImageCropFinishData(mod.data))")
-    #     else:
-    #         q[mod.base] = mod.run()
-
-    # ----------------------------------------------------------------------
-    def terminate(self):
-        logger.info("Terminating Filter Thread")
-        self.terminate()
 
 
 ########################################################################
@@ -239,8 +162,6 @@ class Controller():
         # connect to db
         self.db = DBI()
         self.db.connect()
-
-
 
     def loadLogger(self, outputdir=None):
         #### LoggingConfig
@@ -285,12 +206,35 @@ class Controller():
             for filename in filenames:
                 msg = "Load Process Threads: %s %s [row: %d]" % (processname, filename, row)
                 print(msg)
-                #TODO use outputfile directory rather than filename for progress bar output
-                outfile = join(outputdir,basename(filename).splitext()[0])
+                # Outputfile directory rather than filename for progress bar output
+                outfile = join(outputdir,splitext(basename(filename))[0])
+                # Initial entry
                 wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfile)))
+                wx.YieldIfNeeded()
                 t = ProcessThread(wxGui, self.currentconfig, processname, processmodule,processclass, outputdir, filename, row)
                 t.start()
+                print('Thread started')
+                ctr = 0
+                tcount = 90
+                while t.isAlive():
+                    time.sleep(5)
+                    msg = "Controller:RunProcess (t.alive): %s (%s) (%d percent)" % (processname, outfile, ctr)
+                    print(msg)
+                    #logger.info(msg)
+
+                    ctr += 5
+                    # reset ??
+                    if ctr == tcount:
+                        ctr = 5
+                    # count, row, process, filename
+                    wx.PostEvent(wxGui, ResultEvent((ctr, row, processname, outfile)))
+                    wx.YieldIfNeeded()
+                # End processing
+                wx.PostEvent(wxGui, ResultEvent((100, row, processname, outfile)))
+                # New row
                 row += 1
+
+
         else:
             logger.error("No files to process")
             raise ValueError("No matched files to process")

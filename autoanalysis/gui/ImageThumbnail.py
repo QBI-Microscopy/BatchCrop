@@ -12,6 +12,7 @@ class ImageThumbnail(wx.StaticBitmap):
     """
     def __init__(self, parent, filename, max_size=None):
         self.thumbnail = self.get_image_data(filename)
+        self.filename = filename
         if self.thumbnail is None:
             return
 
@@ -23,8 +24,8 @@ class ImageThumbnail(wx.StaticBitmap):
                 self.thumbnail = imresize(self.thumbnail, max_size[1] / self.thumbnail.shape[1])
 
         image = wx.Image(wx.Size(self.thumbnail.shape[1], self.thumbnail.shape[0]), self.thumbnail)
-        super(ImageThumbnail, self).__init__(parent, bitmap =wx.BitmapFromImage(image))
-        self.SetBitmap(wx.BitmapFromImage(image))
+        super(ImageThumbnail, self).__init__(parent, bitmap=wx.BitmapFromImage(image))
+        #self.SetBitmap(wx.BitmapFromImage(image))
 
 
 
