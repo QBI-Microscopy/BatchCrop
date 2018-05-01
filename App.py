@@ -171,9 +171,9 @@ class MyFileDropTarget(wx.FileDropTarget):
 
     def OnDropFiles(self, x, y, filenames):
         group = ''
-        for fname in filenames:
-            print(os.stat(fname))
-            self.target.AppendItem([True, fname])
+        fileList = [str(self.target.GetTextValue(i, 1)) for i in range(self.target.GetItemCount())]
+        for fname in list(set(filenames).difference(set(fileList))):
+            self.target.AppendItem([True, fname, "{:0.3f}".format(os.stat(fname).st_size/ 10e8)])
 
         # Update status bar
         status = 'Total files loaded: %s' % self.target.Parent.m_dataViewListCtrl1.GetItemCount()
@@ -266,9 +266,11 @@ class FileSelectPanel(FilesPanel):
         finally:
             print('Save list complete')
 
-    def loadFileToPanel(self, filepath,fsize):
-        self.m_dataViewListCtrl1.AppendItem([True, filepath,fsize])
-        print(os.stat(filepath))
+    def loadFileToPanel(self, filepath):
+        currentFileList = [str(self.m_dataViewListCtrl1.GetTextValue(i, 1)) for i in range(self.m_dataViewListCtrl1.GetItemCount())]
+        if filepath not in currentFileList:
+            self.m_dataViewListCtrl1.AppendItem([True, filepath, "{:0.3f}".format(os.stat(filepath).st_size / 10e8)])
+
 
     def OnLoadList(self, event):
         """
@@ -287,7 +289,7 @@ class FileSelectPanel(FilesPanel):
                     self.m_dataViewListCtrl1.DeleteAllItems()
                     for row in sreader:
                         if len(row) > 0:
-                            self.loadFileToPanel(row[0],row[1])
+                            self.loadFileToPanel(row[0])
                 msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
                 self.m_status.SetLabelText(msg)
         except Exception as e:
@@ -319,10 +321,11 @@ class FileSelectPanel(FilesPanel):
 
             for fname in filenames:
                 # touch file (archive)
+
+                #TODO: find neater solution/less IO solution
                 fh = open(fname,'r')
                 fh.close()
-                size =os.stat(fname).st_size / 10e8
-                self.loadFileToPanel(fname,size)
+                self.loadFileToPanel(fname)
                 msg = 'FilePanel loaded: %s' % fname
                 print(msg)
 
