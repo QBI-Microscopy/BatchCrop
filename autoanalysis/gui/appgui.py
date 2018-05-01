@@ -137,9 +137,12 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_imageViewer = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_imageViewer.SetMinSize( wx.Size( 600,800 ) )
-		
+		# self.m_imageViewer.EnableDragSource(wx.DataFormat(wx.DF_BITMAP))
+		# self.m_imageViewer.EnableDropTarget(wx.DataFormat(wx.DF_BITMAP))
+
+
 		self.m_colOrder = self.m_imageViewer.AppendTextColumn( u"Order" )
-		self.m_colThumb = self.m_imageViewer.AppendIconTextColumn( u"Thumbnail" )
+		self.m_colThumb = self.m_imageViewer.AppendIconTextColumn( u"Thumbnail" , width=128)
 		bSizer201.Add( self.m_imageViewer, 0, wx.ALL, 5 )
 		
 		
@@ -190,9 +193,9 @@ class ProcessPanel ( wx.Panel ):
 		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,200 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
-		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
+		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Output" )
 		self.m_dataViewListColumnStatus = self.m_dataViewListCtrlRunning.AppendProgressColumn( u"Status" )
-		self.m_dataViewListColumnOutput = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Output" )
+		self.m_dataViewListColumnOutput = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Progress" )
 		bSizer20.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"Processing status", wx.DefaultPosition, wx.DefaultSize, 0 )

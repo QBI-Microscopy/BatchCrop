@@ -352,11 +352,14 @@ class ProcessRunPanel(ProcessPanel):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
         self.loadCaptions()
-        # Panel for sorted images
-        self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
-        self.m_panelImageOrder.Layout()
+
+        # # Panel for sorted images
+        # self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
+        # self.m_panelImageOrder.Layout()
+
         # Bind progress update function
         EVT_RESULT(self, self.progressfunc)
+
         # Set timer handler
         self.start = {}
         self.bitmaps = {}
@@ -393,18 +396,19 @@ class ProcessRunPanel(ProcessPanel):
         (count, row, process, filename) = msg.data
         msg = "\nProgress updated: %s file=%s status=%s percent" % (time.ctime(), filename,count)
         print(msg)
+        print("!!!!Progress func ", filename)
+
         if count == 0:
             self.m_dataViewListCtrlRunning.AppendItem([process, filename, count, "Starting"])
             self.start[process] = time.time()
-        elif count < 0:
-            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
-            self.m_btnRunProcess.Enable()
+
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
             self.m_dataViewListCtrlRunning.SetValue("Running  - " + str(count), row=row, col=3)
             self.m_dataViewListCtrlRunning.Refresh()
             self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process,filename))
-        else:
+
+        elif count == 100:
             if process in self.start:
                 endtime = time.time() - self.start[process]
                 status = "%s (%d secs)" % ("Done", endtime)
@@ -414,12 +418,18 @@ class ProcessRunPanel(ProcessPanel):
             self.m_btnRunProcess.Enable()
             self.m_stOutputlog.SetLabelText("Completed process %s . Double-click on file to view and reorder cropped images" % process)
 
+        else:
+            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
+            self.m_btnRunProcess.Enable()
+
     def OnShowResults(self,event):
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
         filedir = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
+
         print('File results clicked: ', filedir)
         # Load thumbnails to Image Ordering Panel
         imglist = [y for y in iglob(join(filedir, '*.tiff'), recursive=False)]
+        print(imglist)
         self.bitmaps = []
         self.currentfile = filedir
         idx = 0
@@ -429,8 +439,12 @@ class ProcessRunPanel(ProcessPanel):
             thumb = MultiPageTiffImageThumbnail(self, img, max_size=[128,128])
             self.bitmaps.append(img)
             ico = wx.Icon(thumb.GetBitmap())
-            self.m_imageViewer.AppendItem([idx, wx.dataview.DataViewIconText(text=str(idx), icon=ico)])
+            ico.SetHeight(128)#  , desiredWidth=128, desiredHeight=128)
+            ico.SetWidth(128)
+            self.m_imageViewer.AppendItem([idx, wx.dataview.DataViewIconText(text=str(idx), icon=ico, )])
+            self.m_imageViewer.SetRowHeight(128)
             idx += 1
+            thumb.Destroy()
         print(self.bitmaps)
         self.m_imageViewer.Fit()
         self.m_panelImageOrder.Refresh()

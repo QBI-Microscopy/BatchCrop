@@ -5,7 +5,7 @@ import time
 from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support
 from os import access, R_OK, W_OK, mkdir
-from os.path import join, expanduser, splitext, basename, split
+from os.path import join, expanduser, splitext, basename, split, abspath, dirname
 
 import wx
 
@@ -208,8 +208,10 @@ class Controller():
                 print(msg)
                 # Outputfile directory rather than filename for progress bar output
                 outfile = join(outputdir,splitext(basename(filename))[0])
+                outfolder = join(dirname(abspath(filename)), "cropped", splitext(basename(filename))[0])
+
                 # Initial entry
-                wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfile)))
+                wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfolder)))
                 wx.YieldIfNeeded()
                 t = ProcessThread(wxGui, self.currentconfig, processname, processmodule,processclass, outputdir, filename, row)
                 t.start()
@@ -227,10 +229,11 @@ class Controller():
                     if ctr == tcount:
                         ctr = 5
                     # count, row, process, filename
-                    wx.PostEvent(wxGui, ResultEvent((ctr, row, processname, outfile)))
+
+                    wx.PostEvent(wxGui, ResultEvent((ctr, row, processname, outfolder)))
                     wx.YieldIfNeeded()
                 # End processing
-                wx.PostEvent(wxGui, ResultEvent((100, row, processname, outfile)))
+                wx.PostEvent(wxGui, ResultEvent((100, row, processname, outfolder)))
                 # New row
                 row += 1
 

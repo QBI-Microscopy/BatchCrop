@@ -20,18 +20,6 @@ class ImageSegmentOrderingPanel(wx.Panel):
         self.segmentOrderQueue = deque()
         #Publisher.subscribe(self.updateSegmentOrderQueue, "Image_Cropped_Finished")
         self.parent = parent
-        # self.bSizer1 = wx.BoxSizer(wx.VERTICAL)
-        # self.bSizer2 = wx.BoxSizer(wx.VERTICAL)
-        # self.submit = wx.Button(self, wx.ID_ANY, u"Confirm", wx.DefaultPosition, wx.DefaultSize, 0)
-        # self.bSizer2.Add(self.submit, 0, wx.ALL, 5)
-        # self.submit.Bind(wx.EVT_BUTTON, self.confirmSegmentOrder)
-        #
-        # self.SetSizer(self.bSizer1)
-        # self.image_sizer = wx.BoxSizer(wx.VERTICAL)
-        # self.bSizer1.Add(self.image_sizer, 0, wx.ALL, 5)
-        # self.bSizer1.Add(self.bSizer2)
-        # self.Layout()
-        # self.SetSizer(self.bSizer1)
         self.bitmaps = {}
 
     def OnShowResults(self,event,filedir):
