@@ -189,15 +189,7 @@ class FileSelectPanel(FilesPanel):
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
         self.inputdir = None
 
-    #
-    # @property
-    # def inputdir(self):
-    #     return self._inputdir
-    #
-    # @inputdir.setter
-    # def inputdir(self, input):
-    #     print(input)
-    #     self._inputdir = input
+
 
     def OnFileClicked(self, event):
         row = self.m_dataViewListCtrl1.ItemToRow(event.GetItem())
@@ -215,12 +207,6 @@ class FileSelectPanel(FilesPanel):
             print("Could not open file {0} as an IMS image. Error is {1}".format(filepath, str(e)))
             self.preview_thumbnail = None
         #self.Layout()
-
-
-    # def OnColClick(self, event):
-    #     print("header clicked: ", event.GetColumn())
-    #     # colidx = event.GetColumn()
-    #     # self.m_dataViewListCtrl1.GetModel().Resort()
 
     def loadController(self):
         self.controller = self.Parent.controller
@@ -443,17 +429,12 @@ class ProcessRunPanel(ProcessPanel):
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
         filedir = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
 
-        print('File results clicked: ', filedir)
+        self.segment_grid_directory = filedir
         # Load thumbnails to Image Ordering Panel
         imglist = [y for y in iglob(join(filedir, '*.tiff'), recursive=False)]
-        print(imglist)
         self.bitmaps = []
         self.currentfile = filedir
         idx = 0
-        #
-        # for i in range(self.m_grid1.GetNumberRows()):
-        #     self.m_grid1.SetRowSize(i, 128)
-        #     self.m_grid1.SetReadOnly(i, 1, True)
 
         for img in imglist:
             self.m_grid1.AppendRows()
@@ -468,8 +449,6 @@ class ProcessRunPanel(ProcessPanel):
             image.Destroy()
             idx += 1
 
-        print(self.bitmaps)
-        # self.m_imageViewer.Fit()
         self.m_panelImageOrder.Refresh()
         self.m_stOutputlog.SetLabelText("Displayed %s" % filedir)
 
@@ -598,6 +577,40 @@ class ProcessRunPanel(ProcessPanel):
         dlg.tcLog.LoadFile(logfile)
         dlg.ShowModal()
         dlg.Destroy()
+
+    def CreateOrderFile(self, indices, segment_directory):
+        """
+        Encapsulated method to produce output file used to keep track of order. In our case it 
+        should be an XML that imagej can pass in to order the images. 
+        :param indices: an array of integers that for indices[i] = a the ith image is a'th segment in the proper order 
+        :param segment_directory: directory of cropped tiff segment files. 
+        """
+        pass
+
+        #  EXAMPLE STARTING POINT
+        # for i, order in zip(range(len(indices)), indices):
+        #     # Use i to find necessary tiff image and use order to store its order
+
+    def OnCreateOrderFile(self, event):
+        try:
+            self.m_grid1.Disable()
+            indices = [int(self.m_grid1.GetCellValue(i, 0)) for i in range(self.m_grid1.GetNumberRows())]
+            if sorted(indices) != list(range(self.m_grid1.GetNumberRows())):
+                wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(self.m_grid1.GetNumberRows() -1), "Error", wx.OK)
+                return
+
+            self.CreateOrderFile(indices, self.segment_grid_directory)
+            self.segment_grid_directory = ''
+            self.m_grid1.DeleteRows(numRows=self.m_grid1.NumberRows)
+
+        except Exception:
+            wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(
+                self.m_grid1.GetNumberRows() - 1), "Error", wx.OK)
+            return
+
+        finally:
+            self.m_grid1.Enable()
+
 
     def OnClearWindow(self, event):
         self.m_dataViewListCtrlRunning.DeleteAllItems()
