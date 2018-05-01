@@ -134,18 +134,40 @@ class ProcessPanel ( wx.Panel ):
 		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
 		bSizer201 = wx.BoxSizer( wx.VERTICAL )
-		
-		self.m_imageViewer = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_imageViewer.SetMinSize( wx.Size( 600,800 ) )
-		# self.m_imageViewer.EnableDragSource(wx.DataFormat(wx.DF_BITMAP))
-		# self.m_imageViewer.EnableDropTarget(wx.DataFormat(wx.DF_BITMAP))
+
+		self.m_grid1SubmitButton = wx.Button(self.m_panelImageOrder, wx.ID_ANY, u"Create Order File", wx.DefaultPosition, wx.DefaultSize, 0)
+		self.m_grid1SubmitButton.Bind(wx.EVT_BUTTON, self.OnCreateOrderFile)
+		bSizer201.Add(self.m_grid1SubmitButton, 0, wx.ALIGN_TOP | wx.EXPAND, 5)
+
+		self.m_grid1 = wx.grid.Grid(self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
+		self.m_grid1.SetMinSize(wx.Size(600,800))
+		# Grid
+		self.m_grid1.CreateGrid(0, 2)
+		self.m_grid1.EnableEditing(True)
+		self.m_grid1.EnableGridLines(True)
+		self.m_grid1.EnableDragGridSize(True)
+		self.m_grid1.SetMargins(0, 0)
+
+		# Columns
+		self.m_grid1.EnableDragColMove(False)
+		self.m_grid1.EnableDragColSize(True)
+		self.m_grid1.SetColLabelSize(50)
+		self.m_grid1.SetColLabelValue(0, u"Index")
+		self.m_grid1.SetColLabelValue(1, u"Segment")
+		self.m_grid1.SetColSize(1, 128)
+		self.m_grid1.DisableDragColSize()
+		self.m_grid1.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+
+		# Rows
+		self.m_grid1.EnableDragRowSize(True)
+		self.m_grid1.SetRowLabelSize(80)
+		self.m_grid1.SetRowMinimalAcceptableHeight(128)
+
+		self.m_grid1.SetRowLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+
+		bSizer201.Add(self.m_grid1, 0, wx.ALIGN_TOP | wx.EXPAND, 5)
 
 
-		self.m_colOrder = self.m_imageViewer.AppendTextColumn( u"Order" )
-		self.m_colThumb = self.m_imageViewer.AppendIconTextColumn( u"Thumbnail" , width=128)
-		bSizer201.Add( self.m_imageViewer, 0, wx.ALL, 5 )
-		
-		
 		self.m_panelImageOrder.SetSizer( bSizer201 )
 		self.m_panelImageOrder.Layout()
 		bSizer201.Fit( self.m_panelImageOrder )
@@ -233,7 +255,9 @@ class ProcessPanel ( wx.Panel ):
 	# Virtual event handlers, overide them in your derived class
 	def OnShowDescription( self, event ):
 		event.Skip()
-	
+
+	def OnCreateOrderFile(self, event):
+		event.Skip()
 	
 	def OnRunScripts( self, event ):
 		event.Skip()

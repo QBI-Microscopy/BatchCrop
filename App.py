@@ -422,6 +422,23 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
             self.m_btnRunProcess.Enable()
 
+    class BitmapRenderer(wx.grid.GridCellRenderer):
+
+            def __init__(self, bitmap):
+                self.bitmap  = bitmap
+                wx.grid.GridCellRenderer.__init__(self)
+
+
+
+            def Draw(self, grid, attr, dc, rect, row, col, is_selected):
+                dc.DrawBitmap(self.bitmap, rect.X, rect.Y)
+
+            def Clone(self):
+                return self.__class__()
+
+            def GetBestSize(self, grid, attr, dc, row, col):
+                return wx.Size(128, 128)
+
     def OnShowResults(self,event):
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
         filedir = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
@@ -433,20 +450,26 @@ class ProcessRunPanel(ProcessPanel):
         self.bitmaps = []
         self.currentfile = filedir
         idx = 0
+        #
+        # for i in range(self.m_grid1.GetNumberRows()):
+        #     self.m_grid1.SetRowSize(i, 128)
+        #     self.m_grid1.SetReadOnly(i, 1, True)
 
         for img in imglist:
-            #TODO - Why does this display in Panel?? Need to increase row and column sizes ?
-            thumb = MultiPageTiffImageThumbnail(self, img, max_size=[128,128])
-            self.bitmaps.append(img)
-            ico = wx.Icon(thumb.GetBitmap())
-            ico.SetHeight(128)#  , desiredWidth=128, desiredHeight=128)
-            ico.SetWidth(128)
-            self.m_imageViewer.AppendItem([idx, wx.dataview.DataViewIconText(text=str(idx), icon=ico, )])
-            self.m_imageViewer.SetRowHeight(128)
+            self.m_grid1.AppendRows()
+            self.m_grid1.SetReadOnly(idx, 1, True)
+            self.m_grid1.SetRowSize(idx, 128)
+
+            # TODO: Dont make a multipagetiffimagethumbnail, grab the image then delete the thumbnail.
+            # Make static library for making variouse image types
+            image = MultiPageTiffImageThumbnail(self, img, max_size=[128, 128])
+            self.m_grid1.SetCellRenderer(idx, 1, self.BitmapRenderer(image.GetBitmap()))
+            self.m_grid1.SetCellValue(idx, 0, str(idx))
+            image.Destroy()
             idx += 1
-            thumb.Destroy()
+
         print(self.bitmaps)
-        self.m_imageViewer.Fit()
+        # self.m_imageViewer.Fit()
         self.m_panelImageOrder.Refresh()
         self.m_stOutputlog.SetLabelText("Displayed %s" % filedir)
 
