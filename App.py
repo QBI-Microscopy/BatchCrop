@@ -306,11 +306,6 @@ class FileSelectPanel(FilesPanel):
                 filenames = [f for f in allfiles if not isdir(f)]
 
             for fname in filenames:
-                # touch file (archive)
-
-                #TODO: find neater solution/less IO solution
-                fh = open(fname,'r')
-                fh.close()
                 self.loadFileToPanel(fname)
                 msg = 'FilePanel loaded: %s' % fname
                 print(msg)
