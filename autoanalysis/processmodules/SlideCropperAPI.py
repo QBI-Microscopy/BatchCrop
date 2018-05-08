@@ -16,7 +16,7 @@ class SlideCropperAPI(object):
     def __init__(self, datafile, outputdir):
         # Set config values
         self.cfg = self.getConfigurables()
-        self.status = 1
+        self.status = 0
 
         try:
             # Load data
@@ -34,7 +34,8 @@ class SlideCropperAPI(object):
             if os.access(outputdir, os.W_OK):
                 self.outputdir = outputdir
             else:
-                raise IOError('Unable to access output directory: {0}'.format(outputdir))
+                os.makedirs(outputdir)
+                self.outputdir =outputdir # raise IOError('Unable to access output directory: {0}'.format(outputdir))
 
         except IOError as e:
             print(e.args[0])
@@ -73,31 +74,21 @@ class SlideCropperAPI(object):
     def isRunning(self):
         return self.status == 1
 
-    def segment_run(self):
-        if self.data is not None:
-            border_factor = float(self.cfg['BORDER_FACTOR'])
-            image = I.ImarisImage(self.data)
-            segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
-            image.close_file()
-            return segmentations
-        else:
-            raise ValueError('SlideCropperAPI: Data is not set')
-
-
-    def crop_run(self, segments):
-        #TODO - Combine with segment_run?
-        if self.data is not None:
-            TIFFImageCropper.crop_input_images(self.data, segments, self.outputdir)
-        else:
-            raise ValueError('SlideCropperAPI: Run failed: Image not loaded')
-
-
     def run(self):
+        self.status = 1
         try:
-            # self.status = 1
-            segments = self.segment_run()
-            self.crop_run(segments)
-            self.status = 0
+            if self.data is not None:
+                border_factor = float(self.cfg['BORDER_FACTOR'])
+                image = I.ImarisImage(self.data)
+                segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
+                image.close_file()
+            else:
+                raise ValueError('SlideCropperAPI: Data is not set')
+            if self.data is not None:
+                TIFFImageCropper.crop_input_images(self.data, segmentations, self.outputdir)
+            else:
+                raise ValueError('SlideCropperAPI: Run failed: Image not loaded')
+
         except Exception as e:
             raise e
         finally:

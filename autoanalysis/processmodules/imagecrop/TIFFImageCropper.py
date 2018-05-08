@@ -32,7 +32,6 @@ class TIFFImageCropper(object):
             filename = basename(input_path) #(input_path.split("/")[-1]).split(".")[0]
             new_folder = splitext(filename)[0]
             image_folder = join(output_path, new_folder)
-            print("Output Dir: ", image_folder)
             if not os.path.isdir(image_folder):
                 os.makedirs(image_folder)
 
@@ -46,8 +45,7 @@ class TIFFImageCropper(object):
             crop_process.start()
             crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
         return           # the program will give individual processes a ROI each: multiprocessing to use more CPU.
-        for proc in pid_list:
-            proc.join()
+
 
     @staticmethod
     def crop_single_image(input_path, image_segmentation, output_path, box_index):

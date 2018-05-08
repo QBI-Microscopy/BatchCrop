@@ -328,6 +328,7 @@ class FileSelectPanel(FilesPanel):
         print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
 
+
 ########################################################################
 class BitmapRenderer(wx.grid.GridCellRenderer):
     """
@@ -374,7 +375,6 @@ class ProcessRunPanel(ProcessPanel):
         """
         Pull the clicked on process description form the Database and display it in the description panel.  
         """
-
         self.controller.db.connect()
         ref = self.controller.db.getRef(event.String)
         desc = self.controller.db.getDescription(ref)
@@ -553,7 +553,8 @@ class ProcessRunPanel(ProcessPanel):
     def CreateOrderFile(self, indices, segment_directory):
         """
         Encapsulated method to produce output file used to keep track of order. In our case it 
-        should be an XML that imagej can pass in to order the images. 
+        should be an XML that imagej can pass in to order the images. Currently this is intrinsicly linked to the 
+        style of the output file name. 
         :param indices: an array of integers that for indices[i] = a the ith image is a'th segment in the proper order 
         :param segment_directory: directory of cropped tiff segment files. 
         """
@@ -575,6 +576,11 @@ class ProcessRunPanel(ProcessPanel):
 
 
     def OnCreateOrderFile(self, event):
+        """
+        Function handler for when a user submits the ordering of the segments in the process panel. Provides error 
+        handling for incorrectly ordered images. Passes the order to a helper (and overridable function) self.CreateOrderFile() 
+        to deal with the required ordering. Also clears the grid images from the previous image, if successfully submitted. 
+        """
         try:
             self.m_grid1.Disable()
             indices = [int(self.m_grid1.GetCellValue(i, 0)) for i in range(self.m_grid1.GetNumberRows())]

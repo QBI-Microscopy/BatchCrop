@@ -86,7 +86,11 @@ class ProcessThread(threading.Thread):
         module = importlib.import_module(processmodule)
         self.class_ = getattr(module, processclass)
         # This is a slidecropperAPI class show plots is whether to show boxes
-        self.mod = self.class_(filename, outputdir)
+
+        # Need to make sure outputdir is relative to input file directory
+        # not to where the code is running (hence the join)
+        self.fullOutputPath = join(dirname(abspath(filename)), outputdir)
+        self.mod = self.class_(filename, self.fullOutputPath)
 
     # ----------------------------------------------------------------------
     def run(self):
@@ -122,6 +126,7 @@ class ProcessThread(threading.Thread):
 
             self.db.closeconn()
             self.mod.setConfigurables(cfg)
+            self.mod.outputdir = self.fullOutputPath
         except Exception as e:
             print("PROCESSTHREAD:ERROR in configuration", str(e))
 
@@ -144,7 +149,7 @@ class ProcessThread(threading.Thread):
                 while t < c:
                     time.sleep(5)
                     t += 50
-                #q[filename] =self.mod.run()
+                # q[filename] =self.mod.run()
             else:
                 print("no mod.data ERROR")
                 #q[filename] = None
@@ -229,7 +234,7 @@ class Controller():
                     if ctr == tcount:
                         ctr = 5
                     # count, row, process, filename
-
+                    print("OUTFOLDER", outfolder)
                     wx.PostEvent(wxGui, ResultEvent((ctr, row, processname, outfolder)))
                     wx.YieldIfNeeded()
                 # End processing
@@ -250,5 +255,5 @@ class Controller():
         t = threading.current_thread()
         # print("Thread tcounter:", threading.main_thread())
         if t != threading.main_thread() and t.is_alive():
-            logger.info('Shutdown: closing %s', t.getName())
+            logger.info('Shutdown: closing {0}'.format(t.getName()))
             t.terminate()
