@@ -10,7 +10,7 @@ from autoanalysis.gui.ImageThumbnail import *
 
 class ImageSegmentOrderingPanel(wx.Panel):
     """
-    Widget to display the segments of a cropped image for the user to order and produce an XML that it ultimately able
+     Widget to display the segments of a cropped image for the user to order and produce an XML that it ultimately able
      to help stack the slices in FIJI/ImageJ
     """
 

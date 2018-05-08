@@ -19,6 +19,7 @@
 import csv
 import os
 import re
+import string
 import time
 from os.path import join, isdir, sep,exists
 from os import mkdir,access,R_OK,W_OK,rmdir
@@ -28,7 +29,7 @@ from os import mkdir,access,R_OK,W_OK,rmdir
 import matplotlib
 
 from autoanalysis.gui.ImageSegmentOrderingPanel import ImageSegmentOrderingPanel
-from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
+from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail, ImageThumbnail
 from autoanalysis.resources.dbquery import DBI
 
 matplotlib.use('Agg')
@@ -328,22 +329,36 @@ class FileSelectPanel(FilesPanel):
         self.m_dataViewListCtrl1.DeleteAllItems()
 
 ########################################################################
+class BitmapRenderer(wx.grid.GridCellRenderer):
+    """
+    Custom grid element renderer to render bitmaps into the process panel grid 
+    """
+    def __init__(self, bitmap):
+        self.bitmap  = bitmap
+        wx.grid.GridCellRenderer.__init__(self)
+
+    def Draw(self, grid, attr, dc, rect, row, col, is_selected):
+        dc.DrawBitmap(self.bitmap, rect.X, rect.Y)
+
+    def Clone(self):
+        return self.__class__()
+
+    def GetBestSize(self, grid, attr, dc, row, col):
+        return wx.Size(128, 128)
+
+
+########################################################################
 class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
         self.loadCaptions()
 
-        # # Panel for sorted images
-        # self.m_panelImageOrder = ImageSegmentOrderingPanel(self)
-        # self.m_panelImageOrder.Layout()
-
         # Bind progress update function
         EVT_RESULT(self, self.progressfunc)
 
         # Set timer handler
         self.start = {}
-        self.bitmaps = {}
 
     def loadController(self):
         self.controller = self.Parent.controller
@@ -356,6 +371,10 @@ class ProcessRunPanel(ProcessPanel):
         self.controller.db.closeconn()
 
     def OnShowDescription(self, event):
+        """
+        Pull the clicked on process description form the Database and display it in the description panel.  
+        """
+
         self.controller.db.connect()
         ref = self.controller.db.getRef(event.String)
         desc = self.controller.db.getDescription(ref)
@@ -368,26 +387,22 @@ class ProcessRunPanel(ProcessPanel):
 
     def progressfunc(self, msg):
         """
-        Update progress bars in table - multithreaded
-        :param count:
-        :param row:
-        :param col:
-        :return:
+        Update progress bars in progress table. This will be sent from the panel running a process 
+        (from the controller) with a msg as a RESULTEVENT. 
+        :param msg: message passed in to Proccess panel. Currently in the form
+            (count, row, process, outputPath) 
         """
-        (count, row, process, filename) = msg.data
-        msg = "\nProgress updated: %s file=%s status=%s percent" % (time.ctime(), filename,count)
-        print(msg)
-        print("!!!!Progress func ", filename)
+        (count, row, process, outputPath) = msg.data
 
         if count == 0:
-            self.m_dataViewListCtrlRunning.AppendItem([process, filename, count, "Starting"])
+            self.m_dataViewListCtrlRunning.AppendItem([process, outputPath, count, "Starting"])
             self.start[process] = time.time()
 
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
             self.m_dataViewListCtrlRunning.SetValue("Running  - " + str(count), row=row, col=3)
             self.m_dataViewListCtrlRunning.Refresh()
-            self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process,filename))
+            self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process,outputPath))
 
         elif count == 100:
             if process in self.start:
@@ -403,70 +418,30 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
             self.m_btnRunProcess.Enable()
 
-    class BitmapRenderer(wx.grid.GridCellRenderer):
-
-            def __init__(self, bitmap):
-                self.bitmap  = bitmap
-                wx.grid.GridCellRenderer.__init__(self)
-
-
-
-            def Draw(self, grid, attr, dc, rect, row, col, is_selected):
-                dc.DrawBitmap(self.bitmap, rect.X, rect.Y)
-
-            def Clone(self):
-                return self.__class__()
-
-            def GetBestSize(self, grid, attr, dc, row, col):
-                return wx.Size(128, 128)
-
     def OnShowResults(self,event):
+        """
+        Event handler for when a user clicks on a completed image in the process panel. Loads the segments and templates
+        the index order for them. Users can then renumber and submit the segments to be ordered via the 
+        self.CreateOrderFile function. 
+        """
+
+        # Get the file directory from the selected row.
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
-        filedir = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
+        self.segmentGridPath = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
 
-        self.segment_grid_directory = filedir
         # Load thumbnails to Image Ordering Panel
-        imglist = [y for y in iglob(join(filedir, '*.tiff'), recursive=False)]
-        self.bitmaps = []
-        self.currentfile = filedir
-        idx = 0
+        imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
 
-        for img in imglist:
+        #  For each thumbnail, create a grid row with a default order
+        for idx, img in zip(range(len(imglist)), imglist):
             self.m_grid1.AppendRows()
             self.m_grid1.SetReadOnly(idx, 1, True)
             self.m_grid1.SetRowSize(idx, 128)
-
-            # TODO: Dont make a multipagetiffimagethumbnail, grab the image then delete the thumbnail.
-            # Make static library for making variouse image types
-            image = MultiPageTiffImageThumbnail(self, img, max_size=[128, 128])
-            self.m_grid1.SetCellRenderer(idx, 1, self.BitmapRenderer(image.GetBitmap()))
+            self.m_grid1.SetCellRenderer(idx, 1, BitmapRenderer(ImageThumbnail.get_tiff_bitmap(img, max_size=[128, 128])))
             self.m_grid1.SetCellValue(idx, 0, str(idx))
-            image.Destroy()
-            idx += 1
 
         self.m_panelImageOrder.Refresh()
-        self.m_stOutputlog.SetLabelText("Displayed %s" % filedir)
-
-    def OnSaveOrder(self):
-        if self.m_imageViewer.GetItemCount() > 0:
-            #make a temp dir ?locally
-            tmpdir = join(self.currentfile, 'reordered')
-            if exists(tmpdir,W_OK):
-                rmdir(tmpdir)
-            mkdir(tmpdir)
-            for i in range(self.m_imageViewer.GetItemCount()):
-                num = self.m_imageViewer.GetValue(i,0)
-                thumb_num = self.m_imageViewer.GetValue(i,1).GetText()
-                if num != thumb_num:
-                    oldfilename = self.bitmaps[thumb_num]
-                    newfilename = oldfilename.replace(str(thumb_num)+"_full", str(num)+"_full")
-                    shutil.copy(join(self.currentfile,oldfilename), join(tmpdir,newfilename))
-                    msg ='Filename replaced: %s to %s' % (oldfilename,newfilename)
-                    print(msg)
-            print('SaveOrder complete')
-        else:
-            print('Items not added yet')
-
+        self.m_stOutputlog.SetLabelText("Displayed %s" % self.segmentGridPath)
 
     def getFilePanel(self):
         """
@@ -483,24 +458,26 @@ class ProcessRunPanel(ProcessPanel):
 
     def OnCancelScripts(self, event):
         """
-        Find a way to stop processes
-        :param event:
-        :return:
+        Button event to stop the current process from continuing to run. 
         """
         self.controller.shutdown()
         print("Cancel multiprocessor")
-        event.Skip()
 
     def getDefaultOutputdir(self):
-        subdir = 'cropped'
-        sdir = ''
-        if self.controller is not None and self.controller.db is not None:
+        """
+        :return: the default output directory for the segmented images. If a problem occured, return default. 
+        """
+        default = "cropped"
+        try:
             self.controller.db.connect()
             sdir = self.controller.db.getConfigByName(self.controller.currentconfig, 'CROPPED_IMAGE_FILES')
-            self.controller.db.closeconn()
-        if len(sdir) > 0:
-            subdir = sdir
-        return subdir
+            return sdir if len(sdir) > 0 else default
+        except Exception as e:
+            print("Error occured when getting the default output directory: {0}".format(str(e)))
+            return default
+        finally:
+            self.controller.db.connect()
+
 
     def OnRunScripts(self, event):
         """
@@ -580,11 +557,22 @@ class ProcessRunPanel(ProcessPanel):
         :param indices: an array of integers that for indices[i] = a the ith image is a'th segment in the proper order 
         :param segment_directory: directory of cropped tiff segment files. 
         """
-        pass
 
-        #  EXAMPLE STARTING POINT
-        # for i, order in zip(range(len(indices)), indices):
-        #     # Use i to find necessary tiff image and use order to store its order
+        imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
+
+        # rename files from index based to ascii letter based as temp file name
+        for img, i in zip(imglist, range(len(imglist))):
+            temp_path = re.sub(r'_._full', "_{0}_full".format(string.ascii_lowercase[i]), img)
+            os.rename(img, temp_path)
+            imglist[i] = temp_path
+
+        # convert ascii letter based filename to new ordering of images.
+        for i, order in zip(range(len(indices)), indices):
+            # Use i to find necessary tiff image and use order to store its order
+            tempPath = imglist[i]
+            finalPath = re.sub(r'_._full', "_{0}_full".format(order), tempPath)
+            os.rename(tempPath, finalPath)
+
 
     def OnCreateOrderFile(self, event):
         try:
@@ -592,15 +580,17 @@ class ProcessRunPanel(ProcessPanel):
             indices = [int(self.m_grid1.GetCellValue(i, 0)) for i in range(self.m_grid1.GetNumberRows())]
             if sorted(indices) != list(range(self.m_grid1.GetNumberRows())):
                 wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(self.m_grid1.GetNumberRows() -1), "Error", wx.OK)
+                print("segments has order labels: {0}".format(indices))
                 return
 
-            self.CreateOrderFile(indices, self.segment_grid_directory)
-            self.segment_grid_directory = ''
+            self.CreateOrderFile(indices, self.segmentGridPath)
+            self.segmentGridPath = ''
             self.m_grid1.DeleteRows(numRows=self.m_grid1.NumberRows)
 
-        except Exception:
+        except Exception as e:
             wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(
                 self.m_grid1.GetNumberRows() - 1), "Error", wx.OK)
+            print("Error occured for list {0}. error is {1}".format(indices, str(e)))
             return
 
         finally:
