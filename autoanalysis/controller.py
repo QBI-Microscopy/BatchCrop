@@ -119,7 +119,7 @@ class ProcessThread(threading.Thread):
         try:
             msg = "PROCESSTHREAD:configuration set"
             print(msg)
-            #logger.debug(msg)
+            logger.debug(msg)
             # Load all configurable params required for module - get list from module
             cfg = self.mod.getConfigurables()
             self.db.connect()
@@ -144,19 +144,26 @@ class ProcessThread(threading.Thread):
         try:
             # run cropping process
             if self.mod.data is not None:
-                print('PROCESSTHREAD: Module running')
-                #fake loop
-                t=0
-                c = 100
-                while t < c:
-                    time.sleep(5)
-                    t += 50
-                # q[filename] =self.mod.run()
+                msg = 'PROCESSTHREAD: Module running: %s' % filename
+                print(msg)
+                logging.info(msg)
+                # #fake loop for testing
+                # t=0
+                # c = 100
+                # while t < c:
+                #     time.sleep(5)
+                #     t += 50
+                #Run processing
+                q[filename] =self.mod.run()
             else:
-                print("no mod.data ERROR")
-                #q[filename] = None
+                msg = "ERROR: No data loaded for process: %s file: %s" % (self.class_, filename)
+                print(msg)
+                logging.error(msg)
+                q[filename] = None
+                raise ValueError(msg)
+
         except Exception as e:
-            print("ERROR in cropping", str(e))
+            print("ERROR in processData: ", str(e))
 
 
 ########################################################################
@@ -224,19 +231,19 @@ class Controller():
                 t.start()
                 print('Thread started')
                 ctr = 0
+                increment = 5
                 tcount = 90
                 while t.isAlive():
-                    time.sleep(5)
+                    time.sleep(increment)
                     msg = "Controller:RunProcess (t.alive): %s (%s) (%d percent)" % (processname, outfolder, ctr)
                     print(msg)
-                    #logger.info(msg)
+                    logger.debug(msg)
 
-                    ctr += 5
+                    ctr += increment
                     # reset ??
                     if ctr == tcount:
-                        ctr = 5
+                        ctr = increment
                     # count, row, process, filename
-                    print("OUTFOLDER", outfolder)
                     wx.PostEvent(wxGui, ResultEvent((ctr, row, processname, outfolder)))
                     wx.YieldIfNeeded()
                 # End processing

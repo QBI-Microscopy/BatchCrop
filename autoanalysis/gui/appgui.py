@@ -164,9 +164,15 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer20.Add( bSizer16, 1, wx.ALL, 5 )
 		
-		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.FULL_REPAINT_ON_RESIZE|wx.VSCROLL )
+		self.m_staticText21 = wx.StaticText( self, wx.ID_ANY, u"Process Panel", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
+		self.m_staticText21.Wrap( -1 )
+		self.m_staticText21.SetFont( wx.Font( 10, 70, 90, 92, False, wx.EmptyString ) )
+		
+		bSizer20.Add( self.m_staticText21, 0, wx.ALL, 5 )
+		
+		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.HSCROLL|wx.VSCROLL )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
-		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,400 ) )
+		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,360 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
 		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
@@ -187,15 +193,22 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer17 = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_staticText20 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"Review Cropped Images", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText20 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"Review Output Images", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
 		self.m_staticText20.Wrap( -1 )
+		self.m_staticText20.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
 		bSizer17.Add( self.m_staticText20, 0, wx.ALL, 5 )
+		
+		self.m_staticText22 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"(Double-click on Filename in Process panel when processing complete where process has produced output images)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText22.Wrap( 600 )
+		bSizer17.Add( self.m_staticText22, 0, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlReview = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_dataViewListCtrlReview.SetMinSize( wx.Size( 600,500 ) )
 		
 		self.m_Col_reviewCheck = self.m_dataViewListCtrlReview.AppendToggleColumn( u"Select" )
 		self.m_Col_reviewFilename = self.m_dataViewListCtrlReview.AppendTextColumn( u"File Name" )
+		self.m_Col_reviewSize = self.m_dataViewListCtrlReview.AppendTextColumn( u"Size" )
 		bSizer17.Add( self.m_dataViewListCtrlReview, 0, wx.ALL, 5 )
 		
 		self.m_btnDeleteImg = wx.Button( self.m_panelImageOrder, wx.ID_ANY, u"Delete Selected", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -406,9 +419,9 @@ class FilesPanel ( wx.Panel ):
 		
 		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self.panel_right = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		self.panel_right = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.HSCROLL|wx.VSCROLL )
 		self.panel_right.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-		self.panel_right.SetMaxSize( wx.Size( 400,-1 ) )
+		self.panel_right.SetMaxSize( wx.Size( 380,-1 ) )
 		
 		bSizerThumb = wx.BoxSizer( wx.VERTICAL )
 		
@@ -466,7 +479,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_staticText251.Wrap( -1 )
 		fgSizer4.Add( self.m_staticText251, 0, wx.ALL, 5 )
 		
-		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag data files here", wx.DefaultPosition, wx.Size( 300,100 ), wx.TE_READONLY|wx.TE_WORDWRAP )
+		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag data files here", wx.DefaultPosition, wx.Size( 300,80 ), wx.TE_READONLY|wx.TE_WORDWRAP )
 		self.m_tcDragdrop.SetBackgroundColour( wx.Colour( 191, 191, 255 ) )
 		
 		fgSizer4.Add( self.m_tcDragdrop, 0, 0, 5 )
@@ -496,8 +509,13 @@ class FilesPanel ( wx.Panel ):
 		
 		bSizer18.Add( fgSizer4, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
 		
-		self.m_staticText252 = wx.StaticText( self, wx.ID_ANY, u"Click on filename to view thumbnail (may be delay if file is on archived storage)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticline6 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		bSizer18.Add( self.m_staticline6, 0, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticText252 = wx.StaticText( self, wx.ID_ANY, u"Click on filename to view thumbnail (may be long delay if network is slow)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText252.Wrap( -1 )
+		self.m_staticText252.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 93, 90, False, wx.EmptyString ) )
+		
 		bSizer18.Add( self.m_staticText252, 0, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.dataview.DV_MULTIPLE|wx.HSCROLL|wx.VSCROLL )

@@ -208,6 +208,15 @@ class DBI():
             data = data[0]
         return data
 
+    def getProcessFilesout(self, processname):
+        if self.c is None:
+            self.connect()
+        self.c.execute("SELECT filesout FROM processes WHERE process=?", (self.validstring(processname),))
+        data = self.c.fetchone()
+        if data is not None:
+            data = data[0]
+        return data
+
 #############################################################################
 if __name__ == "__main__":
     dbi = DBI(test=True)

@@ -90,7 +90,7 @@ class HomePanel(WelcomePanel):
         # self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.Newline()
         self.m_richText1.WriteText(
-            "Select a top level directory containing the required data files and/or use the Drag'n'Drop for individual files. Only files checked in the file list will be included. Output files will be put in a subfolders under matching filenames either in a directory called 'cropped' in the input directory structure or specified output directory. A prefix and group can be used for all output files.")
+            "Select a top level directory containing the required data files and/or use the Drag'n'Drop for individual files. Only files checked in the file list will be included in processing. A preview of each file can be displayed by selecting the filename.  If required, the file list can be saved and reloaded.")
         self.m_richText1.Newline()
         self.m_richText1.BeginBold()
         self.m_richText1.WriteText("Run Processes")
@@ -98,7 +98,7 @@ class HomePanel(WelcomePanel):
         # self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.Newline()
         self.m_richText1.WriteText(
-            r"Each process is described with the required input files (which need to be available in the input directory structure) and the output files which it produces. These are multi-threaded processes which will run in sequence as listed and once running their progress can be monitored. A log file is produced which can be viewed in a popup. ")
+            r"Select which processing modules is to run by viewing description. Each file is processed in the background as a multi-threaded process which will run in sequence as listed and once running their progress can be monitored. Any output files will be put in the output directory specified or in subfolders under a directory called 'cropped' in the input directory structure. A review panel is provided for output files. A log file is produced which can be viewed in a popup.")
         # self.m_richText1.EndLeftIndent()
         self.m_richText1.Newline()
         self.m_richText1.BeginItalic()
@@ -415,8 +415,7 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
             self.m_dataViewListCtrlRunning.SetValue(status, row=row, col=3)
             self.m_btnRunProcess.Enable()
-            self.m_stOutputlog.SetLabelText(
-                "Completed process %s . Double-click on file to review cropped images" % process)
+            self.m_stOutputlog.SetLabelText("COMPLETED process %s " % process)
 
         else:
             self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
@@ -431,18 +430,21 @@ class ProcessRunPanel(ProcessPanel):
 
         # Get the file directory from the selected row.
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
-        self.segmentGridPath = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
+        process = self.m_dataViewListCtrlRunning.GetTextValue(row, 0)
+        status = self.m_dataViewListCtrlRunning.GetTextValue(row, 3)
+        if self.controller.db.getProcessFilesout(process) != 'NA' and status.startswith('Done'):
+            self.segmentGridPath = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
 
-        # Load filenames to Review Panel
-        imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
-        self.m_dataViewListCtrlReview.DeleteAllItems()
-        for fname in imglist:
-            self.m_dataViewListCtrlReview.AppendItem([False, fname])
+            # Load filenames to Review Panel
+            imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
+            self.m_dataViewListCtrlReview.DeleteAllItems()
+            for fname in imglist:
+                self.m_dataViewListCtrlReview.AppendItem([False, fname, "{:0.3f}".format(os.stat(fname).st_size / 10e8)])
 
-        # Launch Viewer
-        viewerapp = wx.App()
-        frame = ImageViewer(imglist)
-        viewerapp.MainLoop()
+            # Launch Viewer
+            viewerapp = wx.App()
+            frame = ImageViewer(imglist)
+            viewerapp.MainLoop()
 
         # #  For each thumbnail, create a grid row with a default order
         # for idx, img in zip(range(len(imglist)), imglist):
@@ -477,7 +479,7 @@ class ProcessRunPanel(ProcessPanel):
             # Refresh list
             self.m_dataViewListCtrlReview.DeleteAllItems()
             for fname in filenames:
-                self.m_dataViewListCtrlReview.AppendItem([False, fname])
+                self.m_dataViewListCtrlReview.AppendItem([False, fname,"{:0.3f}".format(os.stat(fname).st_size / 10e8)])
             self.Refresh()
 
             print('PROCESSPANEL: Loaded Files:', len(filenames))

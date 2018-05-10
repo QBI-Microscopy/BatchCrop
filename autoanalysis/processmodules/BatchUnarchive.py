@@ -27,14 +27,15 @@ from collections import OrderedDict
 DEBUG = 1
 
 class FileUnarchiver():
-    def __init__(self, inputfiles):
+    def __init__(self, inputfile, outputdir):
         """
 
         :param inputfiles: Assumes these are correct files - already filtered
-        :param outputdir:
+        :param outputdir: not used - required for template module
         :param showplots:
         """
-        self.inputfiles = inputfiles
+        self.data = inputfile
+        print('FileUnarchiver: data=', self.data)
 
 
     def getConfigurables(self):
@@ -58,11 +59,12 @@ class FileUnarchiver():
         :param colname:
         :return: outputfilename
         """
-
-        for fname in self.inputfiles:
-            print('Unarchiving file: ',fname)
-            fh = open(fname, 'r')
+        try:
+            print('Unarchiving file: ',self.data)
+            fh = open(self.data, 'r')
             fh.close()
+        except Exception as e:
+            raise e
 
 
 ################################################################################
@@ -75,7 +77,7 @@ def create_parser():
 
                  ''')
     parser.add_argument('--inputdir', action='store', help='Input directory',
-                        default="D:\\Data\\Csv\\input")
+                        default="D:\\Data\\MicroscopyData")
 
     return parser
 
@@ -84,9 +86,10 @@ if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
     inputdir = args.inputdir
-    showplots = True
-    # inputfiles, outputdir, datafile_searchtext,showplots=False)
+    outputdir = inputdir
+    # Get file list
     allfiles = [y for y in iglob(join(inputdir, '**','*.ims'), recursive=True)]
-    batch = FileUnarchiver(allfiles)
-    rtn = batch.run()
-    print("Done: ", rtn)
+    for f in allfiles:
+        batch = FileUnarchiver(f, outputdir)
+        batch.run()
+        print("Done")
