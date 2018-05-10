@@ -10,8 +10,8 @@
 import wx
 import wx.xrc
 import wx.grid
-import wx.dataview
 import wx.richtext
+import wx.dataview
 
 ###########################################################################
 ## Class ConfigPanel
@@ -130,49 +130,6 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer19 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-		
-		bSizer201 = wx.BoxSizer( wx.VERTICAL )
-
-		self.m_grid1SubmitButton = wx.Button(self.m_panelImageOrder, wx.ID_ANY, u"Create Order File", wx.DefaultPosition, wx.DefaultSize, 0)
-		self.m_grid1SubmitButton.Bind(wx.EVT_BUTTON, self.OnCreateOrderFile)
-		bSizer201.Add(self.m_grid1SubmitButton, 0, wx.ALIGN_TOP | wx.EXPAND, 5)
-
-		self.m_grid1 = wx.grid.Grid(self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)
-		self.m_grid1.SetMinSize(wx.Size(600,800))
-		# Grid
-		self.m_grid1.CreateGrid(0, 2)
-		self.m_grid1.EnableEditing(True)
-		self.m_grid1.EnableGridLines(True)
-		self.m_grid1.EnableDragGridSize(True)
-		self.m_grid1.SetMargins(0, 0)
-
-		# Columns
-		self.m_grid1.EnableDragColMove(False)
-		self.m_grid1.EnableDragColSize(True)
-		self.m_grid1.SetColLabelSize(50)
-		self.m_grid1.SetColLabelValue(0, u"Index")
-		self.m_grid1.SetColLabelValue(1, u"Segment")
-		self.m_grid1.SetColSize(1, 128)
-		self.m_grid1.DisableDragColSize()
-		self.m_grid1.SetColLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-
-		# Rows
-		self.m_grid1.EnableDragRowSize(True)
-		self.m_grid1.SetRowLabelSize(80)
-		self.m_grid1.SetRowMinimalAcceptableHeight(128)
-
-		self.m_grid1.SetRowLabelAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
-
-		bSizer201.Add(self.m_grid1, 0, wx.ALIGN_TOP | wx.EXPAND, 5)
-
-
-		self.m_panelImageOrder.SetSizer( bSizer201 )
-		self.m_panelImageOrder.Layout()
-		bSizer201.Fit( self.m_panelImageOrder )
-		bSizer19.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
-		
 		bSizer20 = wx.BoxSizer( wx.VERTICAL )
 		
 		m_checkListProcessChoices = []
@@ -204,20 +161,17 @@ class ProcessPanel ( wx.Panel ):
 		self.m_button15 = wx.Button( self, wx.ID_ANY, u"Clear Results", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer16.Add( self.m_button15, 0, wx.ALL, 5 )
 		
-		self.m_btnSaveOrder = wx.Button( self, wx.ID_ANY, u"Save Order", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer16.Add( self.m_btnSaveOrder, 0, wx.ALL, 5 )
-		
 		
 		bSizer20.Add( bSizer16, 1, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.FULL_REPAINT_ON_RESIZE|wx.VSCROLL )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
-		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,200 ) )
+		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,400 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
-		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Output" )
-		self.m_dataViewListColumnStatus = self.m_dataViewListCtrlRunning.AppendProgressColumn( u"Status" )
-		self.m_dataViewListColumnOutput = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Progress" )
+		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
+		self.m_dataViewListColumnStatus = self.m_dataViewListCtrlRunning.AppendProgressColumn( u"Progress" )
+		self.m_dataViewListColumnOutput = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Status" )
 		bSizer20.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_stOutputlog = wx.StaticText( self, wx.ID_ANY, u"Processing status", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -227,10 +181,31 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer19.Add( bSizer20, 1, wx.EXPAND, 5 )
 		
-		bSizer21 = wx.BoxSizer( wx.VERTICAL )
+		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.m_panelImageOrder.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+		
+		bSizer17 = wx.BoxSizer( wx.VERTICAL )
+		
+		self.m_staticText20 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"Review Cropped Images", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText20.Wrap( -1 )
+		bSizer17.Add( self.m_staticText20, 0, wx.ALL, 5 )
+		
+		self.m_dataViewListCtrlReview = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_dataViewListCtrlReview.SetMinSize( wx.Size( 600,500 ) )
+		
+		self.m_Col_reviewCheck = self.m_dataViewListCtrlReview.AppendToggleColumn( u"Select" )
+		self.m_Col_reviewFilename = self.m_dataViewListCtrlReview.AppendTextColumn( u"File Name" )
+		bSizer17.Add( self.m_dataViewListCtrlReview, 0, wx.ALL, 5 )
+		
+		self.m_btnDeleteImg = wx.Button( self.m_panelImageOrder, wx.ID_ANY, u"Delete Selected", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer17.Add( self.m_btnDeleteImg, 0, wx.ALL, 5 )
 		
 		
-		bSizer19.Add( bSizer21, 1, wx.EXPAND, 5 )
+		self.m_panelImageOrder.SetSizer( bSizer17 )
+		self.m_panelImageOrder.Layout()
+		bSizer17.Fit( self.m_panelImageOrder )
+		bSizer19.Add( self.m_panelImageOrder, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		
 		panelMainSizer.Add( bSizer19, 1, wx.EXPAND, 5 )
@@ -245,8 +220,9 @@ class ProcessPanel ( wx.Panel ):
 		self.m_btnRunProcess.Bind( wx.EVT_BUTTON, self.OnRunScripts )
 		self.btnLog.Bind( wx.EVT_BUTTON, self.OnShowLog )
 		self.m_button15.Bind( wx.EVT_BUTTON, self.OnClearWindow )
-		self.m_btnSaveOrder.Bind( wx.EVT_BUTTON, self.OnSaveOrder )
 		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnShowResults, id = wx.ID_ANY )
+		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnRename, id = wx.ID_ANY )
+		self.m_btnDeleteImg.Bind( wx.EVT_BUTTON, self.OnDeleteImage )
 	
 	def __del__( self ):
 		pass
@@ -255,9 +231,7 @@ class ProcessPanel ( wx.Panel ):
 	# Virtual event handlers, overide them in your derived class
 	def OnShowDescription( self, event ):
 		event.Skip()
-
-	def OnCreateOrderFile(self, event):
-		event.Skip()
+	
 	
 	def OnRunScripts( self, event ):
 		event.Skip()
@@ -268,10 +242,13 @@ class ProcessPanel ( wx.Panel ):
 	def OnClearWindow( self, event ):
 		event.Skip()
 	
-	def OnSaveOrder( self, event ):
+	def OnShowResults( self, event ):
 		event.Skip()
 	
-	def OnShowResults( self, event ):
+	def OnRename( self, event ):
+		event.Skip()
+	
+	def OnDeleteImage( self, event ):
 		event.Skip()
 	
 
@@ -474,8 +451,6 @@ class FilesPanel ( wx.Panel ):
 		
 		self.m_staticText27 = wx.StaticText( self, wx.ID_ANY, u"Filename search text", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText27.Wrap( -1 )
-		self.m_staticText27.SetToolTipString( u"Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files." )
-		
 		fgSizer4.Add( self.m_staticText27, 0, wx.ALL, 5 )
 		
 		self.m_tcSearch = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )

@@ -19,18 +19,18 @@
 import csv
 import os
 import re
-import string
+import sys
 import time
-from os.path import join, isdir, sep,exists
-from os import mkdir,access,R_OK,W_OK,rmdir
+from os import mkdir, access, W_OK
+from os.path import join, isdir
 
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 import matplotlib
 
-from autoanalysis.gui.ImageSegmentOrderingPanel import ImageSegmentOrderingPanel
-from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail, ImageThumbnail
-from autoanalysis.resources.dbquery import DBI
+from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
+from autoanalysis.gui.ImageViewer import ImagePanel
+from autoanalysis.gui.ImageViewer import ImageViewer
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -40,11 +40,9 @@ import wx
 import wx.html2
 import wx.dataview
 from glob import iglob
-import shutil
 from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
-from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel,dlgLogViewer
-from autoanalysis.gui.ImageThumbnail import MultiPageTiffImageThumbnail
+from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
 __version__ = '1.0.0alpha'
 
@@ -62,7 +60,7 @@ class HomePanel(WelcomePanel):
         img.LoadFile(join(findResourceDir(), 'loadimage.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
-        welcome = "Welcome to the Slide Cropper App (v.%s)" % __version__
+        welcome = "Welcome to the Batch Slide Cropper App (v.%s)" % __version__
         self.m_richText1.WriteText(welcome)
         self.m_richText1.EndFontSize()
         self.m_richText1.Newline()
@@ -105,7 +103,7 @@ class HomePanel(WelcomePanel):
         self.m_richText1.Newline()
         self.m_richText1.BeginItalic()
         self.m_richText1.AddParagraph(
-            r"Copyright (2018) https://github.com/QBI-Microscopy/SlideCrop")
+            r"Copyright (2018) https://github.com/QBI-Microscopy/BatchCrop")
         self.m_richText1.EndItalic()
 
     def loadController(self):
@@ -125,8 +123,8 @@ class Config(ConfigPanel):
 
     def OnLoadData(self):
         self.controller.db.connect()
-        #load config values
-        rownum =0
+        # load config values
+        rownum = 0
         conf = self.controller.db.getConfigALL(self.controller.currentconfig)
         if conf is not None:
             for k in conf.keys():
@@ -139,30 +137,31 @@ class Config(ConfigPanel):
             self.m_grid1.AutoSize()
         self.controller.db.closeconn()
 
-
     def OnSaveConfig(self, event):
         self.controller.db.getconn()
         configid = self.controller.currentconfig
-        configlist=[]
+        configlist = []
         data = self.m_grid1.GetTable()
         for rownum in range(0, data.GetRowsCount()):
             if not data.IsEmptyCell(rownum, 0):
-                configlist.append((self.m_grid1.GetCellValue(rownum, 0),self.m_grid1.GetCellValue(rownum, 1),configid,self.m_grid1.GetCellValue(rownum, 2)))
-        #print('Saved config:', configlist)
+                configlist.append((self.m_grid1.GetCellValue(rownum, 0), self.m_grid1.GetCellValue(rownum, 1), configid,
+                                   self.m_grid1.GetCellValue(rownum, 2)))
+        # print('Saved config:', configlist)
         # Save to DB
-        cnt = self.controller.db.addConfig(configid,configlist)
+        cnt = self.controller.db.addConfig(configid, configlist)
 
-        #reload other panels
+        # reload other panels
         for fp in self.parent.Children:
             if isinstance(fp, wx.Panel) and self.__class__ != fp.__class__:
                 fp.loadController()
-        #notification
+        # notification
         msg = "Config saved: %s" % configid
         self.Parent.Warn(msg)
         self.controller.db.closeconn()
 
     def OnAddRow(self, event):
         self.m_grid1.AppendRows(1, True)
+
 
 ########################################################################
 class MyFileDropTarget(wx.FileDropTarget):
@@ -174,12 +173,13 @@ class MyFileDropTarget(wx.FileDropTarget):
         group = ''
         fileList = [str(self.target.GetTextValue(i, 1)) for i in range(self.target.GetItemCount())]
         for fname in list(set(filenames).difference(set(fileList))):
-            self.target.AppendItem([True, fname, "{:0.3f}".format(os.stat(fname).st_size/ 10e8)])
+            self.target.AppendItem([True, fname, "{:0.3f}".format(os.stat(fname).st_size / 10e8)])
 
         # Update status bar
         status = 'Total files loaded: %s' % self.target.Parent.m_dataViewListCtrl1.GetItemCount()
         self.target.Parent.m_status.SetLabelText(status)
         return len(filenames)
+
 
 ########################################################################
 class FileSelectPanel(FilesPanel):
@@ -190,8 +190,6 @@ class FileSelectPanel(FilesPanel):
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
         self.inputdir = None
 
-
-
     def OnFileClicked(self, event):
         row = self.m_dataViewListCtrl1.ItemToRow(event.GetItem())
         filepath = self.m_dataViewListCtrl1.GetTextValue(row, 1)
@@ -201,13 +199,13 @@ class FileSelectPanel(FilesPanel):
             self.preview_thumbnail.Destroy()
 
         try:
-            W,H = self.panel_right.GetSize()
+            W, H = self.panel_right.GetSize()
             self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(H, W))
             self.panel_right.Sizer.Add(self.preview_thumbnail, wx.CENTER)
-        except Exception as e :
+        except Exception as e:
             print("Could not open file {0} as an IMS image. Error is {1}".format(filepath, str(e)))
             self.preview_thumbnail = None
-        #self.Layout()
+            # self.Layout()
 
     def loadController(self):
         self.controller = self.Parent.controller
@@ -229,7 +227,6 @@ class FileSelectPanel(FilesPanel):
 
         dlg.Destroy()
 
-
     def OnSaveList(self, event):
         """
         Save selected files to csv
@@ -247,17 +244,18 @@ class FileSelectPanel(FilesPanel):
 
                     for i in range(0, num_files):
                         if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                            swriter.writerow([self.m_dataViewListCtrl1.GetValue(i, 1),self.m_dataViewListCtrl1.GetValue(i, 2)])
+                            swriter.writerow(
+                                [self.m_dataViewListCtrl1.GetValue(i, 1), self.m_dataViewListCtrl1.GetValue(i, 2)])
         except Exception as e:
             self.Parent.Warn("Save list error:" + e.args[0])
         finally:
             print('Save list complete')
 
     def loadFileToPanel(self, filepath):
-        currentFileList = [str(self.m_dataViewListCtrl1.GetTextValue(i, 1)) for i in range(self.m_dataViewListCtrl1.GetItemCount())]
+        currentFileList = [str(self.m_dataViewListCtrl1.GetTextValue(i, 1)) for i in
+                           range(self.m_dataViewListCtrl1.GetItemCount())]
         if filepath not in currentFileList:
             self.m_dataViewListCtrl1.AppendItem([True, filepath, "{:0.3f}".format(os.stat(filepath).st_size / 10e8)])
-
 
     def OnLoadList(self, event):
         """
@@ -294,24 +292,26 @@ class FileSelectPanel(FilesPanel):
         self.btnAutoFind.Disable()
         if self.inputdir is not None:
             self.m_status.SetLabelText("Finding files ... please wait")
-            imgtype = self.controller.db.getConfigByName(self.controller.currentconfig,'IMAGE_TYPE')
+            imgtype = self.controller.db.getConfigByName(self.controller.currentconfig, 'IMAGE_TYPE')
             if imgtype is None:
-                imgtype ='*.ims'
+                imgtype = '*.ims'
             else:
-                imgtype ='*' + imgtype
-            allfiles = [y for y in iglob(join(self.inputdir, '**',imgtype), recursive=True)]
+                imgtype = '*' + imgtype
+            allfiles = [y for y in iglob(join(self.inputdir, '**', imgtype), recursive=True)]
+
             searchtext = self.m_tcSearch.GetValue()
             if (len(searchtext) > 0):
-                filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
-            else:
-                filenames = [f for f in allfiles if not isdir(f)]
+                allfiles = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+
+            #Exclude directories
+            filenames = [f for f in allfiles if not isdir(f)]
 
             for fname in filenames:
                 self.loadFileToPanel(fname)
                 msg = 'FilePanel loaded: %s' % fname
                 print(msg)
 
-            #self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
+            # self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
             msg = "Total Files loaded: %d" % len(filenames)
             self.m_status.SetLabelText(msg)
         else:
@@ -334,8 +334,9 @@ class BitmapRenderer(wx.grid.GridCellRenderer):
     """
     Custom grid element renderer to render bitmaps into the process panel grid 
     """
+
     def __init__(self, bitmap):
-        self.bitmap  = bitmap
+        self.bitmap = bitmap
         wx.grid.GridCellRenderer.__init__(self)
 
     def Draw(self, grid, attr, dc, rect, row, col, is_selected):
@@ -352,6 +353,7 @@ class BitmapRenderer(wx.grid.GridCellRenderer):
 class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
+        self.m_panelImageOrder = ImagePanel(self)
         self.loadController()
         self.loadCaptions()
 
@@ -396,13 +398,14 @@ class ProcessRunPanel(ProcessPanel):
 
         if count == 0:
             self.m_dataViewListCtrlRunning.AppendItem([process, outputPath, count, "Starting"])
+            self.m_dataViewListCtrlRunning.Refresh()
             self.start[process] = time.time()
 
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
             self.m_dataViewListCtrlRunning.SetValue("Running  - " + str(count), row=row, col=3)
             self.m_dataViewListCtrlRunning.Refresh()
-            self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process,outputPath))
+            self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process, outputPath))
 
         elif count == 100:
             if process in self.start:
@@ -412,13 +415,14 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
             self.m_dataViewListCtrlRunning.SetValue(status, row=row, col=3)
             self.m_btnRunProcess.Enable()
-            self.m_stOutputlog.SetLabelText("Completed process %s . Double-click on file to view and reorder cropped images" % process)
+            self.m_stOutputlog.SetLabelText(
+                "Completed process %s . Double-click on file to review cropped images" % process)
 
         else:
             self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
             self.m_btnRunProcess.Enable()
 
-    def OnShowResults(self,event):
+    def OnShowResults(self, event):
         """
         Event handler for when a user clicks on a completed image in the process panel. Loads the segments and templates
         the index order for them. Users can then renumber and submit the segments to be ordered via the 
@@ -429,19 +433,54 @@ class ProcessRunPanel(ProcessPanel):
         row = self.m_dataViewListCtrlRunning.ItemToRow(event.GetItem())
         self.segmentGridPath = self.m_dataViewListCtrlRunning.GetTextValue(row, 1)
 
-        # Load thumbnails to Image Ordering Panel
+        # Load filenames to Review Panel
         imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
+        self.m_dataViewListCtrlReview.DeleteAllItems()
+        for fname in imglist:
+            self.m_dataViewListCtrlReview.AppendItem([False, fname])
 
-        #  For each thumbnail, create a grid row with a default order
-        for idx, img in zip(range(len(imglist)), imglist):
-            self.m_grid1.AppendRows()
-            self.m_grid1.SetReadOnly(idx, 1, True)
-            self.m_grid1.SetRowSize(idx, 128)
-            self.m_grid1.SetCellRenderer(idx, 1, BitmapRenderer(ImageThumbnail.get_tiff_bitmap(img, max_size=[128, 128])))
-            self.m_grid1.SetCellValue(idx, 0, str(idx))
+        # Launch Viewer
+        viewerapp = wx.App()
+        frame = ImageViewer(imglist)
+        viewerapp.MainLoop()
 
-        self.m_panelImageOrder.Refresh()
-        self.m_stOutputlog.SetLabelText("Displayed %s" % self.segmentGridPath)
+        # #  For each thumbnail, create a grid row with a default order
+        # for idx, img in zip(range(len(imglist)), imglist):
+        #     self.m_grid1.AppendRows()
+        #     self.m_grid1.SetReadOnly(idx, 1, True)
+        #     self.m_grid1.SetRowSize(idx, 128)
+        #     self.m_grid1.SetCellRenderer(idx, 1, BitmapRenderer(ImageThumbnail.get_tiff_bitmap(img, max_size=[128, 128])))
+        #     self.m_grid1.SetCellValue(idx, 0, str(idx))
+        #
+        # self.m_panelImageOrder.Refresh()
+        # self.m_stOutputlog.SetLabelText("Displayed %s" % self.segmentGridPath)
+
+    def OnDeleteImage(self, event):
+        """
+        Delete image from disk if marked in list
+        :return:
+        """
+        dial = wx.MessageDialog(None, 'Are you sure you want to delete these files?', 'Question',
+                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        ret = dial.ShowModal()
+        if ret == wx.ID_YES:
+            filenames = []
+            for i in range(self.m_dataViewListCtrlReview.GetItemCount()):
+                fname = self.m_dataViewListCtrlReview.GetValue(i, 1)
+                if self.m_dataViewListCtrlReview.GetToggleValue(i, 0):
+                    os.remove(fname)
+                    msg = "PROCESSPANEL: Deleted file: %s" % fname
+                    print(msg)
+
+                else:
+                    filenames.append(fname)
+            # Refresh list
+            self.m_dataViewListCtrlReview.DeleteAllItems()
+            for fname in filenames:
+                self.m_dataViewListCtrlReview.AppendItem([False, fname])
+            self.Refresh()
+
+            print('PROCESSPANEL: Loaded Files:', len(filenames))
 
     def getFilePanel(self):
         """
@@ -478,7 +517,6 @@ class ProcessRunPanel(ProcessPanel):
         finally:
             self.controller.db.connect()
 
-
     def OnRunScripts(self, event):
         """
         Run selected scripts sequentially - updating progress bars
@@ -493,16 +531,16 @@ class ProcessRunPanel(ProcessPanel):
         # Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
-        #showplots = self.m_cbShowplots.GetValue()
+        # showplots = self.m_cbShowplots.GetValue()
         # Get data from other panels
         filepanel = self.getFilePanel()
-        filenames =[]
+        filenames = []
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         outputdir = filepanel.txtOutputdir.GetValue()
         # if blank will use subdir in inputdir
-        if len(outputdir) <=0:
-            outputdir = join(filepanel.txtInputdir.GetValue(),self.getDefaultOutputdir())
-            if not access(outputdir,W_OK):
+        if len(outputdir) <= 0:
+            outputdir = join(filepanel.txtInputdir.GetValue(), self.getDefaultOutputdir())
+            if not access(outputdir, W_OK):
                 mkdir(outputdir)
         self.outputdir = outputdir
         print('PROCESSPANEL: All Files:', num_files)
@@ -518,13 +556,13 @@ class ProcessRunPanel(ProcessPanel):
                 if len(filenames) <= 0:
                     raise ValueError("No files selected in Files Panel")
 
-                #row = 0
+                # row = 0
                 # For each process
                 for pcaption in selections:
                     p = self.controller.db.getRef(pcaption)
                     print("PROCESSPANEL: Running processname =", p)
                     self.controller.RunProcess(self, p, outputdir, filenames)
-                    #row = row + 1
+                    # row = row + 1
             else:
                 if len(selections) <= 0:
                     raise ValueError("No processes selected")
@@ -550,71 +588,68 @@ class ProcessRunPanel(ProcessPanel):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def CreateOrderFile(self, indices, segment_directory):
-        """
-        Encapsulated method to produce output file used to keep track of order. In our case it 
-        should be an XML that imagej can pass in to order the images. Currently this is intrinsicly linked to the 
-        style of the output file name. 
-        :param indices: an array of integers that for indices[i] = a the ith image is a'th segment in the proper order 
-        :param segment_directory: directory of cropped tiff segment files. 
-        """
+    # def CreateOrderFile(self, indices, segment_directory):
+    #     """
+    #     Encapsulated method to produce output file used to keep track of order. In our case it
+    #     should be an XML that imagej can pass in to order the images. Currently this is intrinsicly linked to the
+    #     style of the output file name.
+    #     :param indices: an array of integers that for indices[i] = a the ith image is a'th segment in the proper order
+    #     :param segment_directory: directory of cropped tiff segment files.
+    #     """
+    #
+    #     imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
+    #
+    #     # rename files from index based to ascii letter based as temp file name
+    #     for img, i in zip(imglist, range(len(imglist))):
+    #         temp_path = re.sub(r'_._full', "_{0}_full".format(string.ascii_lowercase[i]), img)
+    #         os.rename(img, temp_path)
+    #         imglist[i] = temp_path
+    #
+    #     # convert ascii letter based filename to new ordering of images.
+    #     for i, order in zip(range(len(indices)), indices):
+    #         # Use i to find necessary tiff image and use order to store its order
+    #         tempPath = imglist[i]
+    #         finalPath = re.sub(r'_._full', "_{0}_full".format(order), tempPath)
+    #         os.rename(tempPath, finalPath)
 
-        imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
 
-        # rename files from index based to ascii letter based as temp file name
-        for img, i in zip(imglist, range(len(imglist))):
-            temp_path = re.sub(r'_._full', "_{0}_full".format(string.ascii_lowercase[i]), img)
-            os.rename(img, temp_path)
-            imglist[i] = temp_path
-
-        # convert ascii letter based filename to new ordering of images.
-        for i, order in zip(range(len(indices)), indices):
-            # Use i to find necessary tiff image and use order to store its order
-            tempPath = imglist[i]
-            finalPath = re.sub(r'_._full', "_{0}_full".format(order), tempPath)
-            os.rename(tempPath, finalPath)
-
-
-    def OnCreateOrderFile(self, event):
-        """
-        Function handler for when a user submits the ordering of the segments in the process panel. Provides error 
-        handling for incorrectly ordered images. Passes the order to a helper (and overridable function) self.CreateOrderFile() 
-        to deal with the required ordering. Also clears the grid images from the previous image, if successfully submitted. 
-        """
-        try:
-            self.m_grid1.Disable()
-            indices = [int(self.m_grid1.GetCellValue(i, 0)) for i in range(self.m_grid1.GetNumberRows())]
-            if sorted(indices) != list(range(self.m_grid1.GetNumberRows())):
-                wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(self.m_grid1.GetNumberRows() -1), "Error", wx.OK)
-                print("segments has order labels: {0}".format(indices))
-                return
-
-            self.CreateOrderFile(indices, self.segmentGridPath)
-            self.segmentGridPath = ''
-            self.m_grid1.DeleteRows(numRows=self.m_grid1.NumberRows)
-
-        except Exception as e:
-            wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(
-                self.m_grid1.GetNumberRows() - 1), "Error", wx.OK)
-            print("Error occured for list {0}. error is {1}".format(indices, str(e)))
-            return
-
-        finally:
-            self.m_grid1.Enable()
+    # def OnCreateOrderFile(self, event):
+    #     """
+    #     Function handler for when a user submits the ordering of the segments in the process panel. Provides error
+    #     handling for incorrectly ordered images. Passes the order to a helper (and overridable function) self.CreateOrderFile()
+    #     to deal with the required ordering. Also clears the grid images from the previous image, if successfully submitted.
+    #     """
+    #     try:
+    #         self.m_grid1.Disable()
+    #         indices = [int(self.m_grid1.GetCellValue(i, 0)) for i in range(self.m_grid1.GetNumberRows())]
+    #         if sorted(indices) != list(range(self.m_grid1.GetNumberRows())):
+    #             wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(self.m_grid1.GetNumberRows() -1), "Error", wx.OK)
+    #             print("segments has order labels: {0}".format(indices))
+    #             return
+    #
+    #         self.CreateOrderFile(indices, self.segmentGridPath)
+    #         self.segmentGridPath = ''
+    #         self.m_grid1.DeleteRows(numRows=self.m_grid1.NumberRows)
+    #
+    #     except Exception as e:
+    #         wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(
+    #             self.m_grid1.GetNumberRows() - 1), "Error", wx.OK)
+    #         print("Error occured for list {0}. error is {1}".format(indices, str(e)))
+    #         return
+    #
+    #     finally:
+    #         self.m_grid1.Enable()
 
 
     def OnClearWindow(self, event):
         self.m_dataViewListCtrlRunning.DeleteAllItems()
+
 
 ########################################################################
 class AppMain(wx.Listbook):
     def __init__(self, parent):
         """Constructor"""
         wx.Listbook.__init__(self, parent, wx.ID_ANY, style=wx.BK_DEFAULT)
-        #self.resourcesdir = findResourceDir()
-        # self.processfile = join(self.resourcesdir, 'processes.yaml')
-        # self.configfile = self.getConfigdb()
-        #self.currentconfig = 'default'
         self.controller = Controller()
 
         self.InitUI()
@@ -633,8 +668,6 @@ class AppMain(wx.Listbook):
         il.Add(bmp)
         bmp = wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD, wx.ART_FRAME_ICON, (32, 32))
         il.Add(bmp)
-        # bmp = wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_FRAME_ICON, (32, 32))
-        # il.Add(bmp)
 
         self.AssignImageList(il)
 
@@ -648,28 +681,8 @@ class AppMain(wx.Listbook):
             # self.AddPage(page, label)
             imID += 1
 
-        self.GetListView().SetColumnWidth(0, wx.LIST_AUTOSIZE)
-
-        self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGED, self.OnPageChanged)
-        self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGING, self.OnPageChanging)
-
-    # ----------------------------------------------------------------------
-    def OnPageChanged(self, event):
-        # old = event.GetOldSelection()
-        # new = event.GetSelection()
-        # sel = self.GetSelection()
-        # msg = 'OnPageChanged,  old:%d, new:%d, sel:%d\n' % (old, new, sel)
-        # print(msg)
-        event.Skip()
-
-    # ----------------------------------------------------------------------
-    def OnPageChanging(self, event):
-        # old = event.GetOldSelection()
-        # new = event.GetSelection()
-        # sel = self.GetSelection()
-        # msg = 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
-        # print(msg)
-        event.Skip()
+        if sys.platform == 'win32':
+            self.GetListView().SetColumnWidth(0, wx.LIST_AUTOSIZE)
 
     def Warn(self, message, caption='Warning!'):
         dlg = wx.MessageDialog(self, message, caption, wx.OK | wx.ICON_WARNING)
@@ -703,8 +716,9 @@ class AppFrame(wx.Frame):
     # ----------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
+        title = "Batch Crop Application [v %s]" % __version__
         wx.Frame.__init__(self, None, wx.ID_ANY,
-                          "Batch Crop Application",
+                          title,
                           size=(1300, 720)
                           )
 

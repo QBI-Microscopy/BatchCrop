@@ -85,12 +85,14 @@ class ProcessThread(threading.Thread):
         # Instantiate module
         module = importlib.import_module(processmodule)
         self.class_ = getattr(module, processclass)
+        self.mod = self.class_(filename, outputdir)
         # This is a slidecropperAPI class show plots is whether to show boxes
 
-        # Need to make sure outputdir is relative to input file directory
+        # Need to make sure outputdir is relative to input file directory -
+        # **Not if user has specified output directory - this is managed in the client (App.py) not in the thread
         # not to where the code is running (hence the join)
-        self.fullOutputPath = join(dirname(abspath(filename)), outputdir)
-        self.mod = self.class_(filename, self.fullOutputPath)
+        #self.fullOutputPath = join(dirname(abspath(filename)), outputdir)
+        #self.mod = self.class_(filename, self.fullOutputPath)
 
     # ----------------------------------------------------------------------
     def run(self):
@@ -126,7 +128,7 @@ class ProcessThread(threading.Thread):
 
             self.db.closeconn()
             self.mod.setConfigurables(cfg)
-            self.mod.outputdir = self.fullOutputPath
+            #self.mod.outputdir = self.fullOutputPath
         except Exception as e:
             print("PROCESSTHREAD:ERROR in configuration", str(e))
 
@@ -194,7 +196,7 @@ class Controller():
         """
         :param wxGui:
         :param processref:
-        :param outputdir:
+        :param outputdir: either set by user or defaults to subdir in input dir (from App.py)
         :param filenames:
         :param row:
         :return:
@@ -212,8 +214,8 @@ class Controller():
                 msg = "Load Process Threads: %s %s [row: %d]" % (processname, filename, row)
                 print(msg)
                 # Outputfile directory rather than filename for progress bar output
-                outfile = join(outputdir,splitext(basename(filename))[0])
-                outfolder = join(dirname(abspath(filename)), "cropped", splitext(basename(filename))[0])
+                outfolder = join(outputdir,splitext(basename(filename))[0])
+                #outfolder = join(dirname(abspath(filename)), "cropped", splitext(basename(filename))[0])
 
                 # Initial entry
                 wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfolder)))
@@ -225,7 +227,7 @@ class Controller():
                 tcount = 90
                 while t.isAlive():
                     time.sleep(5)
-                    msg = "Controller:RunProcess (t.alive): %s (%s) (%d percent)" % (processname, outfile, ctr)
+                    msg = "Controller:RunProcess (t.alive): %s (%s) (%d percent)" % (processname, outfolder, ctr)
                     print(msg)
                     #logger.info(msg)
 
