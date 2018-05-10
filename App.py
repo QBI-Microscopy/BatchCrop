@@ -29,7 +29,7 @@ from os.path import join, isdir
 import matplotlib
 
 from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
-from autoanalysis.gui.ImageViewer import ImagePanel
+#from autoanalysis.gui.ImageViewer import ImagePanel
 from autoanalysis.gui.ImageViewer import ImageViewer
 
 matplotlib.use('Agg')
@@ -353,7 +353,7 @@ class BitmapRenderer(wx.grid.GridCellRenderer):
 class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
-        self.m_panelImageOrder = ImagePanel(self)
+        #self.m_panelImageOrder = ImagePanel(self)
         self.loadController()
         self.loadCaptions()
 

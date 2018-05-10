@@ -419,7 +419,7 @@ class FilesPanel ( wx.Panel ):
 		
 		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self.panel_right = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.HSCROLL|wx.VSCROLL )
+		self.panel_right = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		self.panel_right.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self.panel_right.SetMaxSize( wx.Size( 380,-1 ) )
 		
@@ -591,21 +591,20 @@ class FilesPanel ( wx.Panel ):
 class dlgLogViewer ( wx.Dialog ):
 	
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Log Viewer", pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Log Viewer", pos = wx.DefaultPosition, size = wx.Size( 1029,738 ), style = wx.DEFAULT_DIALOG_STYLE )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
 		bSizer15 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.tcLog = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-		self.tcLog.SetMinSize( wx.Size( 400,700 ) )
+		self.tcLog.SetMinSize( wx.Size( 950,700 ) )
 		
 		bSizer15.Add( self.tcLog, 0, wx.ALL, 5 )
 		
 		
 		self.SetSizer( bSizer15 )
 		self.Layout()
-		bSizer15.Fit( self )
 		
 		self.Centre( wx.BOTH )
 	
