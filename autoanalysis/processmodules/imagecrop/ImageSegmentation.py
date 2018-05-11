@@ -93,13 +93,25 @@ class ImageSegmentation(object):
         """
         logging.info("Segments are being increase by a factor of {}.".format(factor))
         new_image_segmentation = ImageSegmentation(self.width, self.height)
+
+
         for bounding_box in self.segments:
-            centre_point = [(bounding_box[X1] + bounding_box[X2]) / 2, (bounding_box[Y1] + bounding_box[Y2]) / 2]
-            half_dimensions = [(bounding_box[X2] - bounding_box[X1]) / 2, (bounding_box[Y2] - bounding_box[Y1]) / 2]
-            x1 = max(int(centre_point[0] - factor * half_dimensions[0]), 0)
-            y1 = max(int(centre_point[1] - factor * half_dimensions[1]), 0)
-            x2 = min(int(centre_point[0] + factor * half_dimensions[0]), self.width)
-            y2 = min(int(centre_point[1] + factor * half_dimensions[1]), self.height)
+            center_x, center_y = [(bounding_box[X1] + bounding_box[X2]) / 2, (bounding_box[Y1] + bounding_box[Y2]) / 2]
+            half_box_width, half_box_height = [(bounding_box[X2] - bounding_box[X1]) / 2, (bounding_box[Y2] - bounding_box[Y1]) / 2]
+
+            ## Edge adjusted factor adjusts the factor value so that it does not make a bounding box that would
+            # exceed the original image's dimensions
+            edge_adjusted_factor = min(factor,
+                                       (self.height - center_y/half_box_height),
+                                       (self.width - center_x / half_box_width),
+                                       (center_y/half_box_height),
+                                       (center_x / half_box_width)
+                                       )
+
+            x1 = max(int(center_x - edge_adjusted_factor * half_box_width), 0)
+            y1 = max(int(center_y - edge_adjusted_factor * half_box_height), 0)
+            x2 = min(int(center_x + edge_adjusted_factor * half_box_width), self.width)
+            y2 = min(int(center_y + edge_adjusted_factor * half_box_height), self.height)
             new_image_segmentation.add_segmentation(x1, y1, x2, y2)
         return new_image_segmentation
 
