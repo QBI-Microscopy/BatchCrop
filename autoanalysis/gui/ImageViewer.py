@@ -26,8 +26,7 @@ class ImagePanel(wx.Panel):
         self.magsize = val
 
     def loadImage(self, img):
-        print('Load image')
-
+        # print('Load image')
         tif_file = tf.TiffFile(img)
         thumb = tif_file.pages[self.magsize] # second smallest available
         I = wx.Image(wx.Size(thumb.shape[1], thumb.shape[0]), thumb.asarray())
@@ -64,7 +63,7 @@ class ImageViewer(wx.Frame):
         toolbar = wx.BoxSizer(wx.HORIZONTAL)
         # Add mag sizes choice
         self.choiceLbl = wx.StaticText(self, wx.ID_ANY, u"Display Size: ", wx.DefaultPosition, wx.DefaultSize, 0)
-        m_choice1Choices = [x for x in self.maglist.keys()]
+        m_choice1Choices = [x for x in sorted(self.maglist.keys())]
         self.m_choice1 = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice1Choices, 0)
         self.m_choice1.SetSelection(2)
         self.m_choice1.Bind(wx.EVT_CHOICE, self.OnChangeMag)
@@ -90,7 +89,7 @@ class ImageViewer(wx.Frame):
         :return:
         """
         mag = self.m_choice1.GetStringSelection()
-        print('Selected mag=', mag)
+        #print('Selected mag=', mag)
         self.plotpanel.SetMagsize(self.maglist[mag])
         self.plotpanel.loadImage(self.imglist[self.currentimage])
 
@@ -112,15 +111,15 @@ class ImageViewer(wx.Frame):
             if exists(loadimg):
                 self.plotpanel.loadImage(loadimg)
                 self.fnameTxt.SetLabelText(loadimg)
-                print('Next image: ', loadimg)
-            else:
-                print('No further images found')
-        else:
-            print('Max image')
+            #     print('Next image: ', loadimg)
+            # else:
+            #     print('No further images found')
+        # else:
+        #     print('Max image')
 
 
     def prevImage(self, event):
-        print('Prev image')
+        #print('Prev image')
         if self.currentimage > 0:
             self.currentimage -= 1
             loadimg = self.imglist[self.currentimage]
@@ -131,11 +130,11 @@ class ImageViewer(wx.Frame):
             if exists(loadimg):
                 self.plotpanel.loadImage(self.imglist[self.currentimage])
                 self.fnameTxt.SetLabelText(self.imglist[self.currentimage])
-                print('Prev image: ', loadimg)
-            else:
-                print('No further images found')
-        else:
-            print('Min image')
+        #         print('Prev image: ', loadimg)
+        #     else:
+        #         print('No further images found')
+        # else:
+        #     print('Min image')
 
 
 
