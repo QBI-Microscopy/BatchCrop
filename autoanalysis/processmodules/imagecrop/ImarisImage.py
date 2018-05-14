@@ -1,7 +1,7 @@
 from .InputImage import InputImage
 import numpy as np
 import h5py
-
+import logging
 SEGMENTATION_DIMENSION_MAX = 50000000
 
 
@@ -19,12 +19,13 @@ class ImarisImage(InputImage):
         self.filename = filename
         try:
             self.file = h5py.File(self.filename, "r")
-            print('H5 loaded: ', self.file.keys())
             self.resolutions = self.get_resolution_levels()
-            print('H5 resolution levels: ', self.resolutions)
             # will be defined as self.segmentation_resolution
-            self.segment_resolution = self._set_segmentation_res()  # resolution level to be used for segmentation
-            print('H5 segment level: ', self.segment_resolution)
+            self.segment_resolution = self.resolutions -1 #self._set_segmentation_res()  # resolution level to be used for segmentation
+            msg = 'ImarisImage: H5 loaded: %s \n\t Resolution levels: %s (selected: %d)\n' % (self.filename, str(self.resolutions),self.segment_resolution)
+            logging.info(msg)
+            print(msg)
+
         except Exception as e:
             raise IOError(e)
 
@@ -145,8 +146,9 @@ class ImarisImage(InputImage):
         while resolution_level < self.resolutions:
             shape = image_dimensions[resolution_level]
             if (shape[0] * shape[1]) <= SEGMENTATION_DIMENSION_MAX:
-                return resolution_level
+                break
             resolution_level += 1
+        return resolution_level
 
     def resolution_dimensions(self, r):
         """
@@ -212,6 +214,7 @@ class ImarisImage(InputImage):
         :return: A 2D image used for segmentation with separate channels as the first dimension on the stack (c,y,x)  
         """
         if (self.resolutions != 0) & (self.get_channel_levels() != 0):
+            #image_array = np.ndarray()
             for i in range(self.get_channel_levels()):
                 if not 'image_array' in locals():
                     image_array = self.get_two_dim_data(self.segment_resolution, c=i)

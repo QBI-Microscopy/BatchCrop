@@ -21,21 +21,17 @@ import os
 import re
 import sys
 import time
-from os import mkdir, access, W_OK
-from os.path import join, isdir
+from os import mkdir
+from os.path import join, isdir, exists
 
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 import matplotlib
 
+matplotlib.use('Agg')
 from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
 #from autoanalysis.gui.ImageViewer import ImagePanel
 from autoanalysis.gui.ImageViewer import ImageViewer
-
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
-plt.style.use('seaborn-paper')
 import wx
 import wx.html2
 import wx.dataview
@@ -45,7 +41,7 @@ from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
 __version__ = '1.0.0alpha'
-
+DEBUG = 1
 
 ########################################################################
 class HomePanel(WelcomePanel):
@@ -138,7 +134,7 @@ class Config(ConfigPanel):
         self.controller.db.closeconn()
 
     def OnSaveConfig(self, event):
-        self.controller.db.getconn()
+        self.controller.db.connect()
         configid = self.controller.currentconfig
         configlist = []
         data = self.m_grid1.GetTable()
@@ -155,7 +151,8 @@ class Config(ConfigPanel):
             if isinstance(fp, wx.Panel) and self.__class__ != fp.__class__:
                 fp.loadController()
         # notification
-        msg = "Config saved: %s" % configid
+        #msg = "Config saved: %s" % configid
+        msg = "Config updated"
         self.Parent.Warn(msg)
         self.controller.db.closeconn()
 
@@ -193,7 +190,7 @@ class FileSelectPanel(FilesPanel):
     def OnFileClicked(self, event):
         row = self.m_dataViewListCtrl1.ItemToRow(event.GetItem())
         filepath = self.m_dataViewListCtrl1.GetTextValue(row, 1)
-        print('File clicked: ', filepath)
+        #print('File clicked: ', filepath)
 
         if self.preview_thumbnail is not None:
             self.preview_thumbnail.Destroy()
@@ -203,8 +200,9 @@ class FileSelectPanel(FilesPanel):
             self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(H, W))
             self.panel_right.Sizer.Add(self.preview_thumbnail, wx.CENTER)
         except Exception as e:
-            print("Could not open file {0} as an IMS image. Error is {1}".format(filepath, str(e)))
-            self.preview_thumbnail = None
+            msg = "Could not open file {0} as an IMS image. Error is {1}".format(filepath, str(e))
+            self.Parent.Warn(msg)
+            #self.preview_thumbnail = None
             # self.Layout()
 
     def loadController(self):
@@ -247,9 +245,9 @@ class FileSelectPanel(FilesPanel):
                             swriter.writerow(
                                 [self.m_dataViewListCtrl1.GetValue(i, 1), self.m_dataViewListCtrl1.GetValue(i, 2)])
         except Exception as e:
-            self.Parent.Warn("Save list error:" + e.args[0])
+            self.Parent.Warn("ERROR: Save list:" + e.args[0])
         finally:
-            print('Save list complete')
+            self.Parent.Info('SUCCESS: List saved')
 
     def loadFileToPanel(self, filepath):
         currentFileList = [str(self.m_dataViewListCtrl1.GetTextValue(i, 1)) for i in
@@ -278,10 +276,10 @@ class FileSelectPanel(FilesPanel):
                 msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
                 self.m_status.SetLabelText(msg)
         except Exception as e:
-            print(e.args[0])
+            #print(e.args[0])
             self.Parent.Warn("Load list error:" + e.args[0])
         finally:
-            print("Load list complete")
+            self.Parent.Info('SUCCESS: List loaded')
 
     def OnAutofind(self, event):
         """
@@ -308,45 +306,48 @@ class FileSelectPanel(FilesPanel):
 
             for fname in filenames:
                 self.loadFileToPanel(fname)
-                msg = 'FilePanel loaded: %s' % fname
-                print(msg)
+                if DEBUG:
+                    msg = 'FilePanel loaded: %s' % fname
+                    print(msg)
 
             # self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
             msg = "Total Files loaded: %d" % len(filenames)
             self.m_status.SetLabelText(msg)
         else:
-            print("Cannot autofind files when no directory is selected. Please select Top Level Directory.")
+            self.Parent.Warn("Cannot autofind files when no directory is selected. Please select Top Level Directory.")
 
         self.btnAutoFind.Enable(True)
 
     def OnSelectall(self, event):
         for i in range(0, self.m_dataViewListCtrl1.GetItemCount()):
             self.m_dataViewListCtrl1.SetToggleValue(event.GetSelection(), i, 0)
-        print("Toggled selections to: ", event.GetSelection())
+        if DEBUG:
+            print("Toggled selections to: ", event.GetSelection())
 
     def OnClearlist(self, event):
-        print("Clear items in list")
+        if DEBUG:
+            print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
 
 
 ########################################################################
-class BitmapRenderer(wx.grid.GridCellRenderer):
-    """
-    Custom grid element renderer to render bitmaps into the process panel grid 
-    """
-
-    def __init__(self, bitmap):
-        self.bitmap = bitmap
-        wx.grid.GridCellRenderer.__init__(self)
-
-    def Draw(self, grid, attr, dc, rect, row, col, is_selected):
-        dc.DrawBitmap(self.bitmap, rect.X, rect.Y)
-
-    def Clone(self):
-        return self.__class__()
-
-    def GetBestSize(self, grid, attr, dc, row, col):
-        return wx.Size(128, 128)
+# class BitmapRenderer(wx.grid.GridCellRenderer):
+#     """
+#     Custom grid element renderer to render bitmaps into the process panel grid
+#     """
+#
+#     def __init__(self, bitmap):
+#         self.bitmap = bitmap
+#         wx.grid.GridCellRenderer.__init__(self)
+#
+#     def Draw(self, grid, attr, dc, rect, row, col, is_selected):
+#         dc.DrawBitmap(self.bitmap, rect.X, rect.Y)
+#
+#     def Clone(self):
+#         return self.__class__()
+#
+#     def GetBestSize(self, grid, attr, dc, row, col):
+#         return wx.Size(128, 128)
 
 
 ########################################################################
@@ -394,7 +395,7 @@ class ProcessRunPanel(ProcessPanel):
         :param msg: message passed in to Proccess panel. Currently in the form
             (count, row, process, outputPath) 
         """
-        (count, row, process, outputPath) = msg.data
+        (count, row, process, outputPath, update) = msg.data
 
         if count == 0:
             self.m_dataViewListCtrlRunning.AppendItem([process, outputPath, count, "Starting"])
@@ -403,22 +404,23 @@ class ProcessRunPanel(ProcessPanel):
 
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
-            self.m_dataViewListCtrlRunning.SetValue("Running  - " + str(count), row=row, col=3)
+            self.m_dataViewListCtrlRunning.SetValue("Running  - " + update, row=row, col=3)
             self.m_dataViewListCtrlRunning.Refresh()
             self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process, outputPath))
 
         elif count == 100:
+            status ='Done'
             if process in self.start:
                 endtime = time.time() - self.start[process]
                 status = "%s (%d secs)" % ("Done", endtime)
-            print(status)
+
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
             self.m_dataViewListCtrlRunning.SetValue(status, row=row, col=3)
             self.m_btnRunProcess.Enable()
             self.m_stOutputlog.SetLabelText("COMPLETED process %s " % process)
 
         else:
-            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=3)
+            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file : " + update, row=row, col=3)
             self.m_btnRunProcess.Enable()
 
     def OnShowResults(self, event):
@@ -441,21 +443,11 @@ class ProcessRunPanel(ProcessPanel):
             for fname in imglist:
                 self.m_dataViewListCtrlReview.AppendItem([False, fname, "{:0.3f}".format(os.stat(fname).st_size / 10e8)])
 
-            # Launch Viewer
+            # Launch Viewer in separate window
             viewerapp = wx.App()
             frame = ImageViewer(imglist)
             viewerapp.MainLoop()
 
-        # #  For each thumbnail, create a grid row with a default order
-        # for idx, img in zip(range(len(imglist)), imglist):
-        #     self.m_grid1.AppendRows()
-        #     self.m_grid1.SetReadOnly(idx, 1, True)
-        #     self.m_grid1.SetRowSize(idx, 128)
-        #     self.m_grid1.SetCellRenderer(idx, 1, BitmapRenderer(ImageThumbnail.get_tiff_bitmap(img, max_size=[128, 128])))
-        #     self.m_grid1.SetCellValue(idx, 0, str(idx))
-        #
-        # self.m_panelImageOrder.Refresh()
-        # self.m_stOutputlog.SetLabelText("Displayed %s" % self.segmentGridPath)
 
     def OnDeleteImage(self, event):
         """
@@ -473,7 +465,6 @@ class ProcessRunPanel(ProcessPanel):
                     os.remove(fname)
                     msg = "PROCESSPANEL: Deleted file: %s" % fname
                     print(msg)
-
                 else:
                     filenames.append(fname)
             # Refresh list
@@ -482,7 +473,6 @@ class ProcessRunPanel(ProcessPanel):
                 self.m_dataViewListCtrlReview.AppendItem([False, fname,"{:0.3f}".format(os.stat(fname).st_size / 10e8)])
             self.Refresh()
 
-            print('PROCESSPANEL: Loaded Files:', len(filenames))
 
     def getFilePanel(self):
         """
@@ -512,12 +502,14 @@ class ProcessRunPanel(ProcessPanel):
         try:
             self.controller.db.connect()
             sdir = self.controller.db.getConfigByName(self.controller.currentconfig, 'CROPPED_IMAGE_FILES')
-            return sdir if len(sdir) > 0 else default
+            if len(sdir) > 0:
+                default = sdir
         except Exception as e:
             print("Error occured when getting the default output directory: {0}".format(str(e)))
-            return default
+
         finally:
-            self.controller.db.connect()
+            self.controller.db.closeconn()
+            return default
 
     def OnRunScripts(self, event):
         """
@@ -532,44 +524,39 @@ class ProcessRunPanel(ProcessPanel):
         btn.Disable()
         # Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
-        print("Processes selected: ", len(selections))
-        # showplots = self.m_cbShowplots.GetValue()
-        # Get data from other panels
-        filepanel = self.getFilePanel()
-        filenames = []
-        num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
-        outputdir = filepanel.txtOutputdir.GetValue()
-        # if blank will use subdir in inputdir
-        if len(outputdir) <= 0:
-            outputdir = join(filepanel.txtInputdir.GetValue(), self.getDefaultOutputdir())
-            if not access(outputdir, W_OK):
-                mkdir(outputdir)
-        self.outputdir = outputdir
-        print('PROCESSPANEL: All Files:', num_files)
         try:
-            if len(selections) > 0 and num_files > 0:
+            if len(selections) <= 0:
+                raise ValueError("No Processes selected. Please check at least one process then click Run.")
+
+            # Get data from other panels
+            filepanel = self.getFilePanel()
+            filenames = []
+            num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
+            outputdir = filepanel.txtOutputdir.GetValue()
+            # Set output directory: if blank will use subdir in inputdir
+            if len(outputdir) <= 0:
+                outputdir = join(filepanel.txtInputdir.GetValue(), self.getDefaultOutputdir())
+                if not exists(outputdir):
+                    mkdir(outputdir)
+            self.outputdir = outputdir
+
+            if num_files > 0:
                 # Get selected files and sort into groups
                 for i in range(0, num_files):
                     if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
                         fname = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
                         if not isdir(fname):
                             filenames.append(fname)
-                print('PROCESSPANEL: Selected Files:', len(filenames))
                 if len(filenames) <= 0:
                     raise ValueError("No files selected in Files Panel")
 
-                # row = 0
                 # For each process
                 for pcaption in selections:
                     p = self.controller.db.getRef(pcaption)
-                    print("PROCESSPANEL: Running processname =", p)
                     self.controller.RunProcess(self, p, outputdir, filenames)
-                    # row = row + 1
+
             else:
-                if len(selections) <= 0:
-                    raise ValueError("No processes selected")
-                else:
-                    raise ValueError("No files selected - please go to Files Panel and add to list")
+                raise ValueError("No files selected - please go to Files Panel and add to list")
         except ValueError as e:
             self.Parent.Warn(e.args[0])
             # Enable Run button
@@ -589,58 +576,6 @@ class ProcessRunPanel(ProcessPanel):
         dlg.tcLog.LoadFile(logfile)
         dlg.ShowModal()
         dlg.Destroy()
-
-    # def CreateOrderFile(self, indices, segment_directory):
-    #     """
-    #     Encapsulated method to produce output file used to keep track of order. In our case it
-    #     should be an XML that imagej can pass in to order the images. Currently this is intrinsicly linked to the
-    #     style of the output file name.
-    #     :param indices: an array of integers that for indices[i] = a the ith image is a'th segment in the proper order
-    #     :param segment_directory: directory of cropped tiff segment files.
-    #     """
-    #
-    #     imglist = [y for y in iglob(join(self.segmentGridPath, '*.tiff'), recursive=False)]
-    #
-    #     # rename files from index based to ascii letter based as temp file name
-    #     for img, i in zip(imglist, range(len(imglist))):
-    #         temp_path = re.sub(r'_._full', "_{0}_full".format(string.ascii_lowercase[i]), img)
-    #         os.rename(img, temp_path)
-    #         imglist[i] = temp_path
-    #
-    #     # convert ascii letter based filename to new ordering of images.
-    #     for i, order in zip(range(len(indices)), indices):
-    #         # Use i to find necessary tiff image and use order to store its order
-    #         tempPath = imglist[i]
-    #         finalPath = re.sub(r'_._full', "_{0}_full".format(order), tempPath)
-    #         os.rename(tempPath, finalPath)
-
-
-    # def OnCreateOrderFile(self, event):
-    #     """
-    #     Function handler for when a user submits the ordering of the segments in the process panel. Provides error
-    #     handling for incorrectly ordered images. Passes the order to a helper (and overridable function) self.CreateOrderFile()
-    #     to deal with the required ordering. Also clears the grid images from the previous image, if successfully submitted.
-    #     """
-    #     try:
-    #         self.m_grid1.Disable()
-    #         indices = [int(self.m_grid1.GetCellValue(i, 0)) for i in range(self.m_grid1.GetNumberRows())]
-    #         if sorted(indices) != list(range(self.m_grid1.GetNumberRows())):
-    #             wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(self.m_grid1.GetNumberRows() -1), "Error", wx.OK)
-    #             print("segments has order labels: {0}".format(indices))
-    #             return
-    #
-    #         self.CreateOrderFile(indices, self.segmentGridPath)
-    #         self.segmentGridPath = ''
-    #         self.m_grid1.DeleteRows(numRows=self.m_grid1.NumberRows)
-    #
-    #     except Exception as e:
-    #         wx.MessageBox("Must order segments uniquely with integers from 0 to {0} inclusive.".format(
-    #             self.m_grid1.GetNumberRows() - 1), "Error", wx.OK)
-    #         print("Error occured for list {0}. error is {1}".format(indices, str(e)))
-    #         return
-    #
-    #     finally:
-    #         self.m_grid1.Enable()
 
 
     def OnClearWindow(self, event):
@@ -691,22 +626,38 @@ class AppMain(wx.Listbook):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def OnQuit(self, e):
-        if self.controller.db is not None:
-            self.controller.db.conn.close()
-        self.Close()
+    def Info(self, message, caption='Information'):
+        dlg = wx.MessageDialog(self, message, caption, wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
 
-    def OnCloseWindow(self, e):
-
-        dial = wx.MessageDialog(None, 'Are you sure you want to quit?', 'Question',
-                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-
-        ret = dial.ShowModal()
-
-        if ret == wx.ID_YES:
-            self.Destroy()
-        else:
-            e.Veto()
+    # def OnQuit(self, e):
+    #     print('OnQuit')
+    #     # close any db connection
+    #     if self.controller.db is not None:
+    #         self.controller.db.conn.close()
+    #     #clean up threads
+    #     self.controller.shutdown()
+    #     #clean up extra windows
+    #     winlist= wx.GetTopLevelWindows()
+    #     for i in range(len(winlist)):
+    #         winlist[i].Close()
+    #     self.Close()
+    #
+    # def OnCloseWindow(self, e):
+    #     print('OnCloseWindow')
+    #     dial = wx.MessageDialog(None, 'Are you sure you want to quit?', 'Question',
+    #                             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+    #
+    #     ret = dial.ShowModal()
+    #
+    #     if ret == wx.ID_YES:
+    #         self.Destroy()
+    #     else:
+    #         e.Veto()
+    #
+    # def OnClose(self,event):
+    #     print('OnClose')
 
 
 ########################################################################
@@ -736,10 +687,19 @@ class AppFrame(wx.Frame):
         self.Center(wx.BOTH)
         self.Show()
 
+    def OnCloseWindow(self, e):
+        dial = wx.MessageDialog(None, 'Are you sure you want to quit?', 'Question',
+                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+
+        ret = dial.ShowModal()
+
+        if ret == wx.ID_YES:
+            self.Destroy()
+        else:
+            e.Veto()
 
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
-    # TODO: Run DB setup if not already done
     app = wx.App()
     frame = AppFrame()
     app.MainLoop()

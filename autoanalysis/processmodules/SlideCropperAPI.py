@@ -17,32 +17,26 @@ class SlideCropperAPI(object):
         # Set config values
         self.cfg = self.getConfigurables()
         self.status = 0
-
-        try:
-            # Load data
-            if os.access(datafile,os.R_OK):
-                ext_check = InputImage.get_extension(datafile)
-                if ext_check != self.cfg['IMAGE_TYPE']: #".ims":
-                    raise TypeError("{} is currently not a supported file type".format(ext_check))
-                self.data = datafile
-            else:
-                self.data = None
-                raise IOError('Unable to access datafile: {0}'.format(datafile))
-            msg = "SlideCropper: Image file loaded from %s" % self.data
+        self.imgfile = None
+        # Load data
+        if os.access(datafile,os.R_OK):
+            ext_check = InputImage.get_extension(datafile)
+            if ext_check != self.cfg['IMAGE_TYPE']: #".ims":
+                raise TypeError("{} is currently not a supported file type".format(ext_check))
+            self.imgfile = datafile
+            msg = "Image file loaded from %s" % self.imgfile
             print(msg)
-            # Output
-            if os.access(outputdir, os.W_OK):
-                self.outputdir = outputdir
-            else:
-                os.makedirs(outputdir)
-                self.outputdir =outputdir # raise IOError('Unable to access output directory: {0}'.format(outputdir))
+            logging.info(msg)
+        else:
+            raise IOError('Unable to access datafile: {0}'.format(datafile))
 
-        except IOError as e:
-            print(e.args[0])
-            raise e
-        except Exception as e:
-            print(e.args[0])
-            raise e
+        # Output
+        if os.access(outputdir, os.W_OK):
+            self.outputdir = outputdir
+        else:
+            raise IOError('Unable to write to output directory: {0}'.format(outputdir))
+
+
 
     def getConfigurables(self):
         '''
@@ -53,7 +47,7 @@ class SlideCropperAPI(object):
         cfg['BORDER_FACTOR']=1.3
         cfg['IMAGE_TYPE'] = '.ims'
         cfg['CROPPED_IMAGE_FILES'] = 'cropped'
-        #cfg['SEND_TO_CROP_PANEL'] = True
+        cfg['MAX_MEMORY'] = 5000000000 #5GB
         return cfg
 
     def setConfigurables(self,cfg):
@@ -66,9 +60,7 @@ class SlideCropperAPI(object):
             self.cfg = self.getConfigurables()
         for cf in cfg.keys():
             self.cfg[cf]= cfg[cf]
-        # cfg['CROPPED_IMAGE_FILES'] = 'cropped'
-        # cfg['SEND_TO_CROP_PANEL'] = True
-        print("Config loaded")
+        logging.debug("SlideCropperAPI:Config loaded")
 
 
     def isRunning(self):
@@ -77,81 +69,59 @@ class SlideCropperAPI(object):
     def run(self):
         self.status = 1
         try:
-            if self.data is not None:
+            if self.imgfile is not None:
+                # Load to Image Cropper
                 border_factor = float(self.cfg['BORDER_FACTOR'])
-                image = I.ImarisImage(self.data)
-                segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
-                image.close_file()
+                memu = int(self.cfg['MAX_MEMORY'])
+                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memu)
+                pid_list = tic.crop_input_images()
+                msg = 'Run: cropping done - new images in %s [%s]' % (self.outputdir,pid_list)
+                logging.info(msg)
+                print(msg)
             else:
-                raise ValueError('SlideCropperAPI: Data is not set')
-            if self.data is not None:
-                TIFFImageCropper.crop_input_images(self.data, segmentations, self.outputdir)
-            else:
-                raise ValueError('SlideCropperAPI: Run failed: Image not loaded')
+                raise ValueError('Run failed: Image not loaded')
 
         except Exception as e:
             raise e
         finally:
             self.status = 0
-            print("SlideCropperAPI: exited")
+            logging.info("Run finished")
 
 
 
-    def _loadImage(self,file_path):
-        '''
-        Image files are very large and often archived. This will bring them back ready for processing.
-        :param file_path: full path filename
-        :return: filename from image obj
-        '''
-        image = None
-        try:
-            image = I.ImarisImage(file_path)
-            print('Image loaded: ', image.get_filename())
-            return image.get_filename()
-        except IOError as e:
-            print('ERROR: Unable to load image: ', file_path)
-        finally:
-            if image is not None:
-                image.close_file()
+    # def _loadImage(self,file_path):
+    #     '''
+    #     Image files are very large and often archived. This will bring them back ready for processing.
+    #     :param file_path: full path filename
+    #     :return: filename from image obj
+    #     '''
+    #     image = None
+    #     try:
+    #         image = I.ImarisImage(file_path)
+    #         print('Image loaded: ', image.get_filename())
+    #         return image.get_filename()
+    #     except IOError as e:
+    #         print('ERROR: Unable to load image: ', file_path)
+    #     finally:
+    #         if image is not None:
+    #             image.close_file()
 
 
 
-    def crop_single_image(self, file_path, output_path):
-        """
-        Encapsulation method for cropping an individual image.
-        :param file_path: String path to the desired file. Assumed to be .ims extension
-        :param output_path: 
-        :return: 
-        """
-
-        border_factor = float(self.cfg['BORDER_FACTOR'])
-        image = I.ImarisImage(file_path)
-        segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
-        image.close_file()
-        TIFFImageCropper.crop_input_images(file_path, segmentations, output_path)
-
-
-    # @classmethod
-    # def crop_all_in_folder(cls, folder_path, output_path, concurrent = False):
+    # def crop_single_image(self, file_path, output_path):
     #     """
-    #     Handler to crop all images in a given folder. Will ignore non-compatible file types
-    #     :param folder_path: Path to the files wanted to be
-    #     :param output_path: Folder path to create all new folders and images in.
-    #     :param concurrent: Whether to multiprocess each file. (Current has not been tested)
+    #     Encapsulation method for cropping an individual image.
+    #     :param file_path: String path to the desired file. Assumed to be .ims extension
+    #     :param output_path:
+    #     :return:
     #     """
-    #     if concurrent:
-    #         pid_list = []
     #
-    #     for filename in os.listdir(folder_path):
-    #         file_path = "{}/{}".format(folder_path, filename)
-    #         if concurrent:
-    #             pid_list.append(SlideCropperAPI.spawn_crop_process(file_path, output_path))
-    #         else:
-    #             SlideCropperAPI.crop_single_image(file_path, output_path)
-    #
-    #     if concurrent:
-    #         for proc in pid_list:
-    #             proc.join()
+    #     border_factor = float(self.cfg['BORDER_FACTOR'])
+    #     image = I.ImarisImage(file_path)
+    #     segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
+    #     image.close_file()
+    #     TIFFImageCropper.crop_input_images(file_path, segmentations, output_path)
+
 
 
 
@@ -162,9 +132,9 @@ def main(args):
     """
     Standard wrapper for API usage. Sets API up to call innerMain function. 
     """
-    logfile = args.logfile
-    logging.basicConfig(filename=logfile, level=logging.DEBUG, format=FORMAT)
-    logging.captureWarnings(True)
+    # logfile = args.logfile
+    # logging.basicConfig(filename=logfile, level=logging.DEBUG, format=FORMAT)
+    # logging.captureWarnings(True)
 
     parent_pid = os.getpid()
     # Only log for first process created. Must check that process is the original.
@@ -172,8 +142,7 @@ def main(args):
         print("\nSlideCropper started with pid: {}".format(os.getpid()))
     if args.datafile is not None:
         SlideCropperAPI.crop_single_image(join(args.inputdir,args.datafile), args.outputdir)
-    else:
-        SlideCropperAPI.crop_all_in_folder(args.inputdir, args.outputdir)
+
     if os.getpid() == parent_pid:
         print("SlideCropper ended with pid: {}\n".format(os.getpid()))
 

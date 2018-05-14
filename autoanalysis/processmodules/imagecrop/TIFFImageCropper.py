@@ -7,9 +7,7 @@ from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
 
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
-
-
-#DEFAULT_LOGGING_FILEPATH = "SlideCropperLog.txt"
+from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
 
 class TIFFImageCropper(object):
     """
@@ -17,8 +15,37 @@ class TIFFImageCropper(object):
     ImageSegmentation object applies to each x-y plane and the output is in TIFF format. 
     """
 
-    @staticmethod
-    def crop_input_images(input_path, image_segmentation, output_path):
+    def __init__(self,imgfile, border_factor, output_path, mem):
+        self.maxmemoryavail = mem
+        self.border_factor = border_factor
+        self.imgfile = imgfile
+        if not os.path.isdir(output_path):
+            raise IOError('Invalid output directory: ', output_path)
+        else:
+            #create unique output directory from image filename
+            filename = basename(imgfile)
+            new_folder = splitext(filename)[0]
+            image_folder = join(output_path, new_folder)
+            if not os.path.isdir(image_folder):
+                os.makedirs(image_folder)
+            self.output_folder = image_folder
+
+        self.segmentation = self.generateSegments()
+        if (len(self.segmentation.segments) > 0):
+            msg = 'SlideCropperAPI: run: Image segmentation created %d segments' % len(self.segmentation.segments)
+            print(msg)
+            logging.info(msg)
+        else:
+            raise ValueError('Segmentation failed')
+
+
+    def generateSegments(self):
+        image = I.ImarisImage(self.imgfile)
+        segmentations = ImageSegmenter.segment_image(self.border_factor, image.get_multichannel_segmentation_image())
+        image.close_file()
+        return segmentations
+
+    def crop_input_images(self):
         """
         Crops the inputted image against the given segmentation. All output files will be saved to the OutputPath
         :param input_image: An InputImage object. 
@@ -26,26 +53,17 @@ class TIFFImageCropper(object):
         :param output_path: String output path must be a directory
         :return: 
         """
-        if not os.path.isdir(output_path):
-            return None
-        else:
-            filename = basename(input_path) #(input_path.split("/")[-1]).split(".")[0]
-            new_folder = splitext(filename)[0]
-            image_folder = join(output_path, new_folder)
-            if not os.path.isdir(image_folder):
-                os.makedirs(image_folder)
-
         pid_list = []
 
         ## Iterate through each bounding box
-        for box_index in range(len(image_segmentation.segments)):
+        for box_index in range(len(self.segmentation.segments)):
             crop_process = Process(target=TIFFImageCropper.crop_single_image,
-                                   args=(input_path, image_segmentation, image_folder, box_index))
+                                   args=(self.imgfile, self.segmentation, self.output_folder, box_index))
             pid_list.append(crop_process)
             crop_process.start()
             crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
-        return           # the program will give individual processes a ROI each: multiprocessing to use more CPU.
-
+        # the program will give individual processes a ROI each: multiprocessing to use more CPU.
+        return pid_list
 
     @staticmethod
     def crop_single_image(input_path, image_segmentation, output_path, box_index):
@@ -61,7 +79,7 @@ class TIFFImageCropper(object):
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
 
             # image data with dimensions [c,x,y,z,t]
-            #  TODO: check if enough memory on computer to load into disk
+            #  TODO: check if enough memory on computer to load into disk self.maxmemoryavail
             image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
                                                                         t=[0, t],
                                                                         c=[0, c],
@@ -70,9 +88,10 @@ class TIFFImageCropper(object):
                                                                         x=[segment[0], segment[2]])
 
             # Only Save as AppendedTiff
-            # TODO Provide option to save back to inputdir? if so,
             outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index) + "_full.tiff")
-            print("Generating file: ", outputfile)
+            msg = "CropSingleImage: Generating cropped file: %s" % outputfile
+            logging.info(msg)
+            print(msg)
             with TIFF(outputfile, False) as tf:
                 try:
                     im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
@@ -80,6 +99,7 @@ class TIFFImageCropper(object):
                     tf.newFrame()
                     im.close()
                 except Exception as e:
+                    print('Image info:', im.info)
                     logging.error("Could not create multi-page TIFF. Couldn't compile file: {}".format(str(e)))
             del image_data
         logging.info("Finished saving image %d from %s.", box_index, input_path)

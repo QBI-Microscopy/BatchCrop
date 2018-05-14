@@ -91,7 +91,7 @@ class ImageSegmentation(object):
         :param factor: a float value dictating the change in bounding box size. Factor > 1 increases the ROI
         :return: an ImageSegmentation object with bounding boxes increased/decreased by the given factor
         """
-        logging.info("Segments are being increase by a factor of {}.".format(factor))
+        logging.info("Segments increased by a factor of {}.".format(factor))
         new_image_segmentation = ImageSegmentation(self.width, self.height)
 
 
