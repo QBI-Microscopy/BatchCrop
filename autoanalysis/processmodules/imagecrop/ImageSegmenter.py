@@ -38,6 +38,7 @@ class ImageSegmenter(object):
         """
         # Step 1
         binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
+
         # Step 2
         closed_image = ImageSegmenter._noise_reduction(binary_image)
         opened_image = ImageSegmenter._image_dilation(closed_image)
@@ -56,8 +57,8 @@ class ImageSegmenter(object):
         channel_image = ImageSegmenter._construct_mean_channelled_image(image_array)
         histogram = ImageSegmenter._image_histogram(channel_image)
         cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
-        return ImageSegmenter._apply_cluster_threshold(cluster_vector, channel_image,
-                                                       ImageSegmenter._has_dark_objects(channel_image))
+        has_light_bg = histogram[0] < histogram[255]
+        return ImageSegmenter._apply_cluster_threshold(cluster_vector, channel_image, has_light_bg) #ImageSegmenter._has_dark_objects(channel_image))
 
     @staticmethod
     def _has_dark_objects(image):
@@ -254,8 +255,9 @@ class ImageSegmenter(object):
         # for i in range(len(slices)):
         #     misc.imsave("E:/testingFolder/crop{}.png".format(str(i)), imlabeled[slices[i]])
         ################################################################################################################
-
-        logging.info("boxes created. ")
+        msg = "ObjectDetection: Features found: %d Segments created: %d" % (num_features, len(segmentations.segments))
+        logging.info(msg)
+        print(msg)
         return segmentations
 
     @staticmethod

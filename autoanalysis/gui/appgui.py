@@ -161,6 +161,9 @@ class ProcessPanel ( wx.Panel ):
 		self.m_button15 = wx.Button( self, wx.ID_ANY, u"Clear Results", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer16.Add( self.m_button15, 0, wx.ALL, 5 )
 		
+		self.m_btnStop = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer16.Add( self.m_btnStop, 0, wx.ALL, 5 )
+		
 		
 		bSizer20.Add( bSizer16, 1, wx.ALL, 5 )
 		
@@ -199,7 +202,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer17.Add( self.m_staticText20, 0, wx.ALL, 5 )
 		
-		self.m_staticText22 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"(Double-click on Filename in Process panel when processing complete where process has produced output images)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText22 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"Double-click on Filename in Process panel when processing complete where process has produced output images", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText22.Wrap( 600 )
 		bSizer17.Add( self.m_staticText22, 0, wx.ALL, 5 )
 		
@@ -208,7 +211,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_Col_reviewCheck = self.m_dataViewListCtrlReview.AppendToggleColumn( u"Select" )
 		self.m_Col_reviewFilename = self.m_dataViewListCtrlReview.AppendTextColumn( u"File Name" )
-		self.m_Col_reviewSize = self.m_dataViewListCtrlReview.AppendTextColumn( u"Size" )
+		self.m_Col_reviewSize = self.m_dataViewListCtrlReview.AppendTextColumn( u"Size GB" )
 		bSizer17.Add( self.m_dataViewListCtrlReview, 0, wx.ALL, 5 )
 		
 		self.m_btnDeleteImg = wx.Button( self.m_panelImageOrder, wx.ID_ANY, u"Delete Selected", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -233,6 +236,7 @@ class ProcessPanel ( wx.Panel ):
 		self.m_btnRunProcess.Bind( wx.EVT_BUTTON, self.OnRunScripts )
 		self.btnLog.Bind( wx.EVT_BUTTON, self.OnShowLog )
 		self.m_button15.Bind( wx.EVT_BUTTON, self.OnClearWindow )
+		self.m_btnStop.Bind( wx.EVT_BUTTON, self.OnStopProcessing )
 		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnShowResults, id = wx.ID_ANY )
 		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnRename, id = wx.ID_ANY )
 		self.m_btnDeleteImg.Bind( wx.EVT_BUTTON, self.OnDeleteImage )
@@ -253,6 +257,9 @@ class ProcessPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnClearWindow( self, event ):
+		event.Skip()
+	
+	def OnStopProcessing( self, event ):
 		event.Skip()
 	
 	def OnShowResults( self, event ):
@@ -512,7 +519,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_staticline6 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		bSizer18.Add( self.m_staticline6, 0, wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_staticText252 = wx.StaticText( self, wx.ID_ANY, u"Click on filename to view thumbnail (may be long delay if network is slow)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText252 = wx.StaticText( self, wx.ID_ANY, u"Double-Click on filename to view thumbnail (may be slow)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText252.Wrap( -1 )
 		self.m_staticText252.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 93, 90, False, wx.EmptyString ) )
 		
@@ -549,7 +556,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_button20.Bind( wx.EVT_BUTTON, self.OnSaveList )
 		self.btnClearlist.Bind( wx.EVT_BUTTON, self.OnClearlist )
 		self.Bind( wx.dataview.EVT_DATAVIEW_COLUMN_HEADER_CLICK, self.OnColClick, id = wx.ID_ANY )
-		self.Bind( wx.dataview.EVT_DATAVIEW_SELECTION_CHANGED, self.OnFileClicked, id = wx.ID_ANY )
+		self.Bind( wx.dataview.EVT_DATAVIEW_ITEM_ACTIVATED, self.OnFileClicked, id = wx.ID_ANY )
 	
 	def __del__( self ):
 		pass

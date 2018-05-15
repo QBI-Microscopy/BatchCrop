@@ -35,6 +35,7 @@ from autoanalysis.gui.ImageViewer import ImageViewer
 import wx
 import wx.html2
 import wx.dataview
+
 from glob import iglob
 from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
@@ -42,7 +43,7 @@ from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, Proce
 
 __version__ = '1.0.0alpha'
 DEBUG = 1
-
+COLWIDTH=500 #DISPLAY COLUMNS
 ########################################################################
 class HomePanel(WelcomePanel):
     """
@@ -244,10 +245,11 @@ class FileSelectPanel(FilesPanel):
                         if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
                             swriter.writerow(
                                 [self.m_dataViewListCtrl1.GetValue(i, 1), self.m_dataViewListCtrl1.GetValue(i, 2)])
+                self.Parent.Info('SUCCESS: List saved')
+
         except Exception as e:
             self.Parent.Warn("ERROR: Save list:" + e.args[0])
-        finally:
-            self.Parent.Info('SUCCESS: List saved')
+
 
     def loadFileToPanel(self, filepath):
         currentFileList = [str(self.m_dataViewListCtrl1.GetTextValue(i, 1)) for i in
@@ -275,11 +277,12 @@ class FileSelectPanel(FilesPanel):
                             self.loadFileToPanel(row[0])
                 msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
                 self.m_status.SetLabelText(msg)
+                # Try to resize column
+                self.col_file.SetWidth(COLWIDTH)
         except Exception as e:
             #print(e.args[0])
             self.Parent.Warn("Load list error:" + e.args[0])
-        finally:
-            self.Parent.Info('SUCCESS: List loaded')
+
 
     def OnAutofind(self, event):
         """
@@ -310,7 +313,8 @@ class FileSelectPanel(FilesPanel):
                     msg = 'FilePanel loaded: %s' % fname
                     print(msg)
 
-            # self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
+            # Try to resize column
+            self.col_file.SetWidth(COLWIDTH)
             msg = "Total Files loaded: %d" % len(filenames)
             self.m_status.SetLabelText(msg)
         else:
@@ -399,6 +403,8 @@ class ProcessRunPanel(ProcessPanel):
 
         if count == 0:
             self.m_dataViewListCtrlRunning.AppendItem([process, outputPath, count, "Starting"])
+            self.m_dataViewListColumnFilename.SetWidth(200)
+            self.m_dataViewListColumnOutput.SetWidth(200)
             self.m_dataViewListCtrlRunning.Refresh()
             self.start[process] = time.time()
 
@@ -442,6 +448,8 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlReview.DeleteAllItems()
             for fname in imglist:
                 self.m_dataViewListCtrlReview.AppendItem([False, fname, "{:0.3f}".format(os.stat(fname).st_size / 10e8)])
+
+            self.m_dataViewListColumnFilename.SetWidth(COLWIDTH)
 
             # Launch Viewer in separate window
             viewerapp = wx.App()
@@ -487,12 +495,12 @@ class ProcessRunPanel(ProcessPanel):
                 break
         return filepanel
 
-    def OnCancelScripts(self, event):
-        """
-        Button event to stop the current process from continuing to run. 
-        """
-        self.controller.shutdown()
-        print("Cancel multiprocessor")
+    # def OnCancelScripts(self, event):
+    #     """
+    #     Button event to stop the current process from continuing to run.
+    #     """
+    #     self.controller.shutdown()
+    #     print("Cancel multiprocessor")
 
     def getDefaultOutputdir(self):
         """
@@ -557,7 +565,7 @@ class ProcessRunPanel(ProcessPanel):
 
             else:
                 raise ValueError("No files selected - please go to Files Panel and add to list")
-        except ValueError as e:
+        except Exception as e:
             self.Parent.Warn(e.args[0])
             # Enable Run button
             self.m_btnRunProcess.Enable()
@@ -580,6 +588,11 @@ class ProcessRunPanel(ProcessPanel):
 
     def OnClearWindow(self, event):
         self.m_dataViewListCtrlRunning.DeleteAllItems()
+
+    def OnStopProcessing( self, event ):
+        self.m_stOutputlog.SetLabelText('Called Stop processing .. please wait')
+        self.controller.shutdown()
+        self.m_stOutputlog.SetLabelText('Called Stop processing -complete')
 
 
 ########################################################################
@@ -631,33 +644,7 @@ class AppMain(wx.Listbook):
         dlg.ShowModal()
         dlg.Destroy()
 
-    # def OnQuit(self, e):
-    #     print('OnQuit')
-    #     # close any db connection
-    #     if self.controller.db is not None:
-    #         self.controller.db.conn.close()
-    #     #clean up threads
-    #     self.controller.shutdown()
-    #     #clean up extra windows
-    #     winlist= wx.GetTopLevelWindows()
-    #     for i in range(len(winlist)):
-    #         winlist[i].Close()
-    #     self.Close()
-    #
-    # def OnCloseWindow(self, e):
-    #     print('OnCloseWindow')
-    #     dial = wx.MessageDialog(None, 'Are you sure you want to quit?', 'Question',
-    #                             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-    #
-    #     ret = dial.ShowModal()
-    #
-    #     if ret == wx.ID_YES:
-    #         self.Destroy()
-    #     else:
-    #         e.Veto()
-    #
-    # def OnClose(self,event):
-    #     print('OnClose')
+
 
 
 ########################################################################

@@ -213,11 +213,11 @@ class ImarisImage(InputImage):
         """
         :return: A 2D image used for segmentation with separate channels as the first dimension on the stack (c,y,x)  
         """
+        image_array = None
         if (self.resolutions != 0) & (self.get_channel_levels() != 0):
-            #image_array = np.ndarray()
             for i in range(self.get_channel_levels()):
-                if not 'image_array' in locals():
+                if image_array is None: #not 'image_array' in locals():
                     image_array = self.get_two_dim_data(self.segment_resolution, c=i)
                 else:
                     np.concatenate((image_array , self.get_two_dim_data(self.segment_resolution, c=i)), axis = 0)
-            return image_array
+        return image_array

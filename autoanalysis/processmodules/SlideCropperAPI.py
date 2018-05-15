@@ -75,7 +75,7 @@ class SlideCropperAPI(object):
                 memu = int(self.cfg['MAX_MEMORY'])
                 tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memu)
                 pid_list = tic.crop_input_images()
-                msg = 'Run: cropping done - new images in %s [%s]' % (self.outputdir,pid_list)
+                msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir,pid_list)
                 logging.info(msg)
                 print(msg)
             else:

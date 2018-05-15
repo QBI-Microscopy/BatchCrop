@@ -1,9 +1,8 @@
-import sqlite3
-import pandas
 import shutil
-from os.path import join, expanduser,commonpath,abspath
-from glob import iglob
-from os import access, R_OK, W_OK, mkdir
+import sqlite3
+from os import access, W_OK, mkdir
+from os.path import join, expanduser
+
 from autoanalysis.utils import findResourceDir
 
 
@@ -20,10 +19,13 @@ class DBI():
             dbname = 'autoconfig-test.db'
         else:
             dbname = 'autoconfig.db'
-        (self.userconfigdir,self.dbfile) = self.getConfigdb(dbname)
+        (self.userconfigdir, self.dbfile) = self.getUserConfigdb(dbname)
+        # use program location only (unless user-specific configs required then change this)
+        self.dbfile = join(self.resourcesdir, dbname)
+        print('DB loaded: ', self.dbfile)
         self.c = None
 
-    def getConfigdb(self,dbname):
+    def getUserConfigdb(self, dbname):
         # Save config db to user's home dir or else will be overwritten with updates
         userconfigdir = join(expanduser('~'), '.qbi_apps', 'batchcrop')
 
@@ -36,7 +38,7 @@ class DBI():
             defaultdb = join(self.resourcesdir, dbname)
             shutil.copy(defaultdb, configdb)
 
-        return (userconfigdir,configdb)
+        return (userconfigdir, configdb)
 
     def connect(self):
         self.conn = sqlite3.connect(self.dbfile)
@@ -58,11 +60,11 @@ class DBI():
         """
         if self.c is None:
             self.connect()
-        self.c.execute("SELECT * FROM config WHERE configid=?",(configid,))
+        self.c.execute("SELECT * FROM config WHERE configid=?", (configid,))
         config = {}
-        for k,val,gp,desc in self.c.fetchall():
+        for k, val, gp, desc in self.c.fetchall():
             config[k] = val
-        if len(config)<=0:
+        if len(config) <= 0:
             config = None
         return config
 
@@ -73,15 +75,15 @@ class DBI():
         """
         if self.c is None:
             self.connect()
-        self.c.execute("SELECT * FROM config WHERE configid=?",(configid,))
+        self.c.execute("SELECT * FROM config WHERE configid=?", (configid,))
         config = {}
-        for k,val,gp,desc in self.c.fetchall():
-            config[k] = [val,desc]
-        if len(config)<=0:
+        for k, val, gp, desc in self.c.fetchall():
+            config[k] = [val, desc]
+        if len(config) <= 0:
             config = None
         return config
 
-    def deleteConfig(self,configid=None):
+    def deleteConfig(self, configid=None):
         """
         Delete all IDs in table
         :return:
@@ -94,7 +96,7 @@ class DBI():
             cnt = self.c.execute("DELETE FROM config WHERE configid=?", (configid,)).rowcount
         return cnt
 
-    def addConfig(self,configid,idlist):
+    def addConfig(self, configid, idlist):
         """
         Save changes to Incorrect and Correct IDs - all are replaced
         :param idlist:
@@ -107,10 +109,10 @@ class DBI():
             self.deleteConfig(configid)
         cnt = self.c.executemany('INSERT INTO config VALUES(?,?,?,?)', idlist).rowcount
         self.conn.commit()
-        #self.conn.close()
+        # self.conn.close()
         return cnt
 
-    def getConfigByName(self,group,sid):
+    def getConfigByName(self, group, sid):
         """
         Get correct ID if it exists in lookup table
         :param sid:
@@ -118,7 +120,7 @@ class DBI():
         """
         if self.c is None:
             self.connect()
-        self.c.execute('SELECT value FROM config WHERE configid=? AND name=?',(group,sid,))
+        self.c.execute('SELECT value FROM config WHERE configid=? AND name=?', (group, sid,))
         data = self.c.fetchone()
         if data is not None:
             cid = data[0]
@@ -134,7 +136,7 @@ class DBI():
         """
         if self.c is None:
             self.connect()
-        self.c.execute('SELECT DISTINCT configid FROM config',)
+        self.c.execute('SELECT DISTINCT configid FROM config', )
         qry = self.c.fetchall()
         data = [d[0] for d in qry]
         return data
@@ -217,11 +219,12 @@ class DBI():
             data = data[0]
         return data
 
+
 #############################################################################
 if __name__ == "__main__":
     dbi = DBI(test=True)
     dbi.connect()
-    configid='general'
+    configid = 'general'
     config = dbi.getConfig(configid)
     # for k,v in config.items():
     #     print(k,"=",v)
@@ -231,4 +234,3 @@ if __name__ == "__main__":
     print('List of processes: ', dbi.getCaptions())
     print('Process module=', dbi.getProcessModule(test1))
     print('Process class=', dbi.getProcessClass(test1))
-

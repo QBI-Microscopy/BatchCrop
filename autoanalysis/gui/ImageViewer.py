@@ -10,7 +10,7 @@ import wx
 class ImagePanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, -1)
-        self.magsize = -3
+        self.magsize = -2
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.m_bitmapPreview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition,
@@ -28,7 +28,7 @@ class ImagePanel(wx.Panel):
     def loadImage(self, img):
         # print('Load image')
         tif_file = tf.TiffFile(img)
-        thumb = tif_file.pages[self.magsize] # second smallest available
+        thumb = tif_file.pages[self.magsize]
         I = wx.Image(wx.Size(thumb.shape[1], thumb.shape[0]), thumb.asarray())
         self.m_bitmapPreview.SetBitmap(I.ConvertToBitmap())
         self.Refresh()
@@ -45,7 +45,7 @@ class ImageViewer(wx.Frame):
                           )
         self.currentimage = 0
         self.imglist = imglist
-        self.maglist = {"Small": -1, "Medium": -2, "Large": -3}
+        self.maglist = ["Small" , "Medium", "Large"]
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.plotpanel = ImagePanel(self)
         # Add toolbar with filename (may be quite long so full length)
@@ -63,9 +63,9 @@ class ImageViewer(wx.Frame):
         toolbar = wx.BoxSizer(wx.HORIZONTAL)
         # Add mag sizes choice
         self.choiceLbl = wx.StaticText(self, wx.ID_ANY, u"Display Size: ", wx.DefaultPosition, wx.DefaultSize, 0)
-        m_choice1Choices = [x for x in sorted(self.maglist.keys())]
+        m_choice1Choices = self.maglist
         self.m_choice1 = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice1Choices, 0)
-        self.m_choice1.SetSelection(2)
+        self.m_choice1.SetSelection(1)
         self.m_choice1.Bind(wx.EVT_CHOICE, self.OnChangeMag)
         toolbar.Add(self.choiceLbl, 0, wx.ALL, 5)
         toolbar.Add(self.m_choice1, 0, wx.ALL, 5)
@@ -90,7 +90,7 @@ class ImageViewer(wx.Frame):
         """
         mag = self.m_choice1.GetStringSelection()
         #print('Selected mag=', mag)
-        self.plotpanel.SetMagsize(self.maglist[mag])
+        self.plotpanel.SetMagsize(-(self.maglist.index(mag)+1))
         self.plotpanel.loadImage(self.imglist[self.currentimage])
 
     def nextImage(self, event):
@@ -139,8 +139,8 @@ class ImageViewer(wx.Frame):
 
 
 if __name__ == '__main__':
-    app = wx.App()
+    imgapp = wx.App()
     imgdir = "Z:\\Micro Admin\\Jack\\cropped\\NG_GAD67_GFP16~B"
     imglist = [x for x in iglob(join(imgdir, "*.tiff"))]
     frame = ImageViewer(imglist)
-    app.MainLoop()
+    imgapp.MainLoop()
