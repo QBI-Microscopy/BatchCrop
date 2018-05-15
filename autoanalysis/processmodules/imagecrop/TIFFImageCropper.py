@@ -53,27 +53,27 @@ class TIFFImageCropper(object):
         :param output_path: String output path must be a directory
         :return: 
         """
-        pid_list = []
+        done_list = 0
 
         ## Iterate through each bounding box
         for box_index in range(len(self.segmentation.segments)):
-            crop_process = Process(target=TIFFImageCropper.crop_single_image,
-                                   args=(self.imgfile, self.segmentation, self.output_folder, box_index))
-            pid_list.append(crop_process)
-            crop_process.start()
-            crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
+            done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index)
+            # crop_process = Process(target=TIFFImageCropper.crop_single_image,
+            #                        args=(self.imgfile, self.segmentation, self.output_folder, box_index))
+            # pid_list.append(crop_process)
+            # crop_process.start()
+            # crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
         # the program will give individual processes a ROI each: multiprocessing to use more CPU.
-        return pid_list
+        return done_list
 
     @staticmethod
     def crop_single_image(input_path, image_segmentation, output_path, box_index):
-
+        rtn = 0
         input_image = I.ImarisImage(input_path)
         for r_lev in range(input_image.get_resolution_levels()):
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = input_image.image_dimensions()[r_lev]
-            segment = image_segmentation.get_scaled_segments(resolution_dimensions[1], resolution_dimensions[0])[
-                box_index]
+            segment = image_segmentation.get_scaled_segments(resolution_dimensions[1], resolution_dimensions[0])[box_index]
 
             # Use all z, c & t planes of the image.
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
@@ -88,9 +88,9 @@ class TIFFImageCropper(object):
                                                                         x=[segment[0], segment[2]])
 
             # Only Save as AppendedTiff
-            outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index) + "_full.tiff")
+            outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + "_full.tiff")
             msg = "CropSingleImage: Generating cropped file: %s" % outputfile
-            logging.info(msg)
+            logging.debug(msg)
             print(msg)
             with TIFF(outputfile, False) as tf:
                 try:
@@ -98,9 +98,14 @@ class TIFFImageCropper(object):
                     im.save(tf)
                     tf.newFrame()
                     im.close()
+                    rtn = 1
                 except Exception as e:
-                    print('Image info:', im.info)
-                    logging.error("Could not create multi-page TIFF. Couldn't compile file: {}".format(str(e)))
+                    msg ='Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                    print(msg)
+                    logging.error(msg)
             del image_data
-        logging.info("Finished saving image %d from %s.", box_index, input_path)
+        msg = "Finished writing image %d to %s" % (box_index + 1, input_path)
+        print(msg)
+        logging.info(msg)
+        return rtn
 

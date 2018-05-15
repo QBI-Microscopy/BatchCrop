@@ -56,6 +56,9 @@ class ProcessThread(threading.Thread):
         threading.Thread.__init__(self)
         self.configID = configid
         self.db = DBI()
+        self.max_mem = float(self.db.getConfigByName(self.configID, 'MAX_MEMORY'))
+        if self.max_mem is None:
+            self.max_mem = 80
         self.wxObject = wxObject
         self.filename = filename
         self.output = outputdir
@@ -83,6 +86,8 @@ class ProcessThread(threading.Thread):
         except Exception as e:
             raise ValueError("Configure:", str(e))
     # ----------------------------------------------------------------------
+
+
     def run(self):
         """
         Run module in thread
@@ -101,6 +106,7 @@ class ProcessThread(threading.Thread):
             logging.info(msg)
             if self.mod.imgfile is not None:
                 q[self.filename] = self.mod.run()
+
             else:
                 msg = "ERROR: No data loaded for process: %s file: %s" % (self.class_, self.filename)
                 print(msg)
@@ -122,31 +128,35 @@ class ProcessThread(threading.Thread):
 
 
 
-
 ########################################################################
 
 class Controller():
     def __init__(self):
-        self.logfile = None
-        self.logger = self.loadLogger()
         self.currentconfig = 'default'  # maybe future multiple configs possible
         # connect to db
         self.db = DBI()
         self.db.connect()
+        self.logfile = None
+        self.logger = self.loadLogger(self.db.userconfigdir)
+        self.threadlist=[]
+        self._stopevent = threading.Event()
 
     def loadLogger(self, outputdir=None):
         #### LoggingConfig
         logger.setLevel(logging.INFO)
-        homedir = expanduser("~")
+        # Check dirs exist and are writable
         if outputdir is not None and access(outputdir, R_OK):
             homedir = outputdir
+        else:
+            userdir = expanduser("~")
+            homedir = join(userdir, '.qbi_apps', 'batchcrop')
+            if not access(homedir, W_OK):
+                if not access(join(userdir, '.qbi_apps'), W_OK):
+                    mkdir(join(userdir, '.qbi_apps'))
+                mkdir(homedir)
 
-        logdir = join(homedir, '.qbi_apps', 'batchcrop', "logs")
-        if not access(logdir, R_OK):
-            if not access(join(homedir, '.qbi_apps'), W_OK):
-                mkdir(join(homedir, '.qbi_apps'))
-            if not access(join(homedir, '.qbi_apps', 'batchcrop'), W_OK):
-                mkdir(join(homedir, '.qbi_apps', 'batchcrop'))
+        logdir = join(homedir, "logs")
+        if not access(logdir,W_OK):
             mkdir(logdir)
         self.logfile = join(logdir, 'batchcrop.log')
         handler = RotatingFileHandler(filename=self.logfile, maxBytes=10000000, backupCount=10)
@@ -154,6 +164,34 @@ class Controller():
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         return logger
+
+    def poll(self,t,row,processname,outfile,wxObject,max_mem):
+        # Poll thread to update progress bar
+        ctr = 0
+        increment = 5
+        tcount = 90
+        while t.isAlive():
+            time.sleep(increment)
+
+            # Check CPU usage
+            percent = psutil.virtual_memory().percent
+            msg = "Controller:RunProcess (t.alive): [%s] %s (%s)" % (
+            processname, outfile, "{0}% memory".format(percent))
+            print(msg)
+            logger.debug(msg)
+            if percent >= max_mem:
+                msg = 'Low memory - stop processing: %d' % percent
+                logging.warning(msg)
+                print(msg)
+                raise OSError(msg)
+
+            ctr += increment
+            # reset ??
+            if ctr == tcount:
+                ctr = increment
+            # count, row, process, filename
+            wx.PostEvent(wxObject, ResultEvent((ctr, row, processname, outfile, "{0}% memory".format(percent))))
+            wx.YieldIfNeeded()
 
     # ----------------------------------------------------------------------
     def RunProcess(self, wxGui, processref, outputdir, filenames):
@@ -174,55 +212,39 @@ class Controller():
         msg = "CPU count: %d" % psutil.cpu_count(False)
         print(msg)
         logging.info(msg)
-        max_mem = psutil.virtual_memory().available
-        msg = "Available memory: %d" % max_mem
+        max_mem = float(self.db.getConfigByName(self.currentconfig,'MAX_MEMORY'))
+        if max_mem is None:
+            max_mem = 80
+        avail_mem = psutil.virtual_memory().available
+        swap = psutil.swap_memory().free
+        percent = psutil.virtual_memory().percent #used/total
+        msg = "MEMORY: \n\tAvailable: %d \t Swap: %d \t Percent: %d \n" % (avail_mem,swap,percent)
         print(msg)
         logging.info(msg)
-        swap = psutil.swap_memory().free
-        print('Swap memory: ', swap)
 
         if len(filenames) > 0:
             row = 0
             # One thread per file
             for filename in filenames:
-                msg = "Load Process Threads: %s %s [row: %d]" % (processname, filename, row)
-                print(msg)
-                logger.info(msg)
-                # Outputfile directory rather than filename for progress bar output
-                outfolder = join(outputdir, splitext(basename(filename))[0])
-                # Initial entry
-                wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfolder,'')))
-                wx.YieldIfNeeded()
-                t = ProcessThread(wxGui, self.currentconfig, processname, processmodule, processclass, outputdir,
-                                  filename, row)
-
-                t.start()
-                # Poll thread to update progress bar
-                ctr = 0
-                increment = 5
-                tcount = 90
-                while t.isAlive():
-                    time.sleep(increment)
-
-                    # Check CPU usage
-                    mem_inuse = psutil.virtual_memory().available
-                    msg = "Controller:RunProcess (t.alive): %s (%s) (%d MB avail)" % (processname, outfolder, mem_inuse/1000000)
+                if not self._stopevent.isSet():
+                    msg = "Load Process Threads: %s %s [row: %d]" % (processname, filename, row)
                     print(msg)
-                    logger.debug(msg)
-                    if mem_inuse <= 100000:
-                        print('Low memory - should stop: ', mem_inuse)
-
-                    ctr += increment
-                    # reset ??
-                    if ctr == tcount:
-                        ctr = increment
-                    # count, row, process, filename
-                    wx.PostEvent(wxGui, ResultEvent((ctr, row, processname, outfolder,str(mem_inuse/1000000))))
+                    logger.info(msg)
+                    # Outputfile directory rather than filename for progress bar output
+                    outfolder = join(outputdir, splitext(basename(filename))[0])
+                    # Initial entry
+                    wx.PostEvent(wxGui, ResultEvent((0, row, processname, outfolder,'')))
                     wx.YieldIfNeeded()
-                # End processing
-                wx.PostEvent(wxGui, ResultEvent((100, row, processname, outfolder,'')))
-                # New row
-                row += 1
+                    t = ProcessThread(wxGui, self.currentconfig, processname, processmodule, processclass, outputdir,
+                                      filename, row)
+
+                    self.threadlist.append(t)
+                    t.start()
+                    self.poll(t,row,processname,outfolder,wxGui,max_mem)
+
+                    wx.PostEvent(wxGui, ResultEvent((100, row, processname, outfolder,'')))
+                    # New row
+                    row += 1
 
 
         else:
@@ -233,8 +255,14 @@ class Controller():
 
 
     def shutdown(self):
-        t = threading.current_thread()
-        # print("Thread tcounter:", threading.main_thread())
-        if t != threading.main_thread() and t.is_alive():
-            logger.info('Shutdown: closing {0}'.format(t.getName()))
-            t.terminate()
+        self._stopevent.set()
+        msg="Controller: stop event set"
+        logging.warning(msg)
+        print(msg)
+        # Loop through threads to finish?
+        for t in self.threadlist:
+            if t != threading.main_thread() and t.is_alive():
+                msg = 'Stop processing called: closing {0}'.format(t.getName())
+                logging.info(msg)
+                print(msg)
+                t.join(timeout=5)
