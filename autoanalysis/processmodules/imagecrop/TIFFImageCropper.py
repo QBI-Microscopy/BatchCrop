@@ -2,10 +2,11 @@ import logging
 import os
 from multiprocessing import Process
 from os.path import basename, splitext, join
-
+from skimage.filters import threshold_minimum
 from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
-
+import matplotlib
+import matplotlib.pyplot as plt
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
 from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
 
@@ -29,7 +30,7 @@ class TIFFImageCropper(object):
             if not os.path.isdir(image_folder):
                 os.makedirs(image_folder)
             self.output_folder = image_folder
-
+        #self.thresholdImage()
         self.segmentation = self.generateSegments()
         if (len(self.segmentation.segments) > 0):
             msg = 'SlideCropperAPI: run: Image segmentation created %d segments' % len(self.segmentation.segments)
@@ -38,6 +39,12 @@ class TIFFImageCropper(object):
         else:
             raise ValueError('Segmentation failed')
 
+    def thresholdImage(self):
+        image = I.ImarisImage(self.imgfile).get_low_res_image()
+        t0_min = threshold_minimum(image.value)
+        bin_img = image.value > t0_min
+
+        image.close_file()
 
     def generateSegments(self):
         image = I.ImarisImage(self.imgfile)
@@ -88,7 +95,7 @@ class TIFFImageCropper(object):
                                                                         x=[segment[0], segment[2]])
 
             # Only Save as AppendedTiff
-            outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + "_full.tiff")
+            outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
             msg = "CropSingleImage: Generating cropped file: %s" % outputfile
             logging.debug(msg)
             print(msg)

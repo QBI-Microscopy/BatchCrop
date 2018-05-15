@@ -245,6 +245,11 @@ class Controller():
                     wx.PostEvent(wxGui, ResultEvent((100, row, processname, outfolder,'')))
                     # New row
                     row += 1
+                else:
+                    msg ='Stop event detected - ending all processing'
+                    logging.warning(msg)
+                    print(msg)
+                    break
 
 
         else:

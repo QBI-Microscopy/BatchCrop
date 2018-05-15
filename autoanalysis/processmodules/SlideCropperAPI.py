@@ -89,62 +89,11 @@ class SlideCropperAPI(object):
 
 
 
-    # def _loadImage(self,file_path):
-    #     '''
-    #     Image files are very large and often archived. This will bring them back ready for processing.
-    #     :param file_path: full path filename
-    #     :return: filename from image obj
-    #     '''
-    #     image = None
-    #     try:
-    #         image = I.ImarisImage(file_path)
-    #         print('Image loaded: ', image.get_filename())
-    #         return image.get_filename()
-    #     except IOError as e:
-    #         print('ERROR: Unable to load image: ', file_path)
-    #     finally:
-    #         if image is not None:
-    #             image.close_file()
-
-
-
-    # def crop_single_image(self, file_path, output_path):
-    #     """
-    #     Encapsulation method for cropping an individual image.
-    #     :param file_path: String path to the desired file. Assumed to be .ims extension
-    #     :param output_path:
-    #     :return:
-    #     """
-    #
-    #     border_factor = float(self.cfg['BORDER_FACTOR'])
-    #     image = I.ImarisImage(file_path)
-    #     segmentations = ImageSegmenter.segment_image(border_factor, image.get_multichannel_segmentation_image())
-    #     image.close_file()
-    #     TIFFImageCropper.crop_input_images(file_path, segmentations, output_path)
-
-
-
 
 """
-    Testing Methods for API. Use above methods directly 
+    Testing Methods for API.
 """
-def main(args):
-    """
-    Standard wrapper for API usage. Sets API up to call innerMain function. 
-    """
-    # logfile = args.logfile
-    # logging.basicConfig(filename=logfile, level=logging.DEBUG, format=FORMAT)
-    # logging.captureWarnings(True)
 
-    parent_pid = os.getpid()
-    # Only log for first process created. Must check that process is the original.
-    if os.getpid() == parent_pid:
-        print("\nSlideCropper started with pid: {}".format(os.getpid()))
-    if args.datafile is not None:
-        SlideCropperAPI.crop_single_image(join(args.inputdir,args.datafile), args.outputdir)
-
-    if os.getpid() == parent_pid:
-        print("SlideCropper ended with pid: {}\n".format(os.getpid()))
 
 def create_parser():
     """
@@ -157,17 +106,27 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2005f 32~B.ims")
+    parser.add_argument('--datafile', action='store', help='Data file', default="NG_GAD67_GFP16~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="Z:\\Micro Admin\\Jack\\output")
-    parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\Adam")
-    parser.add_argument('--logfile', action='store', help='Input directory', default="E:/SlideCropperLog.txt")
+    parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\NG_Gad")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
 
     return parser
 
+
 ####################################################################################################################
 if __name__ == "__main__":
+    from autoanalysis.gui.ImageViewer import ImageViewer
+    from glob import iglob
+    import wx
+    from os.path import basename,splitext
 
     parser = create_parser()
     args = parser.parse_args()
-    main(args)
+    slidecropper = SlideCropperAPI(join(args.inputdir, args.datafile), args.outputdir)
+    slidecropper.run()
+    # check output with ImageViewer
+    imgapp = wx.App()
+    imglist = [x for x in iglob(join(args.outputdir,splitext(basename(args.datafile))[0], "*.tiff"))]
+    frame = ImageViewer(imglist)
+    imgapp.MainLoop()

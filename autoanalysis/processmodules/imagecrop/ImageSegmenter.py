@@ -37,13 +37,14 @@ class ImageSegmenter(object):
         :return: an ImageSegmentation object 
         """
         # Step 1
-        binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
+        #binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
 
+        binary_image = ImageSegmenter._threshold_image(image_array, K_Clusters)
         # Step 2
         closed_image = ImageSegmenter._noise_reduction(binary_image)
         opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
-        segments = ImageSegmenter._apply_object_detection(opened_image).change_segment_bounds(border_factor)
+        segments = ImageSegmenter._apply_object_detection(opened_image) #.change_segment_bounds(border_factor)
         return segments
 
     @staticmethod
@@ -136,7 +137,7 @@ class ImageSegmenter(object):
         return histogram
 
     @staticmethod
-    def _k_means_iterate(histogram, k):
+    def _k_means_iterate(histogram, kcluster):
         """
         K-means algorithm from a histogram based implementation. 
         :param k: number of clusters for the algorithm
@@ -150,7 +151,7 @@ class ImageSegmenter(object):
             return np.argmin(np.abs(ndarray - value))
 
         # Initiate k clusters equidistant on the domain of the channel intensity
-        cluster_vector = np.linspace(0, 255, num=k)
+        cluster_vector = np.linspace(0, 255, num=kcluster)
         cluster_temp_vector = cluster_vector.copy()
 
         while (1):
@@ -160,7 +161,7 @@ class ImageSegmenter(object):
 
             # for each cluster, find mean of clustered pixel intensities
             # histogram[i] is number of pixels at intensity i
-            for k in range(k):
+            for k in range(kcluster):
                 weighted_mean_sum = sum(ind * histogram[ind] for ind in range(256) if index_histogram[ind] == k)
                 pixel_count = sum(histogram[ind] for ind in range(256) if index_histogram[ind] == k)
                 cluster_temp_vector[k] = weighted_mean_sum / (pixel_count + 1)
@@ -181,15 +182,21 @@ class ImageSegmenter(object):
 
         # Using 2nd index of 10 clusters for foreground (index found through testing)
         if (darkObjects):
-            logging.info("Image currently being segmented is deemed to have a light background.")
+            #logging.info("Image currently being segmented is deemed to have a light background.")
             binary_threshold = cluster_vector[-1]
-            print(cluster_vector, binary_threshold)
-            return 255 * (channel_image < binary_threshold).round()
+            msg = 'LIGHT bg: threshold=%d' % binary_threshold
+            print(msg)
+            logging.info(msg)
+            rtn = 255 * (channel_image < binary_threshold).round()
 
         else:
-            logging.info("Image currently being segmented is deemed to have a dark background.")
-            binary_threshold = cluster_vector[0]
-            return 255 * (channel_image > binary_threshold).round()
+            #logging.info("Image currently being segmented is deemed to have a dark background.")
+            binary_threshold = cluster_vector[0] /2
+            msg = 'DARK bg: threshold=%d' % binary_threshold
+            print(msg)
+            logging.info(msg)
+            rtn =  255 * (channel_image > binary_threshold).round()
+        return rtn
 
     @staticmethod
     def _noise_reduction(binary_image):
@@ -220,7 +227,8 @@ class ImageSegmenter(object):
         :param morphological_image: Binary image
         :return: A ImageSegmentation object
         """
-        segmentations = ImageSegmentation(IMAGEX, IMAGEY)
+        #segmentations = ImageSegmentation(IMAGEX, IMAGEY)
+        segmentations = ImageSegmentation(morphological_image.shape[0],morphological_image.shape[1])
 
         # Separate objects into separate labelled ints on matrix imlabelled
         imlabeled, num_features = ndimage.measurements.label(morphological_image, output=np.dtype("int"))
@@ -315,10 +323,10 @@ class ImageSegmenter(object):
         curr_len = len(box_slices)
         flag = True
 
-        for i in range(10):
-            for rect in box_slices:
-                if ImageSegmenter.is_noise(rect):
-                    box_slices.remove(rect)
+        # for i in range(10):
+        #     for rect in box_slices:
+        #         if ImageSegmenter.is_noise(rect):
+        #             box_slices.remove(rect)
 
         while flag | (prev_len != curr_len):
             flag = False
@@ -363,6 +371,4 @@ class ImageSegmenter(object):
             prev_len = curr_len
             curr_len = len(box_slices)
             i = 0
-
-        max_size = (virtual_memory().total)
         return box_slices

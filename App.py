@@ -449,7 +449,7 @@ class ProcessRunPanel(ProcessPanel):
             for fname in imglist:
                 self.m_dataViewListCtrlReview.AppendItem([False, fname, "{:0.3f}".format(os.stat(fname).st_size / 10e8)])
 
-            self.m_dataViewListColumnFilename.SetWidth(COLWIDTH)
+            self.m_Col_reviewFilename.SetWidth(COLWIDTH)
 
             # Launch Viewer in separate window
             viewerapp = wx.App()
@@ -495,12 +495,6 @@ class ProcessRunPanel(ProcessPanel):
                 break
         return filepanel
 
-    # def OnCancelScripts(self, event):
-    #     """
-    #     Button event to stop the current process from continuing to run.
-    #     """
-    #     self.controller.shutdown()
-    #     print("Cancel multiprocessor")
 
     def getDefaultOutputdir(self):
         """
@@ -590,8 +584,9 @@ class ProcessRunPanel(ProcessPanel):
         self.m_dataViewListCtrlRunning.DeleteAllItems()
 
     def OnStopProcessing( self, event ):
-        self.m_stOutputlog.SetLabelText('Called Stop processing .. please wait')
         self.controller.shutdown()
+        while self.controller._stopevent.isSet():
+            self.m_stOutputlog.SetLabelText('Called Stop processing .. please wait')
         self.m_stOutputlog.SetLabelText('Called Stop processing -complete')
 
 
