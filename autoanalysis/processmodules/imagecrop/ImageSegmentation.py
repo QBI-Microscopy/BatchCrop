@@ -88,26 +88,27 @@ class ImageSegmentation(object):
 
     def change_segment_bounds(self, factor):
         """
+        TODO: Fix for border - currently crashing with 'argument out of range' error
         :param factor: percent of pixels to include as border eg 5
-        :return: an ImageSegmentation object with bounding boxes increased/decreased by the given factor
+        :return: an ImageSegmentation object with bounding boxes increased/decreased by the given factor or nothing
         """
-        new_image_segmentation = ImageSegmentation(self.width, self.height)
+
         if factor > 0 and factor < 100:
-            logging.info("Segments border factor of {}.".format(factor))
-
-            factor = factor/100 #%
-
+            border = int((factor / 100) * np.sqrt(self.width * self.height))
+            msg ="Applying border of {} px".format(border)
+            logging.info(msg)
+            print(msg)
+            new_image_segmentation = ImageSegmentation(self.width, self.height)
             for bounding_box in self.segments:
-                border_w = (factor *bounding_box[2])
-                border_h = (factor *bounding_box[3])
-                pos_x = max(0,round(bounding_box[0] - border_w))
-                pos_y = max(0,round(bounding_box[1] - border_h))
-                box_w = min(self.width, round(bounding_box[2] + border_w))
-                box_h = min(self.height, round(bounding_box[3] + border_h))
-                new_image_segmentation.add_segmentation(pos_x,pos_y, box_w,box_h)
-
-        return new_image_segmentation
-
+                pos_x1 = max(0,round(bounding_box[0] - border))
+                pos_y1 = max(0,round(bounding_box[1] - border))
+                pos_x2 = min(self.width, round(bounding_box[2] + border))
+                pos_y2 = min(self.height, round(bounding_box[3] + border))
+                new_image_segmentation.add_segmentation(pos_x1,pos_y1, pos_x2,pos_y2)
+                #new_image_segmentation.add_segmentation(bounding_box[0],bounding_box[1],bounding_box[2],bounding_box[3])
+            return new_image_segmentation
+        else:
+            return self
 
 class InvalidSegmentError(Exception):
     pass

@@ -4,6 +4,7 @@ from psutil import virtual_memory
 import numpy as np
 import scipy.misc as misc
 import scipy.ndimage as ndimage
+from skimage.filters import threshold_minimum
 
 #from old_version.src.main.Config import Config
 from .ImageSegmentation import ImageSegmentation
@@ -44,7 +45,8 @@ class ImageSegmenter(object):
         closed_image = ImageSegmenter._noise_reduction(binary_image)
         opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
-        segments = ImageSegmenter._apply_object_detection(opened_image).change_segment_bounds(border_factor)
+        segments = ImageSegmenter._apply_object_detection(opened_image) 
+        # NOT WORKING PROPERLY  .change_segment_bounds(border_factor)
         return segments
 
     @staticmethod
@@ -58,8 +60,10 @@ class ImageSegmenter(object):
         channel_image = ImageSegmenter._construct_mean_channelled_image(image_array)
         histogram = ImageSegmenter._image_histogram(channel_image)
         cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
-        has_light_bg = histogram[0] < histogram[255]
-        return ImageSegmenter._apply_cluster_threshold(cluster_vector, channel_image, has_light_bg, lightbg, darkbg) #ImageSegmenter._has_dark_objects(channel_image))
+        has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
+        t0_min = threshold_minimum(image_array)
+
+        return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg, darkbg) #ImageSegmenter._has_dark_objects(channel_image))
 
     @staticmethod
     def _has_dark_objects(image):
@@ -172,7 +176,7 @@ class ImageSegmenter(object):
             cluster_vector = cluster_temp_vector.copy()
 
     @staticmethod
-    def _apply_cluster_threshold(cluster_vector, channel_image, darkObjects, lightbg, darkbg):
+    def _apply_cluster_threshold(t0_min, channel_image, darkObjects, lightbg, darkbg):
         """
         Applies the cluster_vector thresholds to the channel_image to create a binary image. 
         :param cluster_vector: 1D array of cluster pixel intensities
@@ -189,7 +193,7 @@ class ImageSegmenter(object):
             if lightbg != 'auto' and int(lightbg) > 0 and int(lightbg) < 255:
                 binary_threshold = int(lightbg)
             else:
-                binary_threshold = cluster_vector[-1]
+                binary_threshold = t0_min #cluster_vector[-1]
             msg = 'LIGHT bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
@@ -200,7 +204,7 @@ class ImageSegmenter(object):
             if darkbg != 'auto' and int(darkbg) > 0 and int(darkbg) < 255:
                 binary_threshold = int(darkbg)
             else:
-                binary_threshold = cluster_vector[0] /2 #Correction for dark bg thresholding
+                binary_threshold = t0_min #cluster_vector[0] /2 #Correction for dark bg thresholding
             msg = 'DARK bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
@@ -262,16 +266,13 @@ class ImageSegmenter(object):
             ImageSegmenter._add_box_from_slice(box, segmentations)
 
         # Remove objects that aren't big enough to be considered full images.
-        fraction = 4  # if sub images are 4 times smaller than biggest sub image: ignore.
-        biggest_box_area = segmentations.segment_area(segmentations.get_max_segment())
+        totalarea = morphological_image.shape[0] * morphological_image.shape[1]
+        fraction = 0.01  # segment/area 1%
         for bounding_box in segmentations.segments:
-            if segmentations.segment_area(bounding_box) * fraction < biggest_box_area:
+            a = segmentations.segment_area(bounding_box)
+            if (a/totalarea) < fraction:
                 segmentations.segments.remove(bounding_box)
 
-        ######################### Used for testing purposes only to check segments are correct ########################
-        # for i in range(len(slices)):
-        #     misc.imsave("E:/testingFolder/crop{}.png".format(str(i)), imlabeled[slices[i]])
-        ################################################################################################################
         msg = "ObjectDetection: Features found: %d Segments created: %d" % (num_features, len(segmentations.segments))
         logging.info(msg)
         print(msg)
@@ -332,10 +333,10 @@ class ImageSegmenter(object):
         curr_len = len(box_slices)
         flag = True
 
-        # for i in range(10):
-        #     for rect in box_slices:
-        #         if ImageSegmenter.is_noise(rect):
-        #             box_slices.remove(rect)
+        for i in range(10):
+            for rect in box_slices:
+                if ImageSegmenter.is_noise(rect):
+                    box_slices.remove(rect)
 
         while flag | (prev_len != curr_len):
             flag = False

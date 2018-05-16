@@ -1,7 +1,7 @@
 import logging
 import os
 from multiprocessing import Process
-from os.path import basename, splitext, join
+from os.path import basename, splitext, join, exists
 from skimage.filters import threshold_minimum
 from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
@@ -82,6 +82,9 @@ class TIFFImageCropper(object):
     def crop_single_image(input_path, image_segmentation, output_path, box_index, memmax):
         rtn = 0
         input_image = I.ImarisImage(input_path)
+        outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
+        if exists(outputfile):
+            os.remove(outputfile)
         for r_lev in range(input_image.get_resolution_levels()):
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = input_image.image_dimensions()[r_lev]
@@ -101,9 +104,8 @@ class TIFFImageCropper(object):
                                                                             y=[segment[1], segment[3]],
                                                                             x=[segment[0], segment[2]])
 
-                # Only Save as AppendedTiff
-                outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
-                msg = "CropSingleImage: Generating cropped file: %s" % outputfile
+                # Appended Tiff
+                msg = "CropSingleImage: Writing file: %s [level %d]" % (outputfile, r_lev)
                 logging.debug(msg)
                 print(msg)
                 with TIFF(outputfile, False) as tf:
