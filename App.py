@@ -660,7 +660,7 @@ class AppFrame(wx.Frame):
         title = "Batch Crop Application [v %s]" % __version__
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           title,
-                          size=(1300, 720)
+                          size=(1000, 720)
                           )
 
         # self.timer = wx.Timer(self)

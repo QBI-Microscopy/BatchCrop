@@ -486,7 +486,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_staticText251.Wrap( -1 )
 		fgSizer4.Add( self.m_staticText251, 0, wx.ALL, 5 )
 		
-		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag data files here", wx.DefaultPosition, wx.Size( 300,80 ), wx.TE_READONLY|wx.TE_WORDWRAP )
+		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag data files here", wx.DefaultPosition, wx.Size( 300,50 ), wx.TE_READONLY|wx.TE_WORDWRAP )
 		self.m_tcDragdrop.SetBackgroundColour( wx.Colour( 191, 191, 255 ) )
 		
 		fgSizer4.Add( self.m_tcDragdrop, 0, 0, 5 )
