@@ -143,7 +143,7 @@ class ProcessPanel ( wx.Panel ):
 		bSizer20.Add( self.m_stTitle, 0, wx.ALL, 5 )
 		
 		self.m_stDescription = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
-		self.m_stDescription.SetMaxSize( wx.Size( -1,150 ) )
+		self.m_stDescription.SetMaxSize( wx.Size( -1,100 ) )
 		
 		bSizer20.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -175,7 +175,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
-		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,360 ) )
+		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( 500,320 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
 		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
