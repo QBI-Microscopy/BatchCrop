@@ -45,7 +45,7 @@ class ImageSegmenter(object):
         closed_image = ImageSegmenter._noise_reduction(binary_image)
         opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
-        segments = ImageSegmenter._apply_object_detection(opened_image) 
+        segments = ImageSegmenter._apply_object_detection(opened_image)
         # NOT WORKING PROPERLY  .change_segment_bounds(border_factor)
         return segments
 

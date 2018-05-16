@@ -19,28 +19,27 @@ class ImageThumbnail(wx.StaticBitmap):
 
         if max_size is not None:
             # Adjust size so that the image dimensions just fit within max_size dimensions
-            if self.thumbnail.shape[0]/max_size[0] > self.thumbnail.shape[1]/max_size[1]:
-                self.thumbnail = resize(self.thumbnail, max_size[0] / self.thumbnail.shape[0])
-            else:
-                self.thumbnail = resize(self.thumbnail, max_size[1] / self.thumbnail.shape[1])
-
+            # if self.thumbnail.shape[0]/max_size[0] > self.thumbnail.shape[1]/max_size[1]:
+            #     self.thumbnail = resize(self.thumbnail, max_size[0] / self.thumbnail.shape[0])
+            # else:
+            #     self.thumbnail = resize(self.thumbnail, max_size[1] / self.thumbnail.shape[1])
+            self.thumbnail = resize(self.thumbnail,(max_size[1],max_size[0],1), preserve_range=True)
         image = wx.Image(wx.Size(self.thumbnail.shape[1], self.thumbnail.shape[0]), self.thumbnail)
         super(ImageThumbnail, self).__init__(parent, bitmap=image.ConvertToBitmap())
-        #self.SetBitmap(wx.BitmapFromImage(image))
 
     def get_image_data(self, filename):
         return None
 
 
-    @staticmethod
-    def resize_thumbnail(image_data, max_size):
-        # Adjust size so that the image dimensions just fit within max_size dimensions
-        if image_data.shape[0] / max_size[0] > image_data.shape[1] / max_size[1]:
-            image_data = resize(image_data, max_size[0] / image_data.shape[0])
-        else:
-            image_data = resize(image_data, max_size[1] / image_data.shape[1])
-
-        return image_data
+    # @staticmethod
+    # def resize_thumbnail(image_data, max_size):
+    #     # Adjust size so that the image dimensions just fit within max_size dimensions
+    #     if image_data.shape[0] / max_size[0] > image_data.shape[1] / max_size[1]:
+    #         image_data = resize(image_data, max_size[0] / image_data.shape[0])
+    #     else:
+    #         image_data = resize(image_data, max_size[1] / image_data.shape[1])
+    #
+    #     return image_data
 
     @staticmethod
     def get_tiff_bitmap(filename, max_size=None):

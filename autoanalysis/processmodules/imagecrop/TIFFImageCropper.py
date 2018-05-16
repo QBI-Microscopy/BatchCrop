@@ -17,11 +17,12 @@ class TIFFImageCropper(object):
     ImageSegmentation object applies to each x-y plane and the output is in TIFF format. 
     """
 
-    def __init__(self,imgfile, border_factor, output_path, memmax,lightbg,darkbg):
+    def __init__(self,imgfile, border_factor, output_path, memmax,lightbg,darkbg,offset):
         self.maxmemory = memmax
         self.lightbg = lightbg
         self.darkbg = darkbg
         self.border_factor = border_factor
+        self.offset = offset
         self.imgfile = imgfile
         if not os.path.isdir(output_path):
             raise IOError('Invalid output directory: ', output_path)
@@ -67,7 +68,7 @@ class TIFFImageCropper(object):
         try:
             ## Iterate through each bounding box
             for box_index in range(len(self.segmentation.segments)):
-                done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory)
+                done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory,self.offset)
                 # crop_process = Process(target=TIFFImageCropper.crop_single_image,
                 #                        args=(self.imgfile, self.segmentation, self.output_folder, box_index))
                 # pid_list.append(crop_process)
@@ -79,7 +80,7 @@ class TIFFImageCropper(object):
         return done_list
 
     @staticmethod
-    def crop_single_image(input_path, image_segmentation, output_path, box_index, memmax):
+    def crop_single_image(input_path, image_segmentation, output_path, box_index, memmax,offset):
         rtn = 0
         input_image = I.ImarisImage(input_path)
         outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
@@ -88,7 +89,7 @@ class TIFFImageCropper(object):
         for r_lev in range(input_image.get_resolution_levels()):
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = input_image.image_dimensions()[r_lev]
-            segment = image_segmentation.get_scaled_segments(resolution_dimensions[1], resolution_dimensions[0])[box_index]
+            segment = image_segmentation.get_scaled_segments(resolution_dimensions[1], resolution_dimensions[0],offset)[box_index]
 
             # Use all z, c & t planes of the image.
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)

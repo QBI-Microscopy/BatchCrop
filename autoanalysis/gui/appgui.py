@@ -132,20 +132,25 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer20 = wx.BoxSizer( wx.VERTICAL )
 		
+		bSizer18 = wx.BoxSizer( wx.HORIZONTAL )
+		
 		m_checkListProcessChoices = []
 		self.m_checkListProcess = wx.CheckListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkListProcessChoices, wx.LB_MULTIPLE )
-		bSizer20.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
+		bSizer18.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
 		
 		self.m_stTitle = wx.StaticText( self, wx.ID_ANY, u"TITLE", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_stTitle.Wrap( -1 )
 		self.m_stTitle.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 90, 92, False, wx.EmptyString ) )
 		
-		bSizer20.Add( self.m_stTitle, 0, wx.ALL, 5 )
+		bSizer18.Add( self.m_stTitle, 0, wx.ALL, 5 )
 		
 		self.m_stDescription = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
 		self.m_stDescription.SetMaxSize( wx.Size( -1,100 ) )
 		
-		bSizer20.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
+		bSizer18.Add( self.m_stDescription, 1, wx.EXPAND |wx.ALL, 5 )
+		
+		
+		bSizer20.Add( bSizer18, 1, wx.EXPAND, 5 )
 		
 		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -175,7 +180,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
-		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( 500,320 ) )
+		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( 500,400 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
 		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
@@ -193,6 +198,7 @@ class ProcessPanel ( wx.Panel ):
 		self.m_panelImageOrder = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self.m_panelImageOrder.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self.m_panelImageOrder.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+		self.m_panelImageOrder.SetMaxSize( wx.Size( 400,-1 ) )
 		
 		bSizer17 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -203,11 +209,11 @@ class ProcessPanel ( wx.Panel ):
 		bSizer17.Add( self.m_staticText20, 0, wx.ALL, 5 )
 		
 		self.m_staticText22 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"Double-click on Filename in Process panel when processing complete where process has produced output images", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText22.Wrap( 600 )
+		self.m_staticText22.Wrap( 360 )
 		bSizer17.Add( self.m_staticText22, 0, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlReview = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_dataViewListCtrlReview.SetMinSize( wx.Size( 600,500 ) )
+		self.m_dataViewListCtrlReview.SetMinSize( wx.Size( 400,600 ) )
 		
 		self.m_Col_reviewCheck = self.m_dataViewListCtrlReview.AppendToggleColumn( u"Select" )
 		self.m_Col_reviewFilename = self.m_dataViewListCtrlReview.AppendTextColumn( u"File Name" )
@@ -428,7 +434,7 @@ class FilesPanel ( wx.Panel ):
 		
 		self.panel_right = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		self.panel_right.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-		self.panel_right.SetMaxSize( wx.Size( 380,-1 ) )
+		self.panel_right.SetMinSize( wx.Size( 380,-1 ) )
 		
 		bSizerThumb = wx.BoxSizer( wx.VERTICAL )
 		

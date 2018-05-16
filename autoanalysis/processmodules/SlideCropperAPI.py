@@ -50,6 +50,7 @@ class SlideCropperAPI(object):
         cfg['MAX_MEMORY'] = 90 # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
+        cfg['OFFSET'] = 0
         return cfg
 
     def setConfigurables(self,cfg):
@@ -77,7 +78,8 @@ class SlideCropperAPI(object):
                 memmax = int(self.cfg['MAX_MEMORY'])
                 lightbg = self.cfg['LIGHT_BG_THRESHOLD']
                 darkbg = self.cfg['DARK_BG_THRESHOLD']
-                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax,lightbg,darkbg)
+                offset = self.cfg['OFFSET']
+                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax,lightbg,darkbg,offset)
                 pid_list = tic.crop_input_images()
                 msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir,pid_list)
                 logging.info(msg)

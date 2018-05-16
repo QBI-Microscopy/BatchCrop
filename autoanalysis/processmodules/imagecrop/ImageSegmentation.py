@@ -30,28 +30,34 @@ class ImageSegmentation(object):
         if [x1, y1, x2, y2] not in self.segments:
             self.segments.append([x1, y1, x2, y2])
 
-    def get_scaled_segments(self, height,width):
+    def get_scaled_segments(self, height,width,offset=False):
         """
         :param width: pixel width of image to be scaled to.
         :param height: pixel height of image to be scaled to. 
         :return: An array of segment boxes scaled to the dimensions width x height
         """
-
+        scalefactor = int(np.sqrt((width * height)/(self.width * self.height)))
         # make into 2d Array
         matrix = np.array(self.segments)[:]
-
+        m1 = np.multiply(matrix,scalefactor)
+        if offset:
+            moffset = np.multiply(m1,0.03)
+            matrix = np.add(m1, np.round(moffset))
+        else:
+            matrix = m1
+        #matrix[:, [X2, Y2]] = np.multiply(matrix[:, [X2, Y2]], scalefactor)
         # column multiplication of columns 0 & 2 by width/self.width
-        matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], round(width / self.width))
+        # matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], (width / self.width))
+        #
+        # # same for y axis columns 1 & 3. Multiply by height/self.height
+        # matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], (height / self.height))
+        return matrix.astype(int)
 
-        # same for y axis columns 1 & 3. Multiply by height/self.height
-        matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], round(height / self.height))
-        return matrix
-
-    def get_relative_segments(self):
-        """
-        :return: An array of segment boxes without scaling.  x1<= x, y <=1. 
-        """
-        return self.get_scaled_segments(1, 1)
+    # def get_relative_segments(self):
+    #     """
+    #     :return: An array of segment boxes without scaling.  x1<= x, y <=1.
+    #     """
+    #     return self.get_scaled_segments(1, 1)
 
     def get_max_segment(self):
         """
