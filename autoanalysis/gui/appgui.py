@@ -173,7 +173,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer20.Add( self.m_staticText21, 0, wx.ALL, 5 )
 		
-		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES|wx.HSCROLL|wx.VSCROLL )
+		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
 		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( -1,360 ) )
 		
@@ -525,7 +525,7 @@ class FilesPanel ( wx.Panel ):
 		
 		bSizer18.Add( self.m_staticText252, 0, wx.ALL, 5 )
 		
-		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.dataview.DV_MULTIPLE|wx.HSCROLL|wx.VSCROLL )
+		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.dataview.DV_MULTIPLE )
 		self.m_dataViewListCtrl1.SetMinSize( wx.Size( -1,300 ) )
 		
 		self.col_selected = self.m_dataViewListCtrl1.AppendToggleColumn( u"Select" )
