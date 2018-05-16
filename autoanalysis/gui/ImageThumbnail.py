@@ -2,7 +2,6 @@ import numpy as np
 import skimage.external.tifffile as tf
 import wx
 from autoanalysis.processmodules.imagecrop.ImarisImage import ImarisImage
-#from scipy.misc import resize
 from skimage.transform import resize
 
 class ImageThumbnail(wx.StaticBitmap):
@@ -18,12 +17,10 @@ class ImageThumbnail(wx.StaticBitmap):
             return
 
         if max_size is not None:
-            # Adjust size so that the image dimensions just fit within max_size dimensions
-            # if self.thumbnail.shape[0]/max_size[0] > self.thumbnail.shape[1]/max_size[1]:
-            #     self.thumbnail = resize(self.thumbnail, max_size[0] / self.thumbnail.shape[0])
-            # else:
-            #     self.thumbnail = resize(self.thumbnail, max_size[1] / self.thumbnail.shape[1])
-            self.thumbnail = resize(self.thumbnail,(max_size[1],max_size[0],1), preserve_range=True)
+            thumb_w = min(max_size[0],self.thumbnail.shape[0])
+            thumb_h = min(max_size[1], self.thumbnail.shape[1])
+            img = resize(self.thumbnail,(thumb_w,thumb_h), preserve_range=True)
+            self.thumbnail = img.astype(np.uint8)
         image = wx.Image(wx.Size(self.thumbnail.shape[1], self.thumbnail.shape[0]), self.thumbnail)
         super(ImageThumbnail, self).__init__(parent, bitmap=image.ConvertToBitmap())
 

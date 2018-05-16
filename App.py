@@ -30,7 +30,6 @@ import matplotlib
 
 matplotlib.use('Agg')
 from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
-#from autoanalysis.gui.ImageViewer import ImagePanel
 from autoanalysis.gui.ImageViewer import ImageViewer
 import wx
 import wx.html2
@@ -332,26 +331,6 @@ class FileSelectPanel(FilesPanel):
         if DEBUG:
             print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
-
-
-########################################################################
-# class BitmapRenderer(wx.grid.GridCellRenderer):
-#     """
-#     Custom grid element renderer to render bitmaps into the process panel grid
-#     """
-#
-#     def __init__(self, bitmap):
-#         self.bitmap = bitmap
-#         wx.grid.GridCellRenderer.__init__(self)
-#
-#     def Draw(self, grid, attr, dc, rect, row, col, is_selected):
-#         dc.DrawBitmap(self.bitmap, rect.X, rect.Y)
-#
-#     def Clone(self):
-#         return self.__class__()
-#
-#     def GetBestSize(self, grid, attr, dc, row, col):
-#         return wx.Size(128, 128)
 
 
 ########################################################################

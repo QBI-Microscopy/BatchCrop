@@ -35,13 +35,14 @@ class ImageSegmentation(object):
         :param width: pixel width of image to be scaled to.
         :param height: pixel height of image to be scaled to. 
         :return: An array of segment boxes scaled to the dimensions width x height
+        https://stackoverflow.com/questions/42000601/resize-an-image-with-offset-in-python
         """
         scalefactor = int(np.sqrt((width * height)/(self.width * self.height)))
         # make into 2d Array
         matrix = np.array(self.segments)[:]
         m1 = np.multiply(matrix,scalefactor)
         if offset:
-            moffset = np.multiply(m1,0.03)
+            moffset = np.multiply(m1,0.01)
             matrix = np.add(m1, np.round(moffset))
         else:
             matrix = m1
