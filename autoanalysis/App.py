@@ -15,7 +15,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 '''
-
+import matplotlib
 import csv
 import os
 import re
@@ -26,7 +26,7 @@ from os.path import join, isdir, exists
 
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
-import matplotlib
+
 
 matplotlib.use('Agg')
 from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
@@ -40,7 +40,7 @@ from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
-__version__ = '1.0.0alpha'
+__version__ = '1.0.0'
 DEBUG = 1
 COLWIDTH=500 #DISPLAY COLUMNS
 ########################################################################
