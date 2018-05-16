@@ -15,7 +15,6 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 '''
-import matplotlib
 import csv
 import os
 import re
@@ -24,14 +23,14 @@ import time
 from os import mkdir
 from os.path import join, isdir, exists
 
+import matplotlib
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
-
-
 matplotlib.use('Agg')
 from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
 from autoanalysis.gui.ImageViewer import ImageViewer
 import wx
+import wx.xrc
 import wx.html2
 import wx.dataview
 

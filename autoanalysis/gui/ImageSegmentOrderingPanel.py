@@ -1,11 +1,10 @@
-from collections import deque
-import wx
 import os
-from glob import iglob
-from os.path import join
-#from wx.lib.pubsub import pub as Publisher
+from collections import deque
 
 from autoanalysis.gui.ImageThumbnail import *
+
+
+# from wx.lib.pubsub import pub as Publisher
 
 
 class ImageSegmentOrderingPanel(wx.Panel):

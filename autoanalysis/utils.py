@@ -1,10 +1,9 @@
-from hashlib import sha256
 import sys
-import re
-from string import ascii_lowercase
-from os import access,R_OK, rename
-from os.path import join,abspath, dirname, split
 from glob import iglob
+from hashlib import sha256
+from os import access, R_OK
+from os.path import join, abspath, dirname, split
+
 
 def generateuid(seriesnum):
     hashed = sha256(str(seriesnum).encode('utf-8')).hexdigest()
@@ -23,14 +22,13 @@ def checkhashed(seriesnum, hashed):
 def findResourceDir():
     # try local
     if sys.platform =='darwin':
-        resource_dir = join('.', 'resources')
+        resource_dir = join('.','autoanalysis', 'resources')
     else:
-        resource_dir = join('.', 'resources')
-    #print("1. Base resource dir:",resource_dir)
+        resource_dir = join('autoanalysis','resources')
     if not access(resource_dir,R_OK):
         #print('1b. Cannot access local resource_dir')
         #Try to locate resource dir
-        base = dirname(abspath(resource_dir))
+        base = dirname(abspath('.'))
         allfiles = [y for y in iglob(join(base,'**', "resources"))]#, recursive=True)]
         files = [f for f in allfiles if not 'build' in f]
         #print('Possible paths: ', len(files))

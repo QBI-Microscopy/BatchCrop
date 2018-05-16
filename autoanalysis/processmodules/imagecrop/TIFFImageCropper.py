@@ -1,15 +1,15 @@
 import logging
 import os
-from multiprocessing import Process
 from os.path import basename, splitext, join, exists
-from skimage.filters import threshold_minimum
+
+import psutil
 from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
-import matplotlib
-import matplotlib.pyplot as plt
-import psutil
+from skimage.filters import threshold_minimum
+
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
 from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
+
 
 class TIFFImageCropper(object):
     """

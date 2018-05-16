@@ -11,19 +11,11 @@ Created on 19 Feb 2018
 @author: Liz Cooper-Williams, QBI
 """
 
-import logging
-import re
-from glob import iglob
-from os import R_OK, access
-from os.path import join, isdir, commonpath, commonprefix,sep, basename, splitext
-
-from configobj import ConfigObj
-from numpy import unique
 import argparse
-import pandas as pd
-from plotly import offline
-from plotly.graph_objs import Layout, Scatter
 from collections import OrderedDict
+from glob import iglob
+from os.path import join
+
 DEBUG = 1
 
 class FileUnarchiver():

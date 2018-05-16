@@ -2,12 +2,12 @@ import argparse
 import logging
 import os
 import sys
-from os.path import join
 from collections import OrderedDict
-from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
+from os.path import join
+
 from autoanalysis.processmodules.imagecrop.InputImage import InputImage
 from autoanalysis.processmodules.imagecrop.TIFFImageCropper import TIFFImageCropper
-import autoanalysis.processmodules.imagecrop.ImarisImage as I
+
 
 class SlideCropperAPI(object):
     """
@@ -44,13 +44,13 @@ class SlideCropperAPI(object):
         :return:
         '''
         cfg = OrderedDict()
-        cfg['BORDER_FACTOR']= 2 # %of pixels for border
+        cfg['BORDER_FACTOR']= 0 # %of pixels for border
         cfg['IMAGE_TYPE'] = '.ims' # File type of original
         cfg['CROPPED_IMAGE_FILES'] = 'cropped' # output directory
         cfg['MAX_MEMORY'] = 90 # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
-        cfg['OFFSET'] = 0
+        cfg['OFFSET'] = 1
         return cfg
 
     def setConfigurables(self,cfg):
@@ -112,7 +112,7 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 control~B.ims")
+    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2045m 15~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="Z:\\Micro Admin\\Jack\\output")
     parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\Adam")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
