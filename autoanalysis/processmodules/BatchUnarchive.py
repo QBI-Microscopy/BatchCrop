@@ -26,8 +26,8 @@ class FileUnarchiver():
         :param outputdir: not used - required for template module
         :param showplots:
         """
-        self.data = inputfile
-        print('FileUnarchiver: data=', self.data)
+        self.imgfile = inputfile
+        print('FileUnarchiver: data=', self.imgfile)
 
 
     def getConfigurables(self):
@@ -52,8 +52,8 @@ class FileUnarchiver():
         :return: outputfilename
         """
         try:
-            print('Unarchiving file: ',self.data)
-            fh = open(self.data, 'r')
+            print('Unarchiving file: ',self.imgfile)
+            fh = open(self.imgfile, 'r')
             fh.close()
         except Exception as e:
             raise e

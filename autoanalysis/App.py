@@ -24,6 +24,7 @@ from os import mkdir
 from os.path import join, isdir, exists
 
 import matplotlib
+
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 matplotlib.use('Agg')
@@ -641,8 +642,7 @@ class AppFrame(wx.Frame):
                           size=(1000, 720)
                           )
 
-        # self.timer = wx.Timer(self)
-        # self.Bind(wx.EVT_TIMER, self.update, self.timer)
+        self.Bind(wx.EVT_CLOSE, self.OnExit)
         panel = wx.Panel(self)
 
         notebook = AppMain(panel)
@@ -653,14 +653,16 @@ class AppFrame(wx.Frame):
         self.Center(wx.BOTH)
         self.Show()
 
-    def OnCloseWindow(self, e):
+    def OnExit(self, e):
         dial = wx.MessageDialog(None, 'Are you sure you want to quit?', 'Question',
                                 wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
 
         ret = dial.ShowModal()
 
         if ret == wx.ID_YES:
+            self.DestroyChildren()
             self.Destroy()
+
         else:
             e.Veto()
 
