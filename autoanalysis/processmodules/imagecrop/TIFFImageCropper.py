@@ -7,6 +7,7 @@ from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
 import matplotlib
 import matplotlib.pyplot as plt
+import psutil
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
 from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
 
@@ -16,8 +17,10 @@ class TIFFImageCropper(object):
     ImageSegmentation object applies to each x-y plane and the output is in TIFF format. 
     """
 
-    def __init__(self,imgfile, border_factor, output_path, mem):
-        self.maxmemoryavail = mem
+    def __init__(self,imgfile, border_factor, output_path, memmax,lightbg,darkbg):
+        self.maxmemory = memmax
+        self.lightbg = lightbg
+        self.darkbg = darkbg
         self.border_factor = border_factor
         self.imgfile = imgfile
         if not os.path.isdir(output_path):
@@ -42,13 +45,13 @@ class TIFFImageCropper(object):
     def thresholdImage(self):
         image = I.ImarisImage(self.imgfile).get_low_res_image()
         t0_min = threshold_minimum(image.value)
-        bin_img = image.value > t0_min
-
+        binary_img = image.value > t0_min
         image.close_file()
+        return binary_img
 
     def generateSegments(self):
         image = I.ImarisImage(self.imgfile)
-        segmentations = ImageSegmenter.segment_image(self.border_factor, image.get_multichannel_segmentation_image())
+        segmentations = ImageSegmenter.segment_image(self.border_factor, image.get_multichannel_segmentation_image(), self.lightbg, self.darkbg)
         image.close_file()
         return segmentations
 
@@ -61,20 +64,22 @@ class TIFFImageCropper(object):
         :return: 
         """
         done_list = 0
-
-        ## Iterate through each bounding box
-        for box_index in range(len(self.segmentation.segments)):
-            done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index)
-            # crop_process = Process(target=TIFFImageCropper.crop_single_image,
-            #                        args=(self.imgfile, self.segmentation, self.output_folder, box_index))
-            # pid_list.append(crop_process)
-            # crop_process.start()
-            # crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
-        # the program will give individual processes a ROI each: multiprocessing to use more CPU.
+        try:
+            ## Iterate through each bounding box
+            for box_index in range(len(self.segmentation.segments)):
+                done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory)
+                # crop_process = Process(target=TIFFImageCropper.crop_single_image,
+                #                        args=(self.imgfile, self.segmentation, self.output_folder, box_index))
+                # pid_list.append(crop_process)
+                # crop_process.start()
+                # crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
+            # the program will give individual processes a ROI each: multiprocessing to use more CPU.
+        except Exception as e:
+            raise e
         return done_list
 
     @staticmethod
-    def crop_single_image(input_path, image_segmentation, output_path, box_index):
+    def crop_single_image(input_path, image_segmentation, output_path, box_index, memmax):
         rtn = 0
         input_image = I.ImarisImage(input_path)
         for r_lev in range(input_image.get_resolution_levels()):
@@ -86,31 +91,36 @@ class TIFFImageCropper(object):
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
 
             # image data with dimensions [c,x,y,z,t]
-            #  TODO: check if enough memory on computer to load into disk self.maxmemoryavail
-            image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
-                                                                        t=[0, t],
-                                                                        c=[0, c],
-                                                                        z=[0, z],
-                                                                        y=[segment[1], segment[3]],
-                                                                        x=[segment[0], segment[2]])
+            #  Check if enough memory on computer to load into disk
+            mempercent = psutil.virtual_memory().percent
+            if mempercent < memmax:
+                image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
+                                                                            t=[0, t],
+                                                                            c=[0, c],
+                                                                            z=[0, z],
+                                                                            y=[segment[1], segment[3]],
+                                                                            x=[segment[0], segment[2]])
 
-            # Only Save as AppendedTiff
-            outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
-            msg = "CropSingleImage: Generating cropped file: %s" % outputfile
-            logging.debug(msg)
-            print(msg)
-            with TIFF(outputfile, False) as tf:
-                try:
-                    im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                    im.save(tf)
-                    tf.newFrame()
-                    im.close()
-                    rtn = 1
-                except Exception as e:
-                    msg ='Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
-                    print(msg)
-                    logging.error(msg)
-            del image_data
+                # Only Save as AppendedTiff
+                outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
+                msg = "CropSingleImage: Generating cropped file: %s" % outputfile
+                logging.debug(msg)
+                print(msg)
+                with TIFF(outputfile, False) as tf:
+                    try:
+                        im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
+                        im.save(tf)
+                        tf.newFrame()
+                        im.close()
+                        rtn = 1
+                    except Exception as e:
+                        msg ='Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                        print(msg)
+                        logging.error(msg)
+                del image_data
+
+            else:
+                raise OSError('Memory insufficient to generate images')
         msg = "Finished writing image %d to %s" % (box_index + 1, input_path)
         print(msg)
         logging.info(msg)

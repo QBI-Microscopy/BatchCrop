@@ -466,20 +466,25 @@ class ProcessRunPanel(ProcessPanel):
                                 wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         ret = dial.ShowModal()
         if ret == wx.ID_YES:
-            filenames = []
-            for i in range(self.m_dataViewListCtrlReview.GetItemCount()):
-                fname = self.m_dataViewListCtrlReview.GetValue(i, 1)
-                if self.m_dataViewListCtrlReview.GetToggleValue(i, 0):
-                    os.remove(fname)
-                    msg = "PROCESSPANEL: Deleted file: %s" % fname
-                    print(msg)
-                else:
-                    filenames.append(fname)
-            # Refresh list
-            self.m_dataViewListCtrlReview.DeleteAllItems()
-            for fname in filenames:
-                self.m_dataViewListCtrlReview.AppendItem([False, fname,"{:0.3f}".format(os.stat(fname).st_size / 10e8)])
-            self.Refresh()
+            try:
+                filenames = []
+                for i in range(self.m_dataViewListCtrlReview.GetItemCount()):
+                    fname = self.m_dataViewListCtrlReview.GetValue(i, 1)
+                    if self.m_dataViewListCtrlReview.GetToggleValue(i, 0):
+                        os.remove(fname)
+                        msg = "PROCESSPANEL: Deleted file: %s" % fname
+                        print(msg)
+                    else:
+                        filenames.append(fname)
+                # Refresh list
+                self.m_dataViewListCtrlReview.DeleteAllItems()
+                for fname in filenames:
+                    self.m_dataViewListCtrlReview.AppendItem([False, fname,"{:0.3f}".format(os.stat(fname).st_size / 10e8)])
+                self.Refresh()
+            except PermissionError as e:
+                self.Parent.Warn('Windows Permission Error: file is still open so cannot delete: ', e.args[0])
+            except Exception as e:
+                self.Parent.Warn('Error: cannot delete selected file: ', e.args[0])
 
 
     def getFilePanel(self):
@@ -586,6 +591,7 @@ class ProcessRunPanel(ProcessPanel):
     def OnStopProcessing( self, event ):
         self.controller.shutdown()
         while self.controller._stopevent.isSet():
+            time.sleep(1)
             self.m_stOutputlog.SetLabelText('Called Stop processing .. please wait')
         self.m_stOutputlog.SetLabelText('Called Stop processing -complete')
 

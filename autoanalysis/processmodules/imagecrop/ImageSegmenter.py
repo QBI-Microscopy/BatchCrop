@@ -29,7 +29,7 @@ class ImageSegmenter(object):
     """
 
     @staticmethod
-    def segment_image(border_factor, image_array):
+    def segment_image(border_factor, image_array, lightbg, darkbg):
         """
         Segments the image by means of mathematical morphology.
         :param image_array: a 2D image array to be cropped with an optional channel dimension Shape in form (c,y,x)
@@ -39,16 +39,16 @@ class ImageSegmenter(object):
         # Step 1
         #binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
 
-        binary_image = ImageSegmenter._threshold_image(image_array, K_Clusters)
+        binary_image = ImageSegmenter._threshold_image(image_array, K_Clusters, lightbg, darkbg)
         # Step 2
         closed_image = ImageSegmenter._noise_reduction(binary_image)
         opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
-        segments = ImageSegmenter._apply_object_detection(opened_image) #.change_segment_bounds(border_factor)
+        segments = ImageSegmenter._apply_object_detection(opened_image).change_segment_bounds(border_factor)
         return segments
 
     @staticmethod
-    def _threshold_image(image_array, k):
+    def _threshold_image(image_array, k, lightbg, darkbg):
         """
         Handler to properly threshold the image_array to a binary image of
         foreground and background. Algorithm used is a k-means clustering. 
@@ -59,7 +59,7 @@ class ImageSegmenter(object):
         histogram = ImageSegmenter._image_histogram(channel_image)
         cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
         has_light_bg = histogram[0] < histogram[255]
-        return ImageSegmenter._apply_cluster_threshold(cluster_vector, channel_image, has_light_bg) #ImageSegmenter._has_dark_objects(channel_image))
+        return ImageSegmenter._apply_cluster_threshold(cluster_vector, channel_image, has_light_bg, lightbg, darkbg) #ImageSegmenter._has_dark_objects(channel_image))
 
     @staticmethod
     def _has_dark_objects(image):
@@ -172,18 +172,24 @@ class ImageSegmenter(object):
             cluster_vector = cluster_temp_vector.copy()
 
     @staticmethod
-    def _apply_cluster_threshold(cluster_vector, channel_image, darkObjects):
+    def _apply_cluster_threshold(cluster_vector, channel_image, darkObjects, lightbg, darkbg):
         """
         Applies the cluster_vector thresholds to the channel_image to create a binary image. 
         :param cluster_vector: 1D array of cluster pixel intensities
         :param channel_image: 2D image array
+        :param darkObjects: boolean True for light bg, False for dark bg
+        :param lightbg: manual override value for thresholding light bg (or 'auto')
+        :param darkbg: manual override value for thresholding dark bg (or 'auto')
         :return: a binary image of the median threshold from cluster_vector
         """
 
         # Using 2nd index of 10 clusters for foreground (index found through testing)
         if (darkObjects):
             #logging.info("Image currently being segmented is deemed to have a light background.")
-            binary_threshold = cluster_vector[-1]
+            if lightbg != 'auto' and int(lightbg) > 0 and int(lightbg) < 255:
+                binary_threshold = int(lightbg)
+            else:
+                binary_threshold = cluster_vector[-1]
             msg = 'LIGHT bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
@@ -191,7 +197,10 @@ class ImageSegmenter(object):
 
         else:
             #logging.info("Image currently being segmented is deemed to have a dark background.")
-            binary_threshold = cluster_vector[0] /2
+            if darkbg != 'auto' and int(darkbg) > 0 and int(darkbg) < 255:
+                binary_threshold = int(darkbg)
+            else:
+                binary_threshold = cluster_vector[0] /2 #Correction for dark bg thresholding
             msg = 'DARK bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)

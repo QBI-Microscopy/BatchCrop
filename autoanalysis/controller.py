@@ -179,10 +179,11 @@ class Controller():
             processname, outfile, "{0}% memory".format(percent))
             print(msg)
             logger.debug(msg)
-            if percent >= max_mem:
+            if percent > max_mem:
                 msg = 'Low memory - stop processing: %d' % percent
                 logging.warning(msg)
                 print(msg)
+                self._stopevent.set()
                 raise OSError(msg)
 
             ctr += increment

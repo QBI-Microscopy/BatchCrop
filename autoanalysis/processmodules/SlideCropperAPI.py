@@ -44,10 +44,12 @@ class SlideCropperAPI(object):
         :return:
         '''
         cfg = OrderedDict()
-        cfg['BORDER_FACTOR']=1.3
-        cfg['IMAGE_TYPE'] = '.ims'
-        cfg['CROPPED_IMAGE_FILES'] = 'cropped'
-        cfg['MAX_MEMORY'] = 5000000000 #5GB
+        cfg['BORDER_FACTOR']= 5 # %of pixels for border
+        cfg['IMAGE_TYPE'] = '.ims' # File type of original
+        cfg['CROPPED_IMAGE_FILES'] = 'cropped' # output directory
+        cfg['MAX_MEMORY'] = 90 # % of memory to quit
+        cfg['LIGHT_BG_THRESHOLD'] = 'auto'
+        cfg['DARK_BG_THRESHOLD'] = 'auto'
         return cfg
 
     def setConfigurables(self,cfg):
@@ -71,9 +73,11 @@ class SlideCropperAPI(object):
         try:
             if self.imgfile is not None:
                 # Load to Image Cropper
-                border_factor = float(self.cfg['BORDER_FACTOR'])
-                memu = int(self.cfg['MAX_MEMORY'])
-                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memu)
+                border_factor = int(self.cfg['BORDER_FACTOR'])
+                memmax = int(self.cfg['MAX_MEMORY'])
+                lightbg = self.cfg['LIGHT_BG_THRESHOLD']
+                darkbg = self.cfg['DARK_BG_THRESHOLD']
+                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax,lightbg,darkbg)
                 pid_list = tic.crop_input_images()
                 msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir,pid_list)
                 logging.info(msg)

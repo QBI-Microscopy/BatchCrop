@@ -88,40 +88,23 @@ class ImageSegmentation(object):
 
     def change_segment_bounds(self, factor):
         """
-        :param factor: a float value dictating the change in bounding box size. Factor > 1 increases the ROI
+        :param factor: percent of pixels to include as border eg 5
         :return: an ImageSegmentation object with bounding boxes increased/decreased by the given factor
         """
-        logging.info("Segments border factor of {}.".format(factor))
         new_image_segmentation = ImageSegmentation(self.width, self.height)
-        factor = factor/100 #0.05 #5%
+        if factor > 0 and factor < 100:
+            logging.info("Segments border factor of {}.".format(factor))
 
-        for bounding_box in self.segments:
-            # center_x, center_y = [(bounding_box[X1] + bounding_box[X2]) / 2, (bounding_box[Y1] + bounding_box[Y2]) / 2]
-            # half_box_width, half_box_height = [(bounding_box[X2] - bounding_box[X1]) / 2, (bounding_box[Y2] - bounding_box[Y1]) / 2]
+            factor = factor/100 #%
 
-            ## Edge adjusted factor adjusts the factor value so that it does not make a bounding box that would
-            # exceed the original image's dimensions
-            # edge_adjusted_factor = min(factor,
-            #                            (self.height - center_y/half_box_height),
-            #                            (self.width - center_x / half_box_width),
-            #                            (center_y/half_box_height),
-            #                            (center_x / half_box_width)
-            #                            )
-            #
-            # x1 = max(int(center_x - edge_adjusted_factor * half_box_width), 0)
-            # y1 = max(int(center_y - edge_adjusted_factor * half_box_height), 0)
-            # x2 = min(int(center_x + edge_adjusted_factor * half_box_width), self.width)
-            # y2 = min(int(center_y + edge_adjusted_factor * half_box_height), self.height)
-            # x1 = bounding_box[X1]
-            # new_image_segmentation.add_segmentation(x1, y1, x2, y2)
-
-            border_w = (factor *bounding_box[2])
-            border_h = (factor *bounding_box[3])
-            pos_x = max(0,round(bounding_box[0] - border_w))
-            pos_y = max(0,round(bounding_box[1] - border_h))
-            box_w = round(bounding_box[2] + border_w)
-            box_h = round(bounding_box[3] + border_h)
-            new_image_segmentation.add_segmentation(pos_x,pos_y, box_w,box_h)
+            for bounding_box in self.segments:
+                border_w = (factor *bounding_box[2])
+                border_h = (factor *bounding_box[3])
+                pos_x = max(0,round(bounding_box[0] - border_w))
+                pos_y = max(0,round(bounding_box[1] - border_h))
+                box_w = min(self.width, round(bounding_box[2] + border_w))
+                box_h = min(self.height, round(bounding_box[3] + border_h))
+                new_image_segmentation.add_segmentation(pos_x,pos_y, box_w,box_h)
 
         return new_image_segmentation
 
