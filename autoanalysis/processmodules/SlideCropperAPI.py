@@ -44,13 +44,13 @@ class SlideCropperAPI(object):
         :return:
         '''
         cfg = OrderedDict()
-        cfg['BORDER_FACTOR']= 5 # %of pixels for border
+        cfg['BORDER_FACTOR']= 10 # %of pixels for border
         cfg['IMAGE_TYPE'] = '.ims' # File type of original
         cfg['CROPPED_IMAGE_FILES'] = 'cropped' # output directory
         cfg['MAX_MEMORY'] = 90 # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
-        cfg['OFFSET'] = 1
+        cfg['OFFSET'] = 0
         return cfg
 
     def setConfigurables(self,cfg):
