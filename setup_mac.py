@@ -1,5 +1,5 @@
 '''
-    QBI Auto Analysis APP: setup_mac.py (Mac OSX package)
+    QBI Batch Crop: setup_mac.py (Mac OSX package)
     *******************************************************************************
     Copyright (C) 2017  QBI Software, The University of Queensland
 
@@ -26,20 +26,20 @@ Notes:
     Macholib version=1.7 required to prevent endless recursions
     Specify matplotlib backends with '-'
 '''
-import sys
-from os.path import join
 from os import getcwd
-#Self -bootstrapping https://py2app.readthedocs.io
-# import ez_setup
-# ez_setup.use_setuptools()
+from os.path import join
 
 from setuptools import setup
 
-from App import __version__
+from autoanalysis.App import __version__
 
-application_title = 'QBI AutoAnalysis SynapticVesicles'
-exe_name='autoanalysis_sv'
-#main_python_file = join('.','App.py')
+# Self -bootstrapping https://py2app.readthedocs.io
+# import ez_setup
+# ez_setup.use_setuptools()
+application_title = 'QBI Batch SlideCropper'
+main_python_file = join('.','autoanalysis','App.py')
+exe_name='batchcropper'
+#main_python_file = join('App.py')
 #venvpython = join(sys.prefix,'Lib','site-packages')
 #mainpython = "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
 
@@ -49,18 +49,18 @@ plist = dict(
     CFBundleName=exe_name,
     CFBundleDisplayName=application_title,
     NSHumanReadableCopyright='Copyright (c) 2018 Queensland Brain Institute',
-    CFBundleTypeIconFile='newplot.icns',
+    CFBundleTypeIconFile='app.icns',
     CFBundleVersion=__version__
             )
 
-APP = ['App.py']
+APP = [main_python_file]
 DATA_FILES = [join('autoanalysis','resources')]
 PARENTDIR= join(getcwd(),'.')
 OPTIONS = {'argv_emulation': True,
            #'use_pythonpath': True,
            'plist': plist,
-           'iconfile': join('autoanalysis','resources','newplot.icns'),
-           'packages': ['sqlite3','scipy', 'wx','pandas','autoanalysis.processmodules'],
+           'iconfile': join('autoanalysis','resources','app.icns'),
+           'packages': ['sqlite3','scipy', 'wx','autoanalysis','h5py'],
            'includes':['six','appdirs','packaging','packaging.version','packaging.specifiers','packaging.requirements','os','numbers','future_builtins'],
            'bdist_base': join(PARENTDIR, 'build'),
            'dist_dir': join(PARENTDIR, 'dist'),
