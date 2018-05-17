@@ -30,7 +30,7 @@ class ImageSegmentation(object):
         if [x1, y1, x2, y2] not in self.segments:
             self.segments.append([x1, y1, x2, y2])
 
-    def get_scaled_segments(self, height,width,offset=False):
+    def get_scaled_segments(self, height,width,border=0,offset=False):
         """
         :param width: pixel width of image to be scaled to.
         :param height: pixel height of image to be scaled to. 
@@ -38,6 +38,8 @@ class ImageSegmentation(object):
         https://stackoverflow.com/questions/42000601/resize-an-image-with-offset-in-python
         """
         scalefactor = int(np.sqrt((width * height)/(self.width * self.height)))
+        if border:
+            scalefactor = scalefactor + (scalefactor * border/100)
         # make into 2d Array
         matrix = np.array(self.segments)[:]
         m1 = np.multiply(matrix,scalefactor)
