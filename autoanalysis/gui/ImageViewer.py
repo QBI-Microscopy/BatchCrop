@@ -43,6 +43,7 @@ class ImageViewer(wx.Frame):
                           "ImageViewer",
                           size=(900, 700)
                           )
+        self.Bind(wx.EVT_CLOSE, self.OnExit)
         self.currentimage = 0
         self.imglist = imglist
         self.maglist = ["Small" , "Medium", "Large"]
@@ -111,11 +112,6 @@ class ImageViewer(wx.Frame):
             if exists(loadimg):
                 self.plotpanel.loadImage(loadimg)
                 self.fnameTxt.SetLabelText(loadimg)
-            #     print('Next image: ', loadimg)
-            # else:
-            #     print('No further images found')
-        # else:
-        #     print('Max image')
 
 
     def prevImage(self, event):
@@ -130,17 +126,15 @@ class ImageViewer(wx.Frame):
             if exists(loadimg):
                 self.plotpanel.loadImage(self.imglist[self.currentimage])
                 self.fnameTxt.SetLabelText(self.imglist[self.currentimage])
-        #         print('Prev image: ', loadimg)
-        #     else:
-        #         print('No further images found')
-        # else:
-        #     print('Min image')
+
+    def OnExit(self, e):
+        self.Destroy()
 
 
 
 if __name__ == '__main__':
     imgapp = wx.App()
-    imgdir = "Z:\\Micro Admin\\Jack\\cropped\\NG_GAD67_GFP16~B"
+    imgdir = "Z:\\Micro Admin\\Jack\\For Rumelo from Lei\\cropped\\170818_APP_1878 UII_BF~B"
     imglist = [x for x in iglob(join(imgdir, "*.tiff"))]
     frame = ImageViewer(imglist)
     imgapp.MainLoop()
