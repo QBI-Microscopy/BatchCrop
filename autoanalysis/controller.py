@@ -195,7 +195,7 @@ class Controller():
             wx.YieldIfNeeded()
 
     # ----------------------------------------------------------------------
-    def RunProcess(self, wxGui, processref, outputdir, filenames):
+    def RunProcess(self, wxGui, processref, outputdir, filenames,prow):
         """
         :param wxGui:
         :param processref:
@@ -222,9 +222,9 @@ class Controller():
         msg = "MEMORY: \n\tAvailable: %d \t Swap: %d \t Percent: %d \n" % (avail_mem,swap,percent)
         print(msg)
         logging.info(msg)
-
+        row = prow
         if len(filenames) > 0:
-            row = 0
+
             # One thread per file
             for filename in filenames:
                 if not self._stopevent.isSet():
@@ -256,6 +256,8 @@ class Controller():
         else:
             logger.error("No files to process")
             raise ValueError("No matched files to process")
+
+        return row
 
     # ----------------------------------------------------------------------
 

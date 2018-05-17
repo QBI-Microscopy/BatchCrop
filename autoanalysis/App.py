@@ -537,9 +537,11 @@ class ProcessRunPanel(ProcessPanel):
                     raise ValueError("No files selected in Files Panel")
 
                 # For each process
+                prow = 0
                 for pcaption in selections:
                     p = self.controller.db.getRef(pcaption)
-                    self.controller.RunProcess(self, p, outputdir, filenames)
+                    prow = self.controller.RunProcess(self, p, outputdir, filenames,prow)
+                    prow += 1
 
             else:
                 raise ValueError("No files selected - please go to Files Panel and add to list")
