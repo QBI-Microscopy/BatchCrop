@@ -66,14 +66,9 @@ class TIFFImageCropper(object):
         """
         done_list = 0
         try:
-            ## Iterate through each bounding box
+            ## Iterate through each bounding box #TODO Tile cannot extend outside image - segments 3 &  4
             for box_index in range(len(self.segmentation.segments)):
                 done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory,self.border_factor,self.offset)
-                # crop_process = Process(target=TIFFImageCropper.crop_single_image,
-                #                        args=(self.imgfile, self.segmentation, self.output_folder, box_index))
-                # pid_list.append(crop_process)
-                # crop_process.start()
-                # crop_process.join()  # Uncomment these two lines to allow single processing of ROIs. When commented
             # the program will give individual processes a ROI each: multiprocessing to use more CPU.
         except Exception as e:
             raise e
@@ -89,11 +84,12 @@ class TIFFImageCropper(object):
         for r_lev in range(input_image.get_resolution_levels()):
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = input_image.image_dimensions()[r_lev]
-            segment = image_segmentation.get_scaled_segments(resolution_dimensions[1], resolution_dimensions[0],border,offset)[box_index]
-
+            segment = image_segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],border,offset)[box_index]
+            print('Segment:',segment)
             # Use all z, c & t planes of the image.
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
-
+            msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d' % (image_width, image_height, z, c, t)
+            print(msg)
             # image data with dimensions [c,x,y,z,t]
             #  Check if enough memory on computer to load into disk
             mempercent = psutil.virtual_memory().percent

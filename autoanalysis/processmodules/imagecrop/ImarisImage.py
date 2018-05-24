@@ -21,7 +21,7 @@ class ImarisImage(InputImage):
             self.file = h5py.File(self.filename, "r")
             self.resolutions = self.get_resolution_levels()
             # will be defined as self.segmentation_resolution
-            self.segment_resolution = self.resolutions -1 #self._set_segmentation_res()  # resolution level to be used for segmentation
+            self.segment_resolution = self.resolutions -self._set_segmentation_res()  # resolution level to be used for segmentation
             msg = 'ImarisImage: H5 loaded: %s \n\t Resolution levels: %s (selected: %d)\n' % (self.filename, str(self.resolutions),self.segment_resolution)
             logging.info(msg)
             print(msg)

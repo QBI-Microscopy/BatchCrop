@@ -22,42 +22,58 @@ class ImageSegmentation(object):
         :param x2, y2: bottom-right point of the segment box
         :return: null
         """
-        # if (any(value < 0 for value in [x1, y1, x2, y2]) | any(x > self.width for x in [x1, x2]) |
-        #         any(y > self.height for y in [y1, y2]) | (x1 > x2) | (y1 > y2)):
+
+        # if (any(value < 0 for value in [x1, y1, x2, y2]) | any(x > self.height for x in [x1, x2]) |
+        #         any(y > self.width for y in [y1, y2]) | (x1 > x2) | (y1 > y2)):
         #     logging.error("Invalid image segment: %s of image sized %s", (x1, y1, x2, y2), (self.width, self.height))
         #     raise InvalidSegmentError()
         # else:
         if [x1, y1, x2, y2] not in self.segments:
             self.segments.append([x1, y1, x2, y2])
 
-    def get_scaled_segments(self, height,width,border=0,offset=False):
+    def get_scaled_segments(self,width, height,border=0,offset=False):
         """
         :param width: pixel width of image to be scaled to.
         :param height: pixel height of image to be scaled to. 
         :return: An array of segment boxes scaled to the dimensions width x height
         https://stackoverflow.com/questions/42000601/resize-an-image-with-offset-in-python
         """
-        scalefactor = round(np.sqrt((width * height)/(self.width * self.height)))
+        scalefactor = int(np.sqrt((width * height)/(self.width * self.height)))
+        scale_width = (width / self.width)
+        scale_height = (height / self.height)
+        if scale_width ==1 or scale_height== 1:
+            scale_width = scalefactor
+            scale_height = scalefactor
 
-        if border:
-            scalefactor = scalefactor + (scalefactor * border/100)
-        msg = 'Scalefactor applied: %d [%d x %d] with border=%d to initial [%d x %d]' % (scalefactor, width, height,border,self.width,self.height)
+        msg = 'Scalefactors: wx%d hx%d [%d x %d] with border=%d to initial [%d x %d] offset=%s' % (scale_width, scale_height, width, height,border,self.width,self.height, offset)
         print(msg)
         logging.debug(msg)
         # make into 2d Array
         matrix = np.array(self.segments)[:]
-        m1 = np.multiply(matrix,scalefactor)
+        print('Orig xy:', matrix)
+        if border:
+            matrix[:, [X1, Y1]] = np.subtract(matrix[:, [X1, Y1]], border)
+            matrix[:, [X2, Y2]] = np.add(matrix[:, [X2, Y2]],border)
+        print('Border xy:', matrix)
         if offset:
-            moffset = np.multiply(m1,scalefactor *0.1)
-            matrix = np.add(m1, np.round(moffset))
-        else:
-            matrix = m1
-        # matrix[:, [X2, Y2]] = np.multiply(matrix[:, [X2, Y2]], scalefactor)
+            matrix[:, [X1, X2]] = np.add(matrix[:, [X1, X2]], 0.1*scale_width)
+            matrix[:, [Y1, Y2]] = np.add(matrix[:, [Y1, Y2]], 0.1*scale_height)
+        # Apply scaling
         # column multiplication of columns 0 & 2 by width/self.width
-        # matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], (width / self.width))
-        #
-        # # same for y axis columns 1 & 3. Multiply by height/self.height
-        # matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], (height / self.height))
+        matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], scale_width)
+        # same for y axis columns 1 & 3. Multiply by height/self.height
+        matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], scale_height)
+        print('Scaled xy:', matrix)
+        # replace with boundaries
+        matrix[matrix<0] =0
+        # check width not greater than max width
+        mw = matrix[:, [X2]] - matrix[:, [X1]]
+        mw[mw> width]=width
+        matrix[:,[X1]]=matrix[:, [X2]]-mw
+        # max height
+        mw = matrix[:, [Y2]] - matrix[:, [Y1]]
+        mw[mw > height] = height
+        matrix[:, [Y1]] = matrix[:, [Y2]]-mw
         return matrix.astype(int)
 
     # def get_relative_segments(self):
