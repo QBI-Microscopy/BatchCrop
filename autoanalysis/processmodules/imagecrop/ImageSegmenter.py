@@ -28,7 +28,7 @@ class ImageSegmenter(object):
     """
 
     @staticmethod
-    def segment_image(border_factor, image_array, lightbg, darkbg):
+    def segment_image(image_array, lightbg, darkbg):
         """
         Segments the image by means of mathematical morphology.
         :param image_array: a 2D image array to be cropped with an optional channel dimension Shape in form (c,y,x)

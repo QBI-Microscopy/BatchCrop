@@ -3,11 +3,14 @@ import numpy as np
 import h5py
 import logging
 SEGMENTATION_DIMENSION_MAX = 50000000
-
+DEBUG=0
 
 class ImarisImage(InputImage):
     """
-    Implementation of the InputImage interface for Imaris Bitplane files. 
+    Implementation of the InputImage interface for Imaris Bitplane files.
+    IMARIS 5.5 File Format Description (IMS)
+    http://open.bitplane.com/Default.aspx?tabid=268
+    Typical chunk sizes are 128x128x64 or 256x256x16
     """
 
     # noinspection PyMissingConstructor
@@ -20,14 +23,36 @@ class ImarisImage(InputImage):
         try:
             self.file = h5py.File(self.filename, "r")
             self.resolutions = self.get_resolution_levels()
+            if DEBUG:
+                self.info = self.get_info()
+            self.chunks = self.get_chunks()
+            self.thumbnail = self.file['/Thumbnail'] #('Data', <HDF5 dataset "Data": shape (256, 1024), type "|u1">)
             # will be defined as self.segmentation_resolution
-            self.segment_resolution = self.resolutions -self._set_segmentation_res()  # resolution level to be used for segmentation
+            self.segment_resolution = self.resolutions -1 #self.resolutions -self._set_segmentation_res()  # resolution level to be used for segmentation
             msg = 'ImarisImage: H5 loaded: %s \n\t Resolution levels: %s (selected: %d)\n' % (self.filename, str(self.resolutions),self.segment_resolution)
             logging.info(msg)
             print(msg)
 
         except Exception as e:
             raise IOError(e)
+
+    def get_info(self):
+        info = self.file['/DataSetInfo']
+        for item in info.items():
+            print(item)
+        return info
+
+    def get_chunks(self):
+        # Find if has chunks - for offsets
+        dataset = self.file['/DataSet/ResolutionLevel 0/TimePoint 0/Channel 1/Data']
+        if hasattr(dataset, 'chunks'):
+            chunks = dataset.chunks
+        else:
+            chunks = None
+        print('Chunks: ', chunks)
+        return chunks
+
+
 
     def get_filename(self):
         """
@@ -70,26 +95,29 @@ class ImarisImage(InputImage):
         :param t: [t1, t2] of t dimension indexing. t2>=t1
         :return: ndarray of up to 5 dimensions for the image data of a given resolution in shape [t,c,z,x,y]
         """
-
+        time_subspace = None
+        subspace = None
         for tPoint in range(t[0], t[1]):
             for cLevel in range(c[0], c[1]):
 
                 path = "/DataSet/ResolutionLevel {0}/TimePoint {1}/Channel {2}/Data".format(r, tPoint, cLevel)
+                #extract ROI from original image
                 dataset = self.file[path][z[0]:z[1], y[0]:y[1], x[0]:x[1]]
+                print('File ROI: ',dataset.shape, 'y=',y,'x=',x)
                 dataset = np.expand_dims(dataset, axis= -1)
-
-                if 'time_subspace' in locals():
+                if time_subspace is not None: #'time_subspace' in locals():
                     time_subspace = np.concatenate((time_subspace, dataset), axis = -1)
 
                 else:
                     time_subspace = dataset
 
             time_subspace = np.expand_dims(time_subspace, axis=-1)
-            if "subspace" in locals():
+            print('Tspace: ',time_subspace.shape)
+            if subspace is not None: #"subspace" in locals():
                 subspace = np.concatenate((subspace, time_subspace), axis = -1)
             else:
                 subspace = time_subspace
-
+            print('space: ', subspace.shape)
         return np.swapaxes(subspace, 0,2)
 
 
@@ -172,18 +200,19 @@ class ImarisImage(InputImage):
         """
         dimensions_stack = []
         lowest_path = '/DataSet/ResolutionLevel {0}/TimePoint 0/Channel 0/Data'.format(self.resolutions - 1)
-        if self.file[lowest_path].ndim == 3:
-            y_index = 1
-            x_index = 2
-        else:
-            y_index = 0
-            x_index = 1
+        # if self.file[lowest_path].ndim == 3:
+        #     y_index = 1
+        #     x_index = 2
+        # else:
+        #     y_index = 0
+        #     x_index = 1
 
         i =0
         while i < self.resolutions:
             path = '/DataSet/ResolutionLevel {0}/TimePoint 0/Channel 0/Data'.format(i)
-            y = self.file[path].shape[y_index]
-            x = self.file[path].shape[x_index]
+            dataset = self.file[path]
+            y = dataset.shape[-2] #self.file[path].shape[y_index]
+            x = dataset.shape[-1] #self.file[path].shape[x_index]
             dimensions_stack.append((y, x))
             i += 1
         return dimensions_stack

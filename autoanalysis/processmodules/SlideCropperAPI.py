@@ -50,7 +50,7 @@ class SlideCropperAPI(object):
         cfg['MAX_MEMORY'] = 80 # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
-        cfg['OFFSET'] = 0
+        cfg['OFFSET'] = 1.2 # range from 0-2 smaller is less shift
         return cfg
 
     def setConfigurables(self,cfg):
@@ -78,9 +78,10 @@ class SlideCropperAPI(object):
                 memmax = int(self.cfg['MAX_MEMORY'])
                 lightbg = self.cfg['LIGHT_BG_THRESHOLD']
                 darkbg = self.cfg['DARK_BG_THRESHOLD']
-                offset = self.cfg['OFFSET']
+                offset = float(self.cfg['OFFSET'])
                 tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax,lightbg,darkbg,offset)
                 pid_list = tic.crop_input_images()
+                tic.image.close_file()
                 msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir,pid_list)
                 logging.info(msg)
                 print(msg)
@@ -112,7 +113,7 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 control~B.ims")
+    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2045m 15~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="D:\\data")
     parser.add_argument('--inputdir', action='store', help='Input directory', default="Y:\\Micro Admin\\Jack\\Adam")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')

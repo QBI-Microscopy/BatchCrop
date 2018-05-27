@@ -152,8 +152,8 @@ class Config(ConfigPanel):
                 fp.loadController()
         # notification
         #msg = "Config saved: %s" % configid
-        msg = "Config updated"
-        self.Parent.Warn(msg)
+        msg = "Config updated successfully"
+        self.Parent.Info(msg)
         self.controller.db.closeconn()
 
     def OnAddRow(self, event):

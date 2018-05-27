@@ -143,7 +143,11 @@ class Controller():
 
     def loadLogger(self, outputdir=None):
         #### LoggingConfig
-        logger.setLevel(logging.INFO)
+        dbug=self.db.getConfigByName(self.currentconfig,'DEBUG')
+        if dbug is not None and dbug =='1':
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
         # Check dirs exist and are writable
         if outputdir is not None and access(outputdir, R_OK):
             homedir = outputdir

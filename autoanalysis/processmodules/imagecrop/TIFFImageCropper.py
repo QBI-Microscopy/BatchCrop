@@ -24,6 +24,7 @@ class TIFFImageCropper(object):
         self.border_factor = border_factor
         self.offset = offset
         self.imgfile = imgfile
+        self.image = I.ImarisImage(self.imgfile)
         if not os.path.isdir(output_path):
             raise IOError('Invalid output directory: ', output_path)
         else:
@@ -51,9 +52,13 @@ class TIFFImageCropper(object):
         return binary_img
 
     def generateSegments(self):
-        image = I.ImarisImage(self.imgfile)
-        segmentations = ImageSegmenter.segment_image(self.border_factor, image.get_multichannel_segmentation_image(), self.lightbg, self.darkbg)
-        image.close_file()
+        # if self.image is None:
+        #     image = I.ImarisImage(self.imgfile)
+        # else:
+        #image = self.image
+        segmentations = ImageSegmenter.segment_image(self.image.get_multichannel_segmentation_image(), self.lightbg, self.darkbg)
+        # if image is not None:
+        #     image.close_file()
         return segmentations
 
     def crop_input_images(self):
@@ -66,34 +71,38 @@ class TIFFImageCropper(object):
         """
         done_list = 0
         try:
-            ## Iterate through each bounding box #TODO Tile cannot extend outside image - segments 3 &  4
+            ## Iterate through each bounding box
             for box_index in range(len(self.segmentation.segments)):
-                done_list += TIFFImageCropper.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory,self.border_factor,self.offset)
+                #done_list += self.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory,self.border_factor,self.offset)
+                done_list += self.crop_single_image(box_index)
             # the program will give individual processes a ROI each: multiprocessing to use more CPU.
         except Exception as e:
             raise e
         return done_list
 
-    @staticmethod
-    def crop_single_image(input_path, image_segmentation, output_path, box_index, memmax,border,offset):
+
+    def crop_single_image(self,box_index):
         rtn = 0
-        input_image = I.ImarisImage(input_path)
-        outputfile = join(output_path, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
+        input_image = self.image #I.ImarisImage(input_path)
+        outputfile = join(self.output_folder, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
         if exists(outputfile):
             os.remove(outputfile)
+        dims = input_image.image_dimensions()
         for r_lev in range(input_image.get_resolution_levels()):
             # Get appropriately scaled ROI for the given dimension.
-            resolution_dimensions = input_image.image_dimensions()[r_lev]
-            segment = image_segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],border,offset)[box_index]
+            resolution_dimensions = dims[r_lev]
+            segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
+                                                            self.border_factor,self.offset,
+                                                            input_image.chunks)[box_index]
             print('Segment:',segment)
             # Use all z, c & t planes of the image.
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
-            msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d' % (image_width, image_height, z, c, t)
+            msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (image_width, image_height, z, c, t, segment[3]-segment[1], segment[2]-segment[0])
             print(msg)
             # image data with dimensions [c,x,y,z,t]
             #  Check if enough memory on computer to load into disk
             mempercent = psutil.virtual_memory().percent
-            if mempercent < memmax:
+            if mempercent < self.maxmemory:
                 image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
                                                                             t=[0, t],
                                                                             c=[0, c],
@@ -120,7 +129,7 @@ class TIFFImageCropper(object):
 
             else:
                 raise OSError('Memory insufficient to generate images')
-        msg = "Finished writing image %d to %s" % (box_index + 1, input_path)
+        msg = "Finished writing image %d from %s" % (box_index + 1, self.imgfile)
         print(msg)
         logging.info(msg)
         return rtn

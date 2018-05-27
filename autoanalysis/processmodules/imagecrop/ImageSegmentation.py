@@ -31,7 +31,7 @@ class ImageSegmentation(object):
         if [x1, y1, x2, y2] not in self.segments:
             self.segments.append([x1, y1, x2, y2])
 
-    def get_scaled_segments(self,width, height,border=0,offset=False):
+    def get_scaled_segments(self,width, height,border=0,offset=0.3, chunks=None):
         """
         :param width: pixel width of image to be scaled to.
         :param height: pixel height of image to be scaled to. 
@@ -44,6 +44,11 @@ class ImageSegmentation(object):
         if scale_width ==1 or scale_height== 1:
             scale_width = scalefactor
             scale_height = scalefactor
+        # # Adjust
+        # if scalefactor >20 and scalefactor < 50:
+        #     scalefactor = 32
+        # elif scalefactor >=50 and scalefactor < 100:
+        #     scalefactor = 64
 
         msg = 'Scalefactors: wx%d hx%d [%d x %d] with border=%d to initial [%d x %d] offset=%s' % (scale_width, scale_height, width, height,border,self.width,self.height, offset)
         print(msg)
@@ -51,21 +56,39 @@ class ImageSegmentation(object):
         # make into 2d Array
         matrix = np.array(self.segments)[:]
         print('Orig xy:', matrix)
+        #Total segment boundary
+        total_seg_h = matrix[-1][X2] - matrix[0][X1]
+        total_seg_w = matrix[-1][Y2] - matrix[0][Y1]
+        msg = 'Segmented area: %d x %d [%0.4f %0.4f]' % (total_seg_w, total_seg_h, (total_seg_h/self.height),(total_seg_w / self.width))
+        print(msg)
         if border:
             matrix[:, [X1, Y1]] = np.subtract(matrix[:, [X1, Y1]], border)
             matrix[:, [X2, Y2]] = np.add(matrix[:, [X2, Y2]],border)
         print('Border xy:', matrix)
-        if offset:
-            matrix[:, [X1, X2]] = np.add(matrix[:, [X1, X2]], 0.1*scale_width)
-            matrix[:, [Y1, Y2]] = np.add(matrix[:, [Y1, Y2]], 0.1*scale_height)
+
         # Apply scaling
-        # column multiplication of columns 0 & 2 by width/self.width
         matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], scale_width)
-        # same for y axis columns 1 & 3. Multiply by height/self.height
         matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], scale_height)
         print('Scaled xy:', matrix)
         # replace with boundaries
         matrix[matrix<0] =0
+
+        # Adjust offset for large images non-contiguous byte storage
+        # https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html
+        if scalefactor > 30:
+            if offset >= 0 or offset < 3:
+                # if chunks is not None:
+                #     bytefactor = offset / round(np.log2(chunks[-1]))
+                # else:
+                #     bytefactor = offset / round(np.log2(scale_height))
+                bytefactor = offset / round(np.log2(scale_height))
+                print('Scale factor=', scalefactor, " scale_height=",scale_height, ' bytefactor=',bytefactor, 'chunks=',chunks)
+                for i in range(len(matrix)):
+                    offsetfactor = int(matrix[i][Y1] * bytefactor)
+                    print('Offset factor: i=', i, ' ', offsetfactor)
+                    matrix[i][Y1] = np.add(matrix[i][Y1], offsetfactor)
+                    matrix[i][Y2] = np.add(matrix[i][Y2], offsetfactor)
+                print('Offset xy:', matrix)
         # check width not greater than max width
         mw = matrix[:, [X2]] - matrix[:, [X1]]
         mw[mw> width]=width
@@ -74,6 +97,12 @@ class ImageSegmentation(object):
         mw = matrix[:, [Y2]] - matrix[:, [Y1]]
         mw[mw > height] = height
         matrix[:, [Y1]] = matrix[:, [Y2]]-mw
+
+        # Total segment boundary after
+        total_seg_w = matrix[-1][X2] - matrix[0][X1]
+        total_seg_h = matrix[-1][Y2] - matrix[0][Y1]
+        msg = 'Segmented area: %d x %d [%0.4f %0.4f]' % (total_seg_w, total_seg_h, (total_seg_w / height), (total_seg_h / width))
+        print(msg)
         return matrix.astype(int)
 
     # def get_relative_segments(self):
