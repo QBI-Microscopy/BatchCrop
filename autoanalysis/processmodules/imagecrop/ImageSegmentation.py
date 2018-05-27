@@ -62,8 +62,9 @@ class ImageSegmentation(object):
         msg = 'Segmented area: %d x %d [%0.4f %0.4f]' % (total_seg_w, total_seg_h, (total_seg_h/self.height),(total_seg_w / self.width))
         print(msg)
         if border:
-            matrix[:, [X1, Y1]] = np.subtract(matrix[:, [X1, Y1]], border)
-            matrix[:, [X2, Y2]] = np.add(matrix[:, [X2, Y2]],border)
+            border_factor = int((border/100) * np.sqrt(self.width * self.height))
+            matrix[:, [X1, Y1]] = np.subtract(matrix[:, [X1, Y1]], border_factor)
+            matrix[:, [X2, Y2]] = np.add(matrix[:, [X2, Y2]],border_factor)
         print('Border xy:', matrix)
 
         # Apply scaling
@@ -75,14 +76,10 @@ class ImageSegmentation(object):
 
         # Adjust offset for large images non-contiguous byte storage
         # https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html
-        if scalefactor > 30:
-            if offset >= 0 or offset < 3:
-                # if chunks is not None:
-                #     bytefactor = offset / round(np.log2(chunks[-1]))
-                # else:
-                #     bytefactor = offset / round(np.log2(scale_height))
-                bytefactor = offset / round(np.log2(scale_height))
-                print('Scale factor=', scalefactor, " scale_height=",scale_height, ' bytefactor=',bytefactor, 'chunks=',chunks)
+        if chunks is not None and scalefactor > 30:
+            if offset >= 0:
+                bytefactor = offset / round(np.log2(scale_width))
+                print('Scale factor=', scale_width, ' bytefactor=',bytefactor, 'chunks=',chunks)
                 for i in range(len(matrix)):
                     offsetfactor = int(matrix[i][Y1] * bytefactor)
                     print('Offset factor: i=', i, ' ', offsetfactor)

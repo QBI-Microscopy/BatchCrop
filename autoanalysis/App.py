@@ -389,7 +389,7 @@ class ProcessRunPanel(ProcessPanel):
 
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=2)
-            self.m_dataViewListCtrlRunning.SetValue("Running  - " + update, row=row, col=3)
+            self.m_dataViewListCtrlRunning.SetValue("Running  - " + str(update), row=row, col=3)
             self.m_dataViewListCtrlRunning.Refresh()
             self.m_stOutputlog.SetLabelText("Running: %s for %s ...please wait" % (process, outputPath))
 
@@ -461,9 +461,9 @@ class ProcessRunPanel(ProcessPanel):
                     self.m_dataViewListCtrlReview.AppendItem([False, fname,"{:0.3f}".format(os.stat(fname).st_size / 10e8)])
                 self.Refresh()
             except PermissionError as e:
-                self.Parent.Warn('Windows Permission Error: file is still open so cannot delete: ', e.args[0])
+                self.Parent.Warn('Windows Permission Error: file is still open so cannot delete: ', str(e))
             except Exception as e:
-                self.Parent.Warn('Error: cannot delete selected file: ', e.args[0])
+                self.Parent.Warn('Error: cannot delete selected file: ',str(e))
 
 
     def getFilePanel(self):
@@ -570,10 +570,11 @@ class ProcessRunPanel(ProcessPanel):
         self.m_dataViewListCtrlRunning.DeleteAllItems()
 
     def OnStopProcessing( self, event ):
+        self.m_stOutputlog.SetLabelText('Called Stop processing ... will end after current image processed')
         self.controller.shutdown()
-        while self.controller._stopevent.isSet():
+        while not self.controller._stopevent.isSet():
             time.sleep(1)
-            self.m_stOutputlog.SetLabelText('Called Stop processing .. please wait')
+            self.m_stOutputlog.SetLabelText('Called Stop processing ... will end after current image processed')
         self.m_stOutputlog.SetLabelText('Called Stop processing -complete')
 
 

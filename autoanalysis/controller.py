@@ -228,7 +228,8 @@ class Controller():
         logging.info(msg)
         row = prow
         if len(filenames) > 0:
-
+            # Remove any previous stop
+            self._stopevent.clear()
             # One thread per file
             for filename in filenames:
                 if not self._stopevent.isSet():
