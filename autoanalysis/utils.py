@@ -1,4 +1,5 @@
 import sys
+import logging
 from glob import iglob
 from hashlib import sha256
 from os import access, R_OK
@@ -43,7 +44,9 @@ def findResourceDir():
                     break
         else:
             raise ValueError('Cannot locate resources dir: ', abspath(resource_dir))
-    print('Resources dir located to: ', abspath(resource_dir))
+    msg ='Resources dir located to: %s' % abspath(resource_dir)
+    print(msg)
+    logging.debug(msg)
     return abspath(resource_dir)
 
 def CheckFilenames(filenames, configfiles):

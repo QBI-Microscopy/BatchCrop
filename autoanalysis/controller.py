@@ -119,9 +119,12 @@ class ProcessThread(threading.Thread):
 
         except Exception as e:
             print(e)
+            logging.error(e)
             wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, self.processname, self.outfile,e.args[0])))
         finally:
-            print('Finished ProcessThread')
+            msg ='Finished ProcessThread'
+            print(msg)
+            logging.info(msg)
             # self.terminate()
             # lock.release()
             # event.clear()

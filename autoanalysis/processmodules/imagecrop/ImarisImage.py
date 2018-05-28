@@ -1,11 +1,13 @@
-from .InputImage import InputImage
-import numpy as np
-import h5py
 import logging
-SEGMENTATION_DIMENSION_MAX = 50000000
-DEBUG=0
 
-class ImarisImage(InputImage):
+import h5py
+import numpy as np
+
+SEGMENTATION_DIMENSION_MAX = 50000000
+DEBUG = 0
+
+
+class ImarisImage(object):
     """
     Implementation of the InputImage interface for Imaris Bitplane files.
     IMARIS 5.5 File Format Description (IMS)
@@ -20,16 +22,18 @@ class ImarisImage(InputImage):
         :param filename: String path to the given image file. 
         """
         self.filename = filename
+
         try:
             self.file = h5py.File(self.filename, "r")
             self.resolutions = self.get_resolution_levels()
             if DEBUG:
                 self.info = self.get_info()
             self.chunks = self.get_chunks()
-            self.thumbnail = self.file['/Thumbnail'] #('Data', <HDF5 dataset "Data": shape (256, 1024), type "|u1">)
+            # self.thumbnail = self.file['/Thumbnail/Data'] #('Data', <HDF5 dataset "Data": shape (256, 1024), type "|u1">)
             # will be defined as self.segmentation_resolution
-            self.segment_resolution = self.resolutions -1 #self.resolutions -self._set_segmentation_res()  # resolution level to be used for segmentation
-            msg = 'ImarisImage: H5 loaded: %s \n\t Resolution levels: %s (selected: %d)\n' % (self.filename, str(self.resolutions),self.segment_resolution)
+            self.segment_resolution = self.resolutions - 1  # self.resolutions -self._set_segmentation_res()  # resolution level to be used for segmentation
+            msg = 'ImarisImage: H5 loaded: %s \n\t Resolution levels: %s (selected: %d)\n' % (
+            self.filename, str(self.resolutions), self.segment_resolution)
             logging.info(msg)
             print(msg)
 
@@ -51,8 +55,6 @@ class ImarisImage(InputImage):
             chunks = None
         print('Chunks: ', chunks)
         return chunks
-
-
 
     def get_filename(self):
         """
@@ -77,15 +79,15 @@ class ImarisImage(InputImage):
                 (c < self.get_channel_levels()) & (c >= 0) &
                 (t < self.get_time_size()) & (t >= 0)):
             dataset = self.file['/DataSet/ResolutionLevel {0}/TimePoint {1}/Channel {2}/Data'
-                                .format(r, t, c)]
+                .format(r, t, c)]
 
             if region:
                 return dataset[z, region[0]:region[2], region[1]: region[3]]
             return dataset[z, :, :]
 
-    # noinspection PyUnboundLocalVariable,PyUnboundLocalVariable
+
     def get_euclidean_subset_in_resolution(self, r, t, c, z, y, x):
-        ### TODO: xyczt is image_j format
+        ### Note: xyczt is image_j format
         """
         :param r: Resolution Level integer 
         :param c: [c1, c2] of channel range indexing. c2>=c1 
@@ -101,25 +103,24 @@ class ImarisImage(InputImage):
             for cLevel in range(c[0], c[1]):
 
                 path = "/DataSet/ResolutionLevel {0}/TimePoint {1}/Channel {2}/Data".format(r, tPoint, cLevel)
-                #extract ROI from original image
+                # extract ROI from original image
                 dataset = self.file[path][z[0]:z[1], y[0]:y[1], x[0]:x[1]]
-                print('File ROI: ',dataset.shape, 'y=',y,'x=',x)
-                dataset = np.expand_dims(dataset, axis= -1)
-                if time_subspace is not None: #'time_subspace' in locals():
-                    time_subspace = np.concatenate((time_subspace, dataset), axis = -1)
+                #print('File ROI: ', dataset.shape, 'y=', y, 'x=', x)
+                dataset = np.expand_dims(dataset, axis=-1)
+                if time_subspace is not None:  # 'time_subspace' in locals():
+                    time_subspace = np.concatenate((time_subspace, dataset), axis=-1)
 
                 else:
                     time_subspace = dataset
 
             time_subspace = np.expand_dims(time_subspace, axis=-1)
-            print('Tspace: ',time_subspace.shape)
-            if subspace is not None: #"subspace" in locals():
-                subspace = np.concatenate((subspace, time_subspace), axis = -1)
+            #print('Tspace: ', time_subspace.shape)
+            if subspace is not None:  # "subspace" in locals():
+                subspace = np.concatenate((subspace, time_subspace), axis=-1)
             else:
                 subspace = time_subspace
-            print('space: ', subspace.shape)
-        return np.swapaxes(subspace, 0,2)
-
+            #print('space: ', subspace.shape)
+        return np.swapaxes(subspace, 0, 2)
 
     def get_low_res_image(self):
         """
@@ -127,7 +128,7 @@ class ImarisImage(InputImage):
         """
         if (self.resolutions != 0) & (self.get_channel_levels() != 0):
             return self.file['/DataSet/ResolutionLevel {0}/TimePoint 0/Channel 0/Data'
-                             .format(self.resolutions - 1)]
+                .format(self.resolutions - 1)]
         # Else return empty Array of shape (0,0)
         return [[]]
 
@@ -138,7 +139,7 @@ class ImarisImage(InputImage):
         """
         if (self.resolutions != 0) & (self.get_channel_levels() != 0):
             return self.file['/DataSet/ResolutionLevel {0}/TimePoint 0/Channel 0/Data'
-                             .format(self.segment_resolution)]
+                .format(self.segment_resolution)]
         # Else return empty Array of shape (0,0)
         return [[]]
 
@@ -207,12 +208,12 @@ class ImarisImage(InputImage):
         #     y_index = 0
         #     x_index = 1
 
-        i =0
+        i = 0
         while i < self.resolutions:
             path = '/DataSet/ResolutionLevel {0}/TimePoint 0/Channel 0/Data'.format(i)
             dataset = self.file[path]
-            y = dataset.shape[-2] #self.file[path].shape[y_index]
-            x = dataset.shape[-1] #self.file[path].shape[x_index]
+            y = dataset.shape[-2]  # self.file[path].shape[y_index]
+            x = dataset.shape[-1]  # self.file[path].shape[x_index]
             dimensions_stack.append((y, x))
             i += 1
         return dimensions_stack
@@ -230,7 +231,6 @@ class ImarisImage(InputImage):
         """
         pass
 
-
     def close_file(self):
         """
         Closes the associated file of the image. Good memory practice before removing this object or reference. 
@@ -245,8 +245,8 @@ class ImarisImage(InputImage):
         image_array = None
         if (self.resolutions != 0) & (self.get_channel_levels() != 0):
             for i in range(self.get_channel_levels()):
-                if image_array is None: #not 'image_array' in locals():
+                if image_array is None:  # not 'image_array' in locals():
                     image_array = self.get_two_dim_data(self.segment_resolution, c=i)
                 else:
-                    np.concatenate((image_array , self.get_two_dim_data(self.segment_resolution, c=i)), axis = 0)
+                    np.concatenate((image_array, self.get_two_dim_data(self.segment_resolution, c=i)), axis=0)
         return image_array

@@ -3,18 +3,17 @@ import logging
 import numpy as np
 import scipy.ndimage as ndimage
 from skimage.filters import threshold_minimum
-
-# from old_version.src.main.Config import Config
-from .ImageSegmentation import ImageSegmentation
+from autoanalysis.processmodules.imagecrop.ImageSegmentation import ImageSegmentation
 
 K_Clusters = 2
 BGPCOUNT = 80  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
-               # background
-SENSITIVITY_THRESHOLD = .05 # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
-MAX_NOISE_AREA = 1000   # Max area (pixels) of a slice for it to be still considered noise
+# background
+SENSITIVITY_THRESHOLD = .05  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
+MAX_NOISE_AREA = 1000  # Max area (pixels) of a slice for it to be still considered noise
 
 DELTAX, DELTAY = (0, 0)  # (20, 50) # How close in both directions a slice can be to another to be considered the same image
-IMAGEX, IMAGEY = (3000, 1200) # Size of image to use when segmenting the image.
+IMAGEX, IMAGEY = (3000, 1200)  # Size of image to use when segmenting the image.
+
 
 class ImageSegmenter(object):
     """
@@ -36,7 +35,7 @@ class ImageSegmenter(object):
         :return: an ImageSegmentation object 
         """
         # Step 1
-        #binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
+        # binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
 
         binary_image = ImageSegmenter._threshold_image(image_array, K_Clusters, lightbg, darkbg)
         # Step 2
@@ -61,7 +60,8 @@ class ImageSegmenter(object):
         has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
         t0_min = threshold_minimum(image_array)
 
-        return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg, darkbg) #ImageSegmenter._has_dark_objects(channel_image))
+        return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg,
+                                                       darkbg)  # ImageSegmenter._has_dark_objects(channel_image))
 
     @staticmethod
     def _has_dark_objects(image):
@@ -187,26 +187,26 @@ class ImageSegmenter(object):
 
         # Using 2nd index of 10 clusters for foreground (index found through testing)
         if (darkObjects):
-            #logging.info("Image currently being segmented is deemed to have a light background.")
+            # logging.info("Image currently being segmented is deemed to have a light background.")
             if lightbg != 'auto' and int(lightbg) > 0 and int(lightbg) < 255:
                 binary_threshold = int(lightbg)
             else:
-                binary_threshold = t0_min #cluster_vector[-1]
+                binary_threshold = t0_min  # cluster_vector[-1]
             msg = 'LIGHT bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
             rtn = 255 * (channel_image < binary_threshold).round()
 
         else:
-            #logging.info("Image currently being segmented is deemed to have a dark background.")
+            # logging.info("Image currently being segmented is deemed to have a dark background.")
             if darkbg != 'auto' and int(darkbg) > 0 and int(darkbg) < 255:
                 binary_threshold = int(darkbg)
             else:
-                binary_threshold = t0_min #cluster_vector[0] /2 #Correction for dark bg thresholding
+                binary_threshold = t0_min  # cluster_vector[0] /2 #Correction for dark bg thresholding
             msg = 'DARK bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
-            rtn =  255 * (channel_image > binary_threshold).round()
+            rtn = 255 * (channel_image > binary_threshold).round()
         return rtn
 
     @staticmethod
@@ -238,8 +238,8 @@ class ImageSegmenter(object):
         :param morphological_image: Binary image
         :return: A ImageSegmentation object
         """
-        #segmentations = ImageSegmentation(IMAGEX, IMAGEY)
-        segmentations = ImageSegmentation(morphological_image.shape[0],morphological_image.shape[1])
+        # segmentations = ImageSegmentation(IMAGEX, IMAGEY)
+        segmentations = ImageSegmentation(morphological_image.shape[0], morphological_image.shape[1])
 
         # Separate objects into separate labelled ints on matrix imlabelled
         imlabeled, num_features = ndimage.measurements.label(morphological_image, output=np.dtype("int"))
@@ -268,7 +268,7 @@ class ImageSegmenter(object):
         fraction = 0.01  # segment/area 1%
         for bounding_box in segmentations.segments:
             a = segmentations.segment_area(bounding_box)
-            if (a/totalarea) < fraction:
+            if (a / totalarea) < fraction:
                 segmentations.segments.remove(bounding_box)
 
         msg = "ObjectDetection: Features found: %d Segments created: %d" % (num_features, len(segmentations.segments))
@@ -372,7 +372,7 @@ class ImageSegmenter(object):
             if len(box_slices) != 0:
                 temp_list.append(box_slices[-1])
 
-            #  re-sort
+            # re-sort
             box_slices = sorted(temp_list.copy())
             del temp_list
 

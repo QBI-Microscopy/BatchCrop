@@ -28,7 +28,7 @@ import matplotlib
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 matplotlib.use('Agg')
-from autoanalysis.gui.ImageThumbnail import IMSImageThumbnail
+from autoanalysis.gui.ImageThumbnail import ImageThumbnail
 from autoanalysis.gui.ImageViewer import ImageViewer
 import wx
 import wx.xrc
@@ -42,7 +42,7 @@ from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, Proce
 
 __version__ = '1.0.0'
 DEBUG = 1
-COLWIDTH=500 #DISPLAY COLUMNS
+COLWIDTH=400 #DISPLAY COLUMNS
 ########################################################################
 class HomePanel(WelcomePanel):
     """
@@ -197,7 +197,7 @@ class FileSelectPanel(FilesPanel):
 
         try:
             W, H = self.panel_right.GetSize()
-            self.preview_thumbnail = IMSImageThumbnail(self.panel_right, filepath, max_size=(H, W))
+            self.preview_thumbnail = ImageThumbnail(self.panel_right, filepath, max_size=(H, W))
             self.panel_right.Sizer.Add(self.preview_thumbnail, wx.CENTER)
         except Exception as e:
             msg = "Could not open file {0} as an IMS image. Error is {1}".format(filepath, str(e))

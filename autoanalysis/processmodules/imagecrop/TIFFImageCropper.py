@@ -24,25 +24,29 @@ class TIFFImageCropper(object):
         self.border_factor = border_factor
         self.offset = offset
         self.imgfile = imgfile
-        self.image = I.ImarisImage(self.imgfile)
-        if not os.path.isdir(output_path):
-            raise IOError('Invalid output directory: ', output_path)
-        else:
-            #create unique output directory from image filename
-            filename = basename(imgfile)
-            new_folder = splitext(filename)[0]
-            image_folder = join(output_path, new_folder)
-            if not os.path.isdir(image_folder):
-                os.makedirs(image_folder)
-            self.output_folder = image_folder
-        #self.thresholdImage()
-        self.segmentation = self.generateSegments()
-        if (len(self.segmentation.segments) > 0):
-            msg = 'SlideCropperAPI: run: Image segmentation created %d segments' % len(self.segmentation.segments)
-            print(msg)
-            logging.info(msg)
-        else:
-            raise ValueError('Segmentation failed')
+        try:
+            self.image = I.ImarisImage(self.imgfile)
+            if not os.path.isdir(output_path):
+                raise IOError('Invalid output directory: ', output_path)
+            else:
+                #create unique output directory from image filename
+                filename = basename(imgfile)
+                new_folder = splitext(filename)[0]
+                image_folder = join(output_path, new_folder)
+                if not os.path.isdir(image_folder):
+                    os.makedirs(image_folder)
+
+                self.output_folder = image_folder
+            #self.thresholdImage()
+            self.segmentation = self.generateSegments()
+            if (len(self.segmentation.segments) > 0):
+                msg = 'SlideCropperAPI: run: Image segmentation created %d segments' % len(self.segmentation.segments)
+                print(msg)
+                logging.info(msg)
+            else:
+                raise ValueError('Segmentation failed')
+        except Exception as e:
+            raise(e)
 
     def thresholdImage(self):
         image = I.ImarisImage(self.imgfile).get_low_res_image()
@@ -99,6 +103,7 @@ class TIFFImageCropper(object):
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
             msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (image_width, image_height, z, c, t, segment[3]-segment[1], segment[2]-segment[0])
             print(msg)
+            logging.info(msg)
             # image data with dimensions [c,x,y,z,t]
             #  Check if enough memory on computer to load into disk
             mempercent = psutil.virtual_memory().percent
@@ -112,7 +117,7 @@ class TIFFImageCropper(object):
 
                 # Appended Tiff
                 msg = "CropSingleImage: Writing file: %s [level %d]" % (outputfile, r_lev)
-                logging.debug(msg)
+                logging.info(msg)
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     try:

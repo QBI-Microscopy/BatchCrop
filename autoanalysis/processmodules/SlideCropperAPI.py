@@ -5,7 +5,6 @@ import sys
 from collections import OrderedDict
 from os.path import join
 
-from autoanalysis.processmodules.imagecrop.InputImage import InputImage
 from autoanalysis.processmodules.imagecrop.TIFFImageCropper import TIFFImageCropper
 
 
@@ -13,15 +12,16 @@ class SlideCropperAPI(object):
     """
     Main Class for using SlideCropper functionality. All methods are class method based.     
     """
+
     def __init__(self, datafile, outputdir):
         # Set config values
         self.cfg = self.getConfigurables()
         self.status = 0
         self.imgfile = None
         # Load data
-        if os.access(datafile,os.R_OK):
-            ext_check = InputImage.get_extension(datafile)
-            if ext_check != self.cfg['IMAGE_TYPE']: #".ims":
+        if os.access(datafile, os.R_OK):
+            ext_check = self.get_extension(datafile)
+            if ext_check != self.cfg['IMAGE_TYPE']:  # ".ims":
                 raise TypeError("{} is currently not a supported file type".format(ext_check))
             self.imgfile = datafile
             msg = "Image file loaded from %s" % self.imgfile
@@ -36,7 +36,12 @@ class SlideCropperAPI(object):
         else:
             raise IOError('Unable to write to output directory: {0}'.format(outputdir))
 
-
+    def get_extension(self, file_path):
+        """
+        :return: The extension of the inputted file.
+        """
+        path_split = splitext(file_path)
+        return path_split[1]
 
     def getConfigurables(self):
         '''
@@ -44,16 +49,16 @@ class SlideCropperAPI(object):
         :return:
         '''
         cfg = OrderedDict()
-        cfg['BORDER_FACTOR']= 5 # %of pixels for border
-        cfg['IMAGE_TYPE'] = '.ims' # File type of original
-        cfg['CROPPED_IMAGE_FILES'] = 'cropped' # output directory
-        cfg['MAX_MEMORY'] = 80 # % of memory to quit
+        cfg['BORDER_FACTOR'] = 5  # %of pixels for border
+        cfg['IMAGE_TYPE'] = '.ims'  # File type of original
+        cfg['CROPPED_IMAGE_FILES'] = 'cropped'  # output directory
+        cfg['MAX_MEMORY'] = 80  # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
-        cfg['OFFSET'] = 1.2 # range from 0-2 smaller is less shift
+        cfg['OFFSET'] = 1.2  # range from 0-2 smaller is less shift
         return cfg
 
-    def setConfigurables(self,cfg):
+    def setConfigurables(self, cfg):
         '''
         Merge any variables set externally
         :param cfg:
@@ -62,9 +67,8 @@ class SlideCropperAPI(object):
         if self.cfg is None:
             self.cfg = self.getConfigurables()
         for cf in cfg.keys():
-            self.cfg[cf]= cfg[cf]
+            self.cfg[cf] = cfg[cf]
         logging.debug("SlideCropperAPI:Config loaded")
-
 
     def isRunning(self):
         return self.status == 1
@@ -79,10 +83,10 @@ class SlideCropperAPI(object):
                 lightbg = self.cfg['LIGHT_BG_THRESHOLD']
                 darkbg = self.cfg['DARK_BG_THRESHOLD']
                 offset = float(self.cfg['OFFSET'])
-                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax,lightbg,darkbg,offset)
+                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax, lightbg, darkbg, offset)
                 pid_list = tic.crop_input_images()
                 tic.image.close_file()
-                msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir,pid_list)
+                msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir, pid_list)
                 logging.info(msg)
                 print(msg)
             else:
@@ -93,8 +97,6 @@ class SlideCropperAPI(object):
         finally:
             self.status = 0
             logging.info("Run finished")
-
-
 
 
 """
@@ -113,9 +115,9 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2045m 15~B.ims")
+    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2238f 30~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="D:\\data")
-    parser.add_argument('--inputdir', action='store', help='Input directory', default="Y:\\Micro Admin\\Jack\\Adam")
+    parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\Adam")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
 
     return parser
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     from autoanalysis.gui.ImageViewer import ImageViewer
     from glob import iglob
     import wx
-    from os.path import basename,splitext
+    from os.path import basename, splitext
 
     parser = create_parser()
     args = parser.parse_args()
@@ -134,6 +136,6 @@ if __name__ == "__main__":
     slidecropper.run()
     # check output with ImageViewer
     imgapp = wx.App()
-    imglist = [x for x in iglob(join(args.outputdir,splitext(basename(args.datafile))[0], "*.tiff"))]
+    imglist = [x for x in iglob(join(args.outputdir, splitext(basename(args.datafile))[0], "*.tiff"))]
     frame = ImageViewer(imglist)
     imgapp.MainLoop()

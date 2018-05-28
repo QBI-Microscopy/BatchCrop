@@ -1,6 +1,7 @@
 import numpy as np
 import skimage.external.tifffile as tf
 import wx
+import traceback
 from autoanalysis.processmodules.imagecrop.ImarisImage import ImarisImage
 from skimage.transform import resize
 
@@ -11,32 +12,41 @@ class ImageThumbnail(wx.StaticBitmap):
     
     """
     def __init__(self, parent, filename, max_size=None):
-        self.thumbnail = self.get_image_data(filename)
         self.filename = filename
-        if self.thumbnail is None:
-            return
+        self.thumbnail = self.get_thumbnail(filename)
 
         if max_size is not None:
-            thumb_w = min(max_size[0],self.thumbnail.shape[0])
-            thumb_h = min(max_size[1], self.thumbnail.shape[1])
+            ratio_h = max_size[0]/self.thumbnail.shape[0]
+            thumb_w = max_size[0]
+            thumb_h = int(self.thumbnail.shape[1] * ratio_h)
             img = resize(self.thumbnail,(thumb_w,thumb_h), preserve_range=True)
             self.thumbnail = img.astype(np.uint8)
         image = wx.Image(wx.Size(self.thumbnail.shape[1], self.thumbnail.shape[0]), self.thumbnail)
         super(ImageThumbnail, self).__init__(parent, bitmap=image.ConvertToBitmap())
 
-    def get_image_data(self, filename):
-        return None
+    def get_thumbnail(self, filename):
+        try:
+            file = ImarisImage(filename)
+            # Must get all channels of image to be compatible with wx.image
+            thumbnail = [file.get_two_dim_data(file.resolutions-1, c=i) for i in range(file.get_channel_levels())]
+            thumbnail = np.stack(thumbnail, axis=2)
+            file.close_file()
+            return thumbnail
+
+        except Exception as e:
+            print(traceback.format_exc())
+            print("Error: Thumbnail from {0}".format(filename), str(e))
+            return None
 
 
-    # @staticmethod
-    # def resize_thumbnail(image_data, max_size):
-    #     # Adjust size so that the image dimensions just fit within max_size dimensions
-    #     if image_data.shape[0] / max_size[0] > image_data.shape[1] / max_size[1]:
-    #         image_data = resize(image_data, max_size[0] / image_data.shape[0])
-    #     else:
-    #         image_data = resize(image_data, max_size[1] / image_data.shape[1])
-    #
-    #     return image_data
+    def resize_thumbnail(self,image_data, max_size):
+        # Adjust size so that the image dimensions just fit within max_size dimensions
+        if image_data.shape[0] / max_size[0] > image_data.shape[1] / max_size[1]:
+            image_data = resize(image_data, max_size[0] / image_data.shape[0])
+        else:
+            image_data = resize(image_data, max_size[1] / image_data.shape[1])
+
+        return image_data
 
     @staticmethod
     def get_tiff_bitmap(filename, max_size=None):
@@ -81,25 +91,29 @@ class ImageThumbnail(wx.StaticBitmap):
             return None
 
 
-class IMSImageThumbnail(ImageThumbnail):
-
-    def __init__(self, parent, filename, max_size=None):
-        super(IMSImageThumbnail, self).__init__(parent, filename, max_size=max_size)
-
-    def get_image_data(self, filename):
-        try:
-            file = ImarisImage(filename)
-            # Must get all channels of image to be compatible with wx.image
-            data = [file.get_two_dim_data(file.resolutions-1, c=i) for i in range(file.get_channel_levels())]
-            data = np.stack(data, axis=2)
-            file.close_file()
-            return data
-
-        except Exception as e:
-            import traceback
-            print(traceback.format_exc())
-            print("Error getting thumbnail from {0}".format(filename), str(e))
-            return None
+# class IMSImageThumbnail(ImageThumbnail):
+#
+#     def __init__(self, parent, filename, max_size=None):
+#         super(IMSImageThumbnail, self).__init__(parent, filename, max_size=max_size)
+#
+#     def get_image_data(self, filename):
+#         try:
+#             file = ImarisImage(filename)
+#             if self.thumbnail is None:
+#                 thumbnail = self.file['/Thumbnail']
+#             else:
+#                 thumbnail = self.thumbnail
+#             # Must get all channels of image to be compatible with wx.image
+#             # data = [file.get_two_dim_data(file.resolutions-1, c=i) for i in range(file.get_channel_levels())]
+#             # data = np.stack(data, axis=2)
+#             file.close_file()
+#             return thumbnail
+#
+#         except Exception as e:
+#             import traceback
+#             print(traceback.format_exc())
+#             print("Error getting thumbnail from {0}".format(filename), str(e))
+#             return None
 
 
 

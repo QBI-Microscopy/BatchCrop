@@ -15,6 +15,7 @@ import argparse
 from collections import OrderedDict
 from glob import iglob
 from os.path import join
+import logging
 
 DEBUG = 1
 
@@ -27,7 +28,9 @@ class FileUnarchiver():
         :param showplots:
         """
         self.imgfile = inputfile
-        print('FileUnarchiver: data=', self.imgfile)
+        msg ='FileUnarchiver: data=%s' % self.imgfile
+        print(msg)
+        logging.debug(msg)
 
 
     def getConfigurables(self):
@@ -52,7 +55,9 @@ class FileUnarchiver():
         :return: outputfilename
         """
         try:
-            print('Unarchiving file: ',self.imgfile)
+            msg = 'Unarchiving file: %s' % self.imgfile
+            print(msg)
+            logging.info(msg)
             fh = open(self.imgfile, 'r')
             fh.close()
         except Exception as e:
