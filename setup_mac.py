@@ -19,7 +19,7 @@ Usage:
 
 Notes:
     Clean on reruns:
-    > rm -rf build dist __pycache__
+    > rm -rf build dist __pycache__ .eggs
     May need to use system python rather than virtualenv
     > /Library/Frameworks/Python.framework/Versions/3.6/bin/python3.6 setup_mac.py py2app --matplotlib-backends='-' > build.log
 
@@ -56,7 +56,7 @@ plist = dict(
 APP = [main_python_file]
 DATA_FILES = [join('autoanalysis','resources')]
 PARENTDIR= join(getcwd(),'.')
-OPTIONS = {'argv_emulation': True,
+OPTIONS = {'argv_emulation': False,
            #'use_pythonpath': True,
            'plist': plist,
            'iconfile': join('autoanalysis','resources','app.icns'),
@@ -67,7 +67,7 @@ OPTIONS = {'argv_emulation': True,
            }
 
 setup(
-    name=exe_name,
+    name=application_title,
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
