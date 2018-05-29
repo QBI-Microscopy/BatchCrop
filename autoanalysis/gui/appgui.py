@@ -184,7 +184,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
-		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( 500,400 ) )
+		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( 550,350 ) )
 		
 		self.m_dataViewListColumnProcess = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
 		self.m_dataViewListColumnFilename = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Filename" )
