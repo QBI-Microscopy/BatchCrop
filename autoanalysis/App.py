@@ -664,7 +664,6 @@ class AppFrame(wx.Frame):
         ret = dial.ShowModal()
 
         if ret == wx.ID_YES:
-            self.DestroyChildren()
             self.Destroy()
 
         else:
