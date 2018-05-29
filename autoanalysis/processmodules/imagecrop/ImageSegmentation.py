@@ -45,11 +45,6 @@ class ImageSegmentation(object):
         if scale_width == 1 or scale_height == 1:
             scale_width = scalefactor
             scale_height = scalefactor
-        # # Adjust
-        # if scalefactor >20 and scalefactor < 50:
-        #     scalefactor = 32
-        # elif scalefactor >=50 and scalefactor < 100:
-        #     scalefactor = 64
 
         msg = 'Scalefactors: wx%d hx%d [%d x %d] with border=%d to initial [%d x %d] offset=%s' % (
         scale_width, scale_height, width, height, border, self.width, self.height, offset)
@@ -57,8 +52,9 @@ class ImageSegmentation(object):
         logging.info(msg)
         # make into 2d Array
         matrix = np.array(self.segments)[:]
-        print('Orig xy:', matrix)
-        logging.debug('Orig xy:', matrix)
+        msg = 'Orig xy: {}'.format(matrix)
+        print(msg)
+        logging.debug(msg)
         # Total segment boundary
         total_seg_h = matrix[-1][X2] - matrix[0][X1]
         total_seg_w = matrix[-1][Y2] - matrix[0][Y1]
@@ -70,36 +66,37 @@ class ImageSegmentation(object):
             border_factor = int((border / 100) * np.sqrt(self.width * self.height))
             matrix[:, [X1, Y1]] = np.subtract(matrix[:, [X1, Y1]], border_factor)
             matrix[:, [X2, Y2]] = np.add(matrix[:, [X2, Y2]], border_factor)
-        print('Border xy:', matrix)
-        logging.debug('Border xy:', matrix)
+        msg = 'Border xy:{}'.format(matrix)
+        print(msg)
+        logging.debug(msg)
         # Apply scaling
         matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], scale_width)
         matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], scale_height)
-        print('Scaled xy:', matrix)
-        logging.debug('Scaled xy:', matrix)
+        msg = 'Scaled xy:{}'.format(matrix)
+        print(msg)
+        logging.debug(msg)
         # replace with boundaries
         matrix[matrix < 0] = 0
 
-        # Adjust offset for large images non-contiguous byte storage
+        # TODO Large images in IMS are chunked so need to adjust offset for large images only
+        # chunks = 128x128x16 (this may change with diff image acquisition)
         # https://www.oreilly.com/library/view/python-and-hdf5/9781491944981/ch04.html
         if chunks is not None and width/chunks[-1] > 50:
+            # allow user to add an offset between 0-2, 0 will not apply ANY correction
             if offset >= 0:
-                numchunks= width/chunks[-1]
-                bytefactor =offset / round(np.log(numchunks))
-                #bytefactor = offset / round(np.log2(scale_width))
-                msg ='Scale factor=%f bytefactor=%f chunks=%s' % (scale_width, bytefactor, chunks)
-                print(msg)
-                logging.debug(msg)
                 for i in range(len(matrix)):
-                    offsetfactor = int(matrix[i][Y1] * bytefactor)
-                    msg ='Offset factor: [%d] %f' % (i, offsetfactor)
-                    logging.debug(msg)
+                    numchunks = matrix[i][Y1] / chunks[-1]
+                    bytefactor = (numchunks + 1 ) * 8 # UINT8 bits per px
+                    offsetfactor = int(bytefactor * offset)
+                    msg ='Offset factor: [%d] %d' % (i, offsetfactor)
+                    logging.info(msg)
                     print(msg)
 
                     matrix[i][Y1] = np.add(matrix[i][Y1], offsetfactor)
                     matrix[i][Y2] = np.add(matrix[i][Y2], offsetfactor)
-                print('Offset xy:', matrix)
-                logging.debug('Offset xy:', matrix)
+                msg = 'Offset xy: {}'.format(matrix)
+                print(msg)
+                logging.info(msg)
         # check width not greater than max width
         mw = matrix[:, [X2]] - matrix[:, [X1]]
         mw[mw > width] = width
@@ -118,11 +115,11 @@ class ImageSegmentation(object):
         logging.info(msg)
         return matrix.astype(int)
 
-    # def get_relative_segments(self):
-    #     """
-    #     :return: An array of segment boxes without scaling.  x1<= x, y <=1.
-    #     """
-    #     return self.get_scaled_segments(1, 1)
+    def get_relative_segments(self):
+        """
+        :return: An array of segment boxes without scaling.  x1<= x, y <=1.
+        """
+        return self.get_scaled_segments(1, 1)
 
     def get_max_segment(self):
         """
@@ -146,16 +143,6 @@ class ImageSegmentation(object):
         """
         return (segment[X2] - segment[X1]) * (segment[Y2] - segment[Y1])
 
-    # def handle_shift_factor(self, height, width):
-    #     new_image_segmentation = ImageSegmentation(self.width, self.height)
-    #     for bounding_box in self.segments:
-    #         y = 1 - (self.height / height) / 100
-    #         x = 1 - (self.width / width) / 100
-    #
-    #         new_image_segmentation.add_segmentation(min(int(bounding_box[X1] * x),self.width), min(int(bounding_box[Y1] * y), self.height),
-    #                                                 min(int(bounding_box[X2] * x), self.width), min(int(bounding_box[Y2] * y), self.height))
-    #
-    #     return new_image_segmentation
 
     def change_segment_bounds(self, factor):
         """

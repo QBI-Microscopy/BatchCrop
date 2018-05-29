@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from collections import OrderedDict
-from os.path import join
+from os.path import join, splitext
 
 from autoanalysis.processmodules.imagecrop.TIFFImageCropper import TIFFImageCropper
 
@@ -55,7 +55,7 @@ class SlideCropperAPI(object):
         cfg['MAX_MEMORY'] = 80  # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
-        cfg['OFFSET'] = 1.2  # range from 0-2 smaller is less shift
+        cfg['OFFSET'] = 1.0  # range from 0-2 smaller is less shift
         return cfg
 
     def setConfigurables(self, cfg):
@@ -116,7 +116,7 @@ def create_parser():
                 
                  ''')
     parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2238f 30~B.ims")
-    parser.add_argument('--outputdir', action='store', help='Output directory', default="D:\\data")
+    parser.add_argument('--outputdir', action='store', help='Output directory', default="D:\\data\\batchcropper")
     parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\Adam")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
 

@@ -4,8 +4,6 @@ import h5py
 import numpy as np
 
 SEGMENTATION_DIMENSION_MAX = 50000000
-DEBUG = 0
-
 
 class ImarisImage(object):
     """
@@ -26,12 +24,11 @@ class ImarisImage(object):
         try:
             self.file = h5py.File(self.filename, "r")
             self.resolutions = self.get_resolution_levels()
-            if DEBUG:
-                self.info = self.get_info()
+            self.info = self.get_info()
             self.chunks = self.get_chunks()
             # self.thumbnail = self.file['/Thumbnail/Data'] #('Data', <HDF5 dataset "Data": shape (256, 1024), type "|u1">)
-            # will be defined as self.segmentation_resolution
-            self.segment_resolution = self.resolutions - 1  # self.resolutions -self._set_segmentation_res()  # resolution level to be used for segmentation
+            # resolution level to be used for segmentation
+            self.segment_resolution = self.resolutions - 1  # self.resolutions -self._set_segmentation_res()
             msg = 'ImarisImage: H5 loaded: %s \n\t Resolution levels: %s (selected: %d)\n' % (
             self.filename, str(self.resolutions), self.segment_resolution)
             logging.info(msg)
@@ -70,7 +67,7 @@ class ImarisImage(object):
         return path[-1][:-4]
 
     # noinspection PyIncorrectDocstring
-    def get_two_dim_data(self, r, z=0, c=0, t=0, region=[]):
+    def get_two_dim_data(self, r, z=0, c=0, t=0, region=None):
         """
         :param region: array of the form [x1, y1, x2, y2] for the 2D subregion desired. 0 implies the whole of 2D. 
         :return: ndarray of the given subset of the image as specified by the param. 
@@ -81,7 +78,7 @@ class ImarisImage(object):
             dataset = self.file['/DataSet/ResolutionLevel {0}/TimePoint {1}/Channel {2}/Data'
                 .format(r, t, c)]
 
-            if region:
+            if region is not None and len(region) > 0:
                 return dataset[z, region[0]:region[2], region[1]: region[3]]
             return dataset[z, :, :]
 

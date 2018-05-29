@@ -178,6 +178,10 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer20.Add( self.m_staticText21, 0, wx.ALL, 5 )
 		
+		self.m_staticText22 = wx.StaticText( self, wx.ID_ANY, u"Double-click on Filename when processing complete (to view output images in popup)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText22.Wrap( -1 )
+		bSizer20.Add( self.m_staticText22, 0, wx.ALL, 5 )
+		
 		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.dataview.DV_ROW_LINES )
 		self.m_dataViewListCtrlRunning.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
 		self.m_dataViewListCtrlRunning.SetMinSize( wx.Size( 500,400 ) )
@@ -203,10 +207,6 @@ class ProcessPanel ( wx.Panel ):
 		self.m_staticText20.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
 		bSizer17.Add( self.m_staticText20, 0, wx.ALL, 5 )
-		
-		self.m_staticText22 = wx.StaticText( self.m_panelImageOrder, wx.ID_ANY, u"Double-click on Filename in Process panel when processing complete where process has produced output images", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText22.Wrap( 360 )
-		bSizer17.Add( self.m_staticText22, 0, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrlReview = wx.dataview.DataViewListCtrl( self.m_panelImageOrder, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_dataViewListCtrlReview.SetMinSize( wx.Size( 400,400 ) )

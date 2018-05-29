@@ -92,6 +92,8 @@ class TIFFImageCropper(object):
         if exists(outputfile):
             os.remove(outputfile)
         dims = input_image.image_dimensions()
+        #TODO only capture every second use:
+        # for r_lev in range(input_image.get_resolution_levels(),2):
         for r_lev in range(input_image.get_resolution_levels()):
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = dims[r_lev]
