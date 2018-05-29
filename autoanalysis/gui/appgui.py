@@ -543,7 +543,7 @@ class FilesPanel ( wx.Panel ):
 		bSizer18.Add( self.m_staticText252, 0, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.dataview.DV_MULTIPLE )
-		self.m_dataViewListCtrl1.SetMinSize( wx.Size( -1,200 ) )
+		self.m_dataViewListCtrl1.SetMinSize( wx.Size( -1,280 ) )
 		
 		self.col_selected = self.m_dataViewListCtrl1.AppendToggleColumn( u"Select" )
 		self.col_file = self.m_dataViewListCtrl1.AppendTextColumn( u"File" )
