@@ -32,7 +32,7 @@ class ImageSegmentation(object):
         if [x1, y1, x2, y2] not in self.segments:
             self.segments.append([x1, y1, x2, y2])
 
-    def get_scaled_segments(self, width, height, border=0, offset=0.3, chunks=None):
+    def get_scaled_segments(self, width, height, border=0, offset=1, chunks=None):
         """
         :param width: pixel width of image to be scaled to.
         :param height: pixel height of image to be scaled to. 

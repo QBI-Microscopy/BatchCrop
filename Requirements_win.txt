@@ -1,2 +1,3 @@
 pypiwin32==223
 pywin32==223
+cx-Freeze==5.1.1
