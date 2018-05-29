@@ -3803,7 +3803,7 @@
             <property name="minimum_size"></property>
             <property name="name">FilesPanel</property>
             <property name="pos"></property>
-            <property name="size">1348,782</property>
+            <property name="size">1355,1001</property>
             <property name="subclass"></property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -6132,7 +6132,7 @@
                                         <property name="hidden">0</property>
                                         <property name="id">wxID_ANY</property>
                                         <property name="maximum_size"></property>
-                                        <property name="minimum_size">-1,300</property>
+                                        <property name="minimum_size">-1,200</property>
                                         <property name="name">m_dataViewListCtrl1</property>
                                         <property name="permission">protected</property>
                                         <property name="pos"></property>

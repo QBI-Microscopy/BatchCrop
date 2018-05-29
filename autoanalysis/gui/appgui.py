@@ -411,7 +411,7 @@ class WelcomePanel ( wx.Panel ):
 class FilesPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 1348,782 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 1355,1001 ), style = wx.TAB_TRAVERSAL )
 		
 		bSizer5 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -543,7 +543,7 @@ class FilesPanel ( wx.Panel ):
 		bSizer18.Add( self.m_staticText252, 0, wx.ALL, 5 )
 		
 		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.dataview.DV_MULTIPLE )
-		self.m_dataViewListCtrl1.SetMinSize( wx.Size( -1,300 ) )
+		self.m_dataViewListCtrl1.SetMinSize( wx.Size( -1,200 ) )
 		
 		self.col_selected = self.m_dataViewListCtrl1.AppendToggleColumn( u"Select" )
 		self.col_file = self.m_dataViewListCtrl1.AppendTextColumn( u"File" )
