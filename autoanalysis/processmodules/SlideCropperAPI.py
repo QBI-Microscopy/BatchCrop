@@ -21,7 +21,7 @@ class SlideCropperAPI(object):
         # Load data
         if os.access(datafile, os.R_OK):
             ext_check = self.get_extension(datafile)
-            if ext_check != self.cfg['IMAGE_TYPE']:  # ".ims":
+            if ext_check.lower() != ".ims":
                 raise TypeError("{} is currently not a supported file type".format(ext_check))
             self.imgfile = datafile
             msg = "Image file loaded from %s" % self.imgfile
@@ -50,7 +50,7 @@ class SlideCropperAPI(object):
         '''
         cfg = OrderedDict()
         cfg['BORDER_FACTOR'] = 5  # %of pixels for border
-        cfg['IMAGE_TYPE'] = '.ims'  # File type of original
+        #cfg['IMAGE_TYPE'] = '.ims'  # File type of original
         cfg['CROPPED_IMAGE_FILES'] = 'cropped'  # output directory
         cfg['MAX_MEMORY'] = 80  # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'

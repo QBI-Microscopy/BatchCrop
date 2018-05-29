@@ -56,7 +56,7 @@ class ImageSegmenter(object):
         """
         channel_image = ImageSegmenter._construct_mean_channelled_image(image_array)
         histogram = ImageSegmenter._image_histogram(channel_image)
-        cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
+        #cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
         has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
         t0_min = threshold_minimum(image_array)
 

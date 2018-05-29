@@ -17,7 +17,6 @@ from glob import iglob
 from os.path import join
 import logging
 
-DEBUG = 1
 
 class FileUnarchiver():
     def __init__(self, inputfile, outputdir):

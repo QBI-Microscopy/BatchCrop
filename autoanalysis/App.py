@@ -292,11 +292,12 @@ class FileSelectPanel(FilesPanel):
         self.btnAutoFind.Disable()
         if self.inputdir is not None:
             self.m_status.SetLabelText("Finding files ... please wait")
-            imgtype = self.controller.db.getConfigByName(self.controller.currentconfig, 'IMAGE_TYPE')
+            #imgtype = self.controller.db.getConfigByName(self.controller.currentconfig, 'IMAGE_TYPE')
+            imgtype = self.m_choiceType.GetStringSelection().lower()
             if imgtype is None:
                 imgtype = '*.ims'
             else:
-                imgtype = '*' + imgtype
+                imgtype = '*.' + imgtype
             allfiles = [y for y in iglob(join(self.inputdir, '**', imgtype), recursive=True)]
 
             searchtext = self.m_tcSearch.GetValue()

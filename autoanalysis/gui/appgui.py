@@ -495,6 +495,19 @@ class FilesPanel ( wx.Panel ):
 		
 		fgSizer4.Add( self.m_tcDragdrop, 0, 0, 5 )
 		
+		self.m_staticText24 = wx.StaticText( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText24.Wrap( -1 )
+		fgSizer4.Add( self.m_staticText24, 0, wx.ALL, 5 )
+		
+		self.m_staticText231 = wx.StaticText( self, wx.ID_ANY, u"Image file type", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText231.Wrap( -1 )
+		fgSizer4.Add( self.m_staticText231, 0, wx.ALL, 5 )
+		
+		m_choiceTypeChoices = [ u"IMS", u"TIFF" ]
+		self.m_choiceType = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choiceTypeChoices, 0 )
+		self.m_choiceType.SetSelection( 0 )
+		fgSizer4.Add( self.m_choiceType, 0, wx.ALL, 5 )
+		
 		self.m_cbSelectall = wx.CheckBox( self, wx.ID_ANY, u"Select All", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_cbSelectall.SetValue(True) 
 		fgSizer4.Add( self.m_cbSelectall, 0, wx.ALL, 5 )

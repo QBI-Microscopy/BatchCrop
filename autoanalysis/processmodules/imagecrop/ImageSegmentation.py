@@ -109,8 +109,7 @@ class ImageSegmentation(object):
         # Total segment boundary after
         total_seg_w = matrix[-1][X2] - matrix[0][X1]
         total_seg_h = matrix[-1][Y2] - matrix[0][Y1]
-        msg = 'Segmented area: %d x %d [%0.4f %0.4f]' % (
-        total_seg_w, total_seg_h, (total_seg_w / height), (total_seg_h / width))
+        msg = 'Segmented area: %d x %d [%0.4f %0.4f]' % (total_seg_w, total_seg_h, (total_seg_w / height), (total_seg_h / width))
         print(msg)
         logging.info(msg)
         return matrix.astype(int)
