@@ -42,7 +42,7 @@ from autoanalysis.App import __version__
 application_title = 'QBI Batch SlideCropper'
 main_python_file = join('autoanalysis','App.py')
 venvpython = join(sys.prefix,'Lib','site-packages')
-mainpython = "D:\\Programs\\Python36"
+mainpython = "C:\\Program Files\\Python36"
 
 os.environ['TCL_LIBRARY'] = join(mainpython, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = join(mainpython, 'tcl', 'tk8.6')
