@@ -2,6 +2,8 @@ import logging
 import os
 from os.path import basename, splitext, join, exists
 
+import math
+
 import psutil
 from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
@@ -94,11 +96,12 @@ class TIFFImageCropper(object):
         dims = input_image.image_dimensions()
         #TODO only capture every second use:
         # for r_lev in range(input_image.get_resolution_levels(),2):
-        for r_lev in range(input_image.get_resolution_levels()):
+        for r_lev in range(input_image.get_resolution_levels())[0:1]:
+        #for r_lev in range(input_image.get_resolution_levels())[0:1]:
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = dims[r_lev]
             segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
-                                                            self.border_factor,self.offset,
+                                                            r_lev, len(dims), self.border_factor,self.offset,
                                                             input_image.chunks)[box_index]
             print('Segment:',segment)
             # Use all z, c & t planes of the image.
@@ -122,16 +125,78 @@ class TIFFImageCropper(object):
                 logging.info(msg)
                 print(msg)
                 with TIFF(outputfile, False) as tf:
-                    try:
-                        im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                        im.save(tf)
-                        tf.newFrame()
-                        im.close()
-                        rtn = 1
-                    except Exception as e:
-                        msg ='Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
-                        print(msg)
-                        logging.error(msg)
+                    if c == 3:
+                        if image_data.size < 2000000000:
+                            try:
+                                im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
+                                im.save(tf)
+                                #tf.newFrame()
+                                im.close()
+                                rtn = 1
+                            except Exception as e:
+                                msg ='Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
+                        else:
+                            try:
+                                im1 = Image.fromarray(image_data[0:math.floor(image_data.shape[0] / 2), 0:math.floor(image_data.shape[1] / 2), 0, :, 0],mode="RGB")
+                                im2 = Image.fromarray(image_data[math.floor(image_data.shape[0] / 2):image_data.shape[0], 0:math.floor(image_data.shape[1] / 2), 0, :, 0],mode="RGB")
+                                im3 = Image.fromarray(image_data[0:math.floor(image_data.shape[0] / 2), math.floor(image_data.shape[1] / 2):image_data.shape[1], 0, :, 0],mode="RGB")
+                                im4 = Image.fromarray(image_data[math.floor(image_data.shape[0] / 2):image_data.shape[0], math.floor(image_data.shape[1] / 2):image_data.shape[1], 0, :, 0],mode="RGB")
+                                new_im = Image.new('RGB', (image_data.shape[1], image_data.shape[0]))
+                                new_im.paste(im1, (0, 0))
+                                new_im.paste(im2, (0, im1.height))
+                                new_im.paste(im3, (im1.width, 0))
+                                new_im.paste(im4, (im1.width, im1.height))
+                                new_im.save(tf)
+                                # tf.newFrame()
+                                new_im.close()
+                                im1.close()
+                                im2.close()
+                                im3.close()
+                                im4.close()
+                                rtn = 1
+                            except Exception as e:
+                                msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
+                    else:
+                        if image_data.size < 2000000000:
+                            try:
+                                for chan in range(c):
+                                    im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
+                                    im.save(tf)
+                                    tf.newFrame()
+                                    im.close()
+                                    rtn = 1
+                            except Exception as e:
+                                msg ='Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
+                        else:
+                            try:
+                                for chan in range(c):
+                                    im1 = Image.fromarray(image_data[0:math.floor(image_data.shape[0] / 2), 0:math.floor(image_data.shape[1] / 2), 0, chan, 0],mode="L")
+                                    im2 = Image.fromarray(image_data[math.floor(image_data.shape[0] / 2):image_data.shape[0], 0:math.floor(image_data.shape[1] / 2), 0, chan, 0],mode="L")
+                                    im3 = Image.fromarray(image_data[0:math.floor(image_data.shape[0] / 2), math.floor(image_data.shape[1] / 2):image_data.shape[1], 0, chan, 0],mode="L")
+                                    im4 = Image.fromarray(image_data[math.floor(image_data.shape[0] / 2):image_data.shape[0], math.floor(image_data.shape[1] / 2):image_data.shape[1], 0, chan, 0],mode="L")
+                                    new_im = Image.new('L', (image_data.shape[1], image_data.shape[0]))
+                                    new_im.paste(im1, (0, 0))
+                                    new_im.paste(im2, (0, im1.height))
+                                    new_im.paste(im3, (im1.width, 0))
+                                    new_im.paste(im4, (im1.width, im1.height))
+                                    new_im.save(tf)
+                                    tf.newFrame()
+                                    new_im.close()
+                                    im1.close()
+                                    im2.close()
+                                    im3.close()
+                                    im4.close()
+                                    rtn = 1
+                            except Exception as e:
+                                msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
                 del image_data
 
             else:

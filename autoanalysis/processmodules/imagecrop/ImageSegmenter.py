@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import scipy.ndimage as ndimage
-from skimage.filters import threshold_minimum
+from skimage.filters import threshold_minimum, threshold_otsu
 from autoanalysis.processmodules.imagecrop.ImageSegmentation import ImageSegmentation
 
 K_Clusters = 2
@@ -58,8 +58,8 @@ class ImageSegmenter(object):
         histogram = ImageSegmenter._image_histogram(channel_image)
         #cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
         has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
-        t0_min = threshold_minimum(image_array)
-
+        #t0_min = threshold_minimum(image_array)
+        t0_min = threshold_otsu(image_array,nbins=256)
         return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg,
                                                        darkbg)  # ImageSegmenter._has_dark_objects(channel_image))
 

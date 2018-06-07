@@ -32,19 +32,31 @@ class ImageSegmentation(object):
         if [x1, y1, x2, y2] not in self.segments:
             self.segments.append([x1, y1, x2, y2])
 
-    def get_scaled_segments(self, width, height, border=0, offset=1, chunks=None):
+    def get_scaled_segments(self, width, height, r, maxr, border=0, offset=1, chunks=None):
         """
         :param width: pixel width of image to be scaled to.
-        :param height: pixel height of image to be scaled to. 
+        :param height: pixel height of image to be scaled to.
+        :param r: resolution level that is being scaled to.
+        :param maxr: total number of resolution levels.
         :return: An array of segment boxes scaled to the dimensions width x height
         https://stackoverflow.com/questions/42000601/resize-an-image-with-offset-in-python
         """
         scalefactor = int(np.sqrt((width * height) / (self.width * self.height)))
-        scale_width = (width / self.width)
-        scale_height = (height / self.height)
-        if scale_width == 1 or scale_height == 1:
-            scale_width = scalefactor
-            scale_height = scalefactor
+
+        #Because of data chunking, height and width of resolution[-1] is padded to be a multiple of 128.
+        #This means instead of being eg. 593 wide it is 640 wide, meaning scaling relative to this value is incorrect.
+        #It appears to be exponential scaling with each resolution level though so I will try this instead.
+
+        exp_scalefactor = [1,2,4,8,16,32,64,128,256]
+
+        #scale_width = (width / self.width)
+        #scale_height = (height / self.height)
+        #if scale_width == 1 or scale_height == 1:
+        #    scale_width = scalefactor
+        #    scale_height = scalefactor
+
+        scale_width = exp_scalefactor[(maxr -1 - r)]
+        scale_height = exp_scalefactor[(maxr - 1 - r)]
 
         msg = 'Scalefactors: wx%d hx%d [%d x %d] with border=%d to initial [%d x %d] offset=%s' % (
         scale_width, scale_height, width, height, border, self.width, self.height, offset)
@@ -70,8 +82,11 @@ class ImageSegmentation(object):
         print(msg)
         logging.debug(msg)
         # Apply scaling
-        matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], scale_width)
-        matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], scale_height)
+        #this was the original - but I think the width/height scaling was accidentally reversed
+        #matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], scale_width)
+        #matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], scale_height)
+        matrix[:, [X1, X2]] = np.multiply(matrix[:, [X1, X2]], scale_height)
+        matrix[:, [Y1, Y2]] = np.multiply(matrix[:, [Y1, Y2]], scale_width)
         msg = 'Scaled xy:{}'.format(matrix)
         print(msg)
         logging.debug(msg)
@@ -94,6 +109,8 @@ class ImageSegmentation(object):
 
                     matrix[i][Y1] = np.add(matrix[i][Y1], offsetfactor)
                     matrix[i][Y2] = np.add(matrix[i][Y2], offsetfactor)
+                    matrix[i][X1] = np.add(matrix[i][X1], offsetfactor)
+                    matrix[i][X2] = np.add(matrix[i][X2], offsetfactor)
                 msg = 'Offset xy: {}'.format(matrix)
                 print(msg)
                 logging.info(msg)

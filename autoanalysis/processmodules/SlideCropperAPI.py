@@ -55,7 +55,7 @@ class SlideCropperAPI(object):
         cfg['MAX_MEMORY'] = 80  # % of memory to quit
         cfg['LIGHT_BG_THRESHOLD'] = 'auto'
         cfg['DARK_BG_THRESHOLD'] = 'auto'
-        cfg['OFFSET'] = 1.0  # range from 0-2 smaller is less shift
+        cfg['OFFSET'] = 0.0  # range from 0-2 smaller is less shift
         return cfg
 
     def setConfigurables(self, cfg):
@@ -115,9 +115,9 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="AT8 sc2238f 30~B.ims")
-    parser.add_argument('--outputdir', action='store', help='Output directory', default="D:\\data\\batchcropper")
-    parser.add_argument('--inputdir', action='store', help='Input directory', default="Z:\\Micro Admin\\Jack\\Adam")
+    parser.add_argument('--datafile', action='store', help='Data file', default="JCP_001~D.ims")
+    parser.add_argument('--outputdir', action='store', help='Output directory', default="C:\\Users\\uqathom9\\Documents\\Microscopy\\BatchCrop")
+    parser.add_argument('--inputdir', action='store', help='Input directory', default="C:\\Users\\uqathom9\\Desktop")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
 
     return parser
