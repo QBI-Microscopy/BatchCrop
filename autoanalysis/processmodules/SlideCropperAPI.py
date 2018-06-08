@@ -49,7 +49,7 @@ class SlideCropperAPI(object):
         :return:
         '''
         cfg = OrderedDict()
-        cfg['BORDER_FACTOR'] = 5  # %of pixels for border
+        cfg['BORDER_FACTOR'] = 3  # %of pixels for border
         #cfg['IMAGE_TYPE'] = '.ims'  # File type of original
         cfg['CROPPED_IMAGE_FILES'] = 'cropped'  # output directory
         cfg['MAX_MEMORY'] = 80  # % of memory to quit
@@ -115,7 +115,7 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="JCP_001~D.ims")
+    parser.add_argument('--datafile', action='store', help='Data file', default="CVS005-1~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="C:\\Users\\uqathom9\\Documents\\Microscopy\\BatchCrop")
     parser.add_argument('--inputdir', action='store', help='Input directory', default="C:\\Users\\uqathom9\\Desktop")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')

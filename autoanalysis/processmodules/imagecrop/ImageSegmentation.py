@@ -116,11 +116,11 @@ class ImageSegmentation(object):
                 logging.info(msg)
         # check width not greater than max width
         mw = matrix[:, [X2]] - matrix[:, [X1]]
-        mw[mw > width] = width
+        mw[mw > height] = height
         matrix[:, [X1]] = matrix[:, [X2]] - mw
         # max height
         mw = matrix[:, [Y2]] - matrix[:, [Y1]]
-        mw[mw > height] = height
+        mw[mw > width] = width
         matrix[:, [Y1]] = matrix[:, [Y2]] - mw
 
         # Total segment boundary after
