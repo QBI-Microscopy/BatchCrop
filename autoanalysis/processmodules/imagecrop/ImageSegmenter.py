@@ -216,7 +216,7 @@ class ImageSegmenter(object):
         :param binary_image: image to be opened.
         :return: A new binary image that has undergone opening. 
         """
-        struct_size = 3  # max(round(binary_image.size / 8000000), 2)
+        struct_size = 5  # max(round(binary_image.size / 8000000), 2)
         structure = np.ones((struct_size, struct_size))
         return ndimage.binary_erosion(binary_image.astype(np.int), structure=structure)
 
@@ -227,8 +227,8 @@ class ImageSegmenter(object):
         :param binary_image: image to be opened.
         :return: A new binary image that has undergone opening. 
         """
-        struct_size = 20  # int(min(binary_image.shape) * 0.01)
-        structure = np.ones((20, 8))  # ((struct_size, struct_size))
+        struct_size = 5  # int(min(binary_image.shape) * 0.01)
+        structure = np.ones((5, 5))  # ((struct_size, struct_size))
         return ndimage.binary_dilation(binary_image.astype(np.int), structure=structure)
 
     @staticmethod

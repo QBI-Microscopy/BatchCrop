@@ -1,7 +1,7 @@
 import shutil
 import sqlite3
 from os import access, W_OK, mkdir
-from os.path import join, expanduser
+from os.path import join, expanduser, abspath
 
 from autoanalysis.utils import findResourceDir
 
@@ -14,6 +14,7 @@ class DBI():
         """
         # locate db in config/
         self.resourcesdir = findResourceDir()
+        #self.resourcesdir = abspath('.')
 
         if test:
             dbname = 'autoconfig-test.db'
