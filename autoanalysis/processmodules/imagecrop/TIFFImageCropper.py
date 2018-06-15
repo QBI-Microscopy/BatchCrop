@@ -147,7 +147,7 @@ class TIFFImageCropper(object):
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     if c == 3:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
                                 im.save(tf)
@@ -160,7 +160,7 @@ class TIFFImageCropper(object):
                                 logging.error(msg)
 
                     else:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 for chan in range(c):
                                     im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
@@ -215,7 +215,7 @@ class TIFFImageCropper(object):
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     if c == 3:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
                                 im.save(tf)
@@ -228,7 +228,7 @@ class TIFFImageCropper(object):
                                 logging.error(msg)
 
                     else:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 for chan in range(c):
                                     im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
@@ -296,7 +296,7 @@ class TIFFImageCropper(object):
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     if c == 3:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
                                 im.save(tf)
@@ -309,7 +309,7 @@ class TIFFImageCropper(object):
                                 logging.error(msg)
 
                     if True:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 for chan in range(c):
                                     im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
@@ -363,7 +363,7 @@ class TIFFImageCropper(object):
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     if c == 3:
-                        if image_data.size < 2000000000:
+                        if True:
                             try:
                                 im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
                                 im.save(tf)
@@ -377,7 +377,7 @@ class TIFFImageCropper(object):
 
                     else:
                         if True:
-                            if image_data.size < 2000000000:
+                            if True:
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
