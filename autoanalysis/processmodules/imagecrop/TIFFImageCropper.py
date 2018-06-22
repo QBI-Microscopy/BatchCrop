@@ -147,7 +147,7 @@ class TIFFImageCropper(object):
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     if c == 3:
-                        if True:
+                        if image_data.size<2000000000:
                             try:
                                 im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
                                 im.save(tf)
@@ -158,6 +158,19 @@ class TIFFImageCropper(object):
                                 msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
                                 print(msg)
                                 logging.error(msg)
+                        else:
+                            try:
+                                for chan in range(c):
+                                    im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
+                                    im.save(tf)
+                                    tf.newFrame()
+                                    im.close()
+                                    rtn = 1
+                            except Exception as e:
+                                msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
+
 
                     else:
                         if True:
@@ -296,13 +309,25 @@ class TIFFImageCropper(object):
                 print(msg)
                 with TIFF(outputfile, False) as tf:
                     if c == 3:
-                        if True:
+                        if image_data.size<2000000000:
                             try:
                                 im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
                                 im.save(tf)
                                 # tf.newFrame()
                                 im.close()
                                 rtn = 1
+                            except Exception as e:
+                                msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
+                        else:
+                            try:
+                                for chan in range(c):
+                                    im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
+                                    im.save(tf)
+                                    tf.newFrame()
+                                    im.close()
+                                    rtn = 1
                             except Exception as e:
                                 msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
                                 print(msg)

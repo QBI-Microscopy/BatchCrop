@@ -28,8 +28,20 @@ class ImageThumbnail(wx.StaticBitmap):
         try:
             file = ImarisImage(filename)
             # Must get all channels of image to be compatible with wx.image
-            thumbnail = [file.get_two_dim_data(file.resolutions-1, c=i) for i in range(file.get_channel_levels())]
+            c_range = [0]
+            if file.get_channel_levels()==1:
+                c_range = [0,0,0]
+            elif file.get_channel_levels()==2:
+                c_range = [0, 1, 0]
+            elif file.get_channel_levels()==3:
+                c_range = [0, 1, 2]
+            elif file.get_channel_levels()>3:
+                c_range = [0, 1, 2]
+
+            thumbnail = [file.get_two_dim_data(file.resolutions-1, c=i) for i in c_range]
+
             thumbnail = np.stack(thumbnail, axis=2)
+
             file.close_file()
             return thumbnail
 
