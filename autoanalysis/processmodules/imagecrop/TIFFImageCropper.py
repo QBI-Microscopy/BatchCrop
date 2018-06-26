@@ -80,15 +80,37 @@ class TIFFImageCropper(object):
         done_list = 0
         try:
             ## Iterate through each bounding box
+
+            ## Check to see if all bounding boxes are smaller than 2Gpx and trigger reduced resolution if any >
+            largesections = False
+            input_image = self.image
+            r_lev = 0
+            dims = input_image.image_dimensions()
+            for box_index in range(len(self.segmentation.segments)):
+                resolution_dimensions = dims[r_lev]
+                segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
+                                                                r_lev, len(dims), self.border_factor, self.offset,
+                                                                input_image.chunks)[box_index]
+                if float((segment[2] - segment[0])) * float((segment[3] - segment[1])) > 2000000000:
+                    r_lev = r_lev + 1
+                    largesections = True
+                    msg = "Cannot crop image with size >2Gpx, decreasing resoltion by one"
+                    logging.info(msg)
+                    print(msg)
+
+            new_r_lev = r_lev
+
+
+
             for box_index in range(len(self.segmentation.segments)):
                 # done_list += self.crop_single_image(self.imgfile, self.segmentation, self.output_folder, box_index,self.maxmemory,self.border_factor,self.offset)
-                done_list += self.crop_single_image(box_index)
+                done_list += self.crop_single_image(box_index,new_r_lev)
             # the program will give individual processes a ROI each: multiprocessing to use more CPU.
         except Exception as e:
             raise e
         return done_list
 
-    def crop_single_image(self, box_index):
+    def crop_single_image(self, box_index,maxrlev):
         rtn = 0
         input_image = self.image  # I.ImarisImage(input_path)
 
@@ -97,7 +119,7 @@ class TIFFImageCropper(object):
         # for r_lev in range(input_image.get_resolution_levels(),2):
 
         if self.resolution == 'High':
-            r_lev = 0
+            r_lev = maxrlev
             outputfile = join(self.output_folder, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
             if exists(outputfile):
                 os.remove(outputfile)
@@ -260,7 +282,7 @@ class TIFFImageCropper(object):
                 raise OSError('Memory insufficient to generate images')
 
         elif self.resolution == 'Both':
-            r_lev = 0
+            r_lev = maxrlev
             outputfile = join(self.output_folder, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
             if exists(outputfile):
                 os.remove(outputfile)
