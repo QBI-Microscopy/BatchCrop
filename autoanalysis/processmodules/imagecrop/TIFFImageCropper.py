@@ -355,7 +355,7 @@ class TIFFImageCropper(object):
                                 print(msg)
                                 logging.error(msg)
 
-                    if True:
+                    else:
                         if True:
                             try:
                                 for chan in range(c):
