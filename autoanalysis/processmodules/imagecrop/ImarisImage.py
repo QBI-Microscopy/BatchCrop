@@ -245,5 +245,6 @@ class ImarisImage(object):
                 if image_array is None:  # not 'image_array' in locals():
                     image_array = self.get_two_dim_data(self.segment_resolution, c=i)
                 else:
-                    np.concatenate((image_array, self.get_two_dim_data(self.segment_resolution, c=i)), axis=0)
+                    #np.concatenate((image_array, self.get_two_dim_data(self.segment_resolution, c=i)), axis=0)
+                    image_array = np.dstack((image_array, self.get_two_dim_data(self.segment_resolution, c=i)))
         return image_array

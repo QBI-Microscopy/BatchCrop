@@ -2,13 +2,15 @@ import logging
 
 import numpy as np
 import scipy.ndimage as ndimage
-from skimage.filters import threshold_minimum, threshold_otsu, threshold_triangle, threshold_mean
+from skimage.morphology import square
+from skimage.exposure import adjust_gamma
+from skimage.filters import threshold_minimum, threshold_otsu, threshold_triangle, threshold_mean, threshold_isodata, sobel, rank
 from autoanalysis.processmodules.imagecrop.ImageSegmentation import ImageSegmentation
 
 K_Clusters = 2
 BGPCOUNT = 80  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
 # background
-SENSITIVITY_THRESHOLD = .05  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
+SENSITIVITY_THRESHOLD = .01  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
 MAX_NOISE_AREA = 1000  # Max area (pixels) of a slice for it to be still considered noise
 
 DELTAX, DELTAY = (0, 0)  # (20, 50) # How close in both directions a slice can be to another to be considered the same image
@@ -39,10 +41,15 @@ class ImageSegmenter(object):
 
         binary_image = ImageSegmenter._threshold_image(image_array, K_Clusters, lightbg, darkbg)
         # Step 2
-        closed_image = ImageSegmenter._noise_reduction(binary_image)
-        opened_image = ImageSegmenter._image_dilation(closed_image)
+        opened_image = ImageSegmenter._image_dilation(binary_image)
+        closed_image = ImageSegmenter._noise_reduction(opened_image)
+        binary_image = ndimage.binary_fill_holes(closed_image.astype(np.int))
+
+        #opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
-        segments = ImageSegmenter._apply_object_detection(opened_image)
+        #closed_image = ImageSegmenter._noise_reduction(opened_image)
+       # opened_image = ImageSegmenter._image_dilation(closed_image)
+        segments = ImageSegmenter._apply_object_detection(binary_image)
         # NOT WORKING PROPERLY  .change_segment_bounds(border_factor)
         return segments
 
@@ -54,14 +61,26 @@ class ImageSegmenter(object):
         :param image_array: 
         :return: a 2D binary image
         """
-        channel_image = ImageSegmenter._construct_mean_channelled_image(image_array)
-        histogram = ImageSegmenter._image_histogram(channel_image)
+        channel_image = ImageSegmenter._optimal_thresholding_channel_image(image_array)
+        #histogram = ImageSegmenter._image_histogram(channel_image)
         #cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
-        has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
+        #has_light_bg = sum(histogram[0:50]) < sum(histogram[205:])
         #t0_min = threshold_minimum(image_array)
-        t0_min = threshold_mean(image_array)
-        return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg,
-                                                       darkbg)  # ImageSegmenter._has_dark_objects(channel_image))
+
+        if (lightbg == 'auto' and darkbg == 'auto'):
+            # filter the image slightly
+            sizefoot = [2, 2]
+            channel_image = ndimage.median_filter(channel_image, sizefoot)
+            channel_image = adjust_gamma(channel_image, gamma=1.4, gain=1)
+            histogram = ImageSegmenter._image_histogram(channel_image)
+            t0_min = threshold_mean(channel_image)
+            has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
+        else:
+            channel_image = ImageSegmenter._optimal_thresholding_channel_image(image_array)
+            histogram = ImageSegmenter._image_histogram(channel_image)
+            t0_min = threshold_mean(channel_image)
+            has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
+        return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg, darkbg)  # ImageSegmenter._has_dark_objects(channel_image))
 
     @staticmethod
     def _has_dark_objects(image):
@@ -195,7 +214,8 @@ class ImageSegmenter(object):
             msg = 'LIGHT bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
-            rtn = 255 * (channel_image < binary_threshold).round()
+            yy = np.zeros(channel_image.shape, dtype=np.uint8)
+            rtn = 255 * (yy+(channel_image < binary_threshold))
 
         else:
             # logging.info("Image currently being segmented is deemed to have a dark background.")
@@ -206,7 +226,8 @@ class ImageSegmenter(object):
             msg = 'DARK bg: threshold=%d' % binary_threshold
             print(msg)
             logging.info(msg)
-            rtn = 255 * (channel_image > binary_threshold).round()
+            yy = np.zeros(channel_image.shape, dtype=np.uint8)
+            rtn = 255 * (yy+(channel_image > binary_threshold))
         return rtn
 
     @staticmethod
@@ -216,9 +237,11 @@ class ImageSegmenter(object):
         :param binary_image: image to be opened.
         :return: A new binary image that has undergone opening. 
         """
-        struct_size = 5  # max(round(binary_image.size / 8000000), 2)
+        struct_size = 2  # max(round(binary_image.size / 8000000), 2)
         structure = np.ones((struct_size, struct_size))
+        #binary_image = ndimage.gaussian_filter(binary_image.astype(np.int),sigma=0.1)
         return ndimage.binary_erosion(binary_image.astype(np.int), structure=structure)
+
 
     @staticmethod
     def _image_dilation(binary_image):
@@ -227,9 +250,11 @@ class ImageSegmenter(object):
         :param binary_image: image to be opened.
         :return: A new binary image that has undergone opening. 
         """
-        struct_size = 5  # int(min(binary_image.shape) * 0.01)
-        structure = np.ones((5, 5))  # ((struct_size, struct_size))
-        return ndimage.binary_dilation(binary_image.astype(np.int), structure=structure)
+        struct_size = 3  # int(min(binary_image.shape) * 0.01)
+        structure = np.ones((2, 2))  # ((struct_size, struct_size))
+        yy = np.zeros(binary_image.shape, dtype=np.uint8)
+        return ndimage.binary_dilation((yy + binary_image), structure=structure).astype(yy.dtype)
+        #return ndimage.median_filter(binary_image.astype(np.int), size=[1, 1])
 
     @staticmethod
     def _apply_object_detection(morphological_image):
@@ -265,7 +290,7 @@ class ImageSegmenter(object):
 
         # Remove objects that aren't big enough to be considered full images.
         totalarea = morphological_image.shape[0] * morphological_image.shape[1]
-        fraction = 0.01  # segment/area 1%
+        fraction = 0.001  # segment/area 1%
         for bounding_box in segmentations.segments:
             a = segmentations.segment_area(bounding_box)
             if (a / totalarea) < fraction:
@@ -306,7 +331,22 @@ class ImageSegmenter(object):
         """
         if (s1[0].stop < s2[0].start) | (s1[0].start > s2[0].stop):
             return False
-        return not (s1[1].stop < s2[1].start) | (s1[1].start > s2[1].stop)
+
+        xx = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(np.int)
+        yy = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(np.int)
+        xx[s1[0].start:s1[0].stop, s1[1].start:s1[1].stop] = 1
+        yy[s2[0].start:s2[0].stop, s2[1].start:s2[1].stop] = 1
+        zz = xx + yy
+        if zz.max() == 2:
+            return True
+        else:
+            return False
+
+        #elif (((s2[1].start <= s1[1].stop) and (s2[1].stop >= s1[1].start)) and ((s2[0].start <= s1[0].stop) and (s2[0].stop >= s1[0].start))):
+        #    return True
+        #else:
+        #    return False
+        #return not (s1[1].stop < s2[1].start) | (s1[1].start > s2[1].stop)
 
     @staticmethod
     def add(s1, s2):
@@ -331,10 +371,10 @@ class ImageSegmenter(object):
         curr_len = len(box_slices)
         flag = True
 
-        for i in range(10):
-            for rect in box_slices:
-                if ImageSegmenter.is_noise(rect):
-                    box_slices.remove(rect)
+
+        for rect in box_slices:
+            if ImageSegmenter.is_noise(rect):
+                box_slices.remove(rect)
 
         while flag | (prev_len != curr_len):
             flag = False
@@ -347,19 +387,76 @@ class ImageSegmenter(object):
                 add_this_obj = True
 
                 j = i + 1
-                x1 = box_slices[i][0]
-                x2 = box_slices[j][0]
+                x1 = box_slices[i]
+                x2 = box_slices[j]
 
                 #  Since sorted, iterate through all boxes with intersecting x until box i is past box j
-                while (not (x1.stop < x2.start) | (x1.start > x2.stop)) & (j < len(box_slices)):
-                    if ImageSegmenter.intersect(box_slices[i], box_slices[j]):
+
+                #while (not (x1.stop < x2.start) | (x1.start > x2.stop)) & (j < len(box_slices)):
+                while (j < len(box_slices)):
+                    if ImageSegmenter.intersect(x1,x2):
                         temp_list.append(ImageSegmenter.add(box_slices.pop(j), box_slices.pop(i)))
                         add_this_obj = False
-                        j = len(box_slices) + 1
+                        j = len(box_slices)
                     else:
                         j += 1
                         if j < len(box_slices):
-                            x2 = box_slices[j][0]
+                            x2 = box_slices[j]
+                        else:
+                            j = len(box_slices)
+
+                # Only add to iterative list if it does not intersect with any of the boxes.
+                if add_this_obj:
+                    temp_list.append(box_slices[i])
+                    i += 1
+
+            # Correct for last object not being iterated over
+            if len(box_slices) != 0:
+                temp_list.append(box_slices[-1])
+
+            # re-sort
+            box_slices = sorted(temp_list.copy())
+            del temp_list
+
+            prev_len = curr_len
+            curr_len = len(box_slices)
+            i = 0
+
+        #iterate over this twice to see if it helps join things that should have been joined the first time
+        prev_len = len(box_slices)
+        curr_len = len(box_slices)
+        flag = True
+
+        for rect in box_slices:
+            if ImageSegmenter.is_noise(rect):
+                box_slices.remove(rect)
+
+        while flag | (prev_len != curr_len):
+            flag = False
+
+            temp_list = []
+            i = 0
+
+            #  Iterate through all slices in the list.
+            while i < (len(box_slices) - 1):
+                add_this_obj = True
+
+                j = i + 1
+                x1 = box_slices[i]
+                x2 = box_slices[j]
+
+                #  Since sorted, iterate through all boxes with intersecting x until box i is past box j
+
+                # while (not (x1.stop < x2.start) | (x1.start > x2.stop)) & (j < len(box_slices)):
+                while (j < len(box_slices)):
+                    if ImageSegmenter.intersect(x1, x2):
+                        temp_list.append(ImageSegmenter.add(box_slices.pop(j), box_slices.pop(i)))
+                        add_this_obj = False
+                        j = len(box_slices)
+                    else:
+                        j += 1
+                        if j < len(box_slices):
+                            x2 = box_slices[j]
                         else:
                             j = len(box_slices)
 
