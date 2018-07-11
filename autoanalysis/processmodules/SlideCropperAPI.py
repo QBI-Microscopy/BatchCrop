@@ -49,7 +49,7 @@ class SlideCropperAPI(object):
         :return:
         '''
         cfg = OrderedDict()
-        cfg['BORDER_FACTOR'] = 3  # %of pixels for border
+        cfg['BORDER_FACTOR'] = 2  # %of pixels for border
         #cfg['IMAGE_TYPE'] = '.ims'  # File type of original
         cfg['CROPPED_IMAGE_FILES'] = 'cropped'  # output directory
         cfg['MAX_MEMORY'] = 80  # % of memory to quit
