@@ -11,7 +11,7 @@ K_Clusters = 2
 BGPCOUNT = 80  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
 # background
 SENSITIVITY_THRESHOLD = .01  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
-MAX_NOISE_AREA = 1000  # Max area (pixels) of a slice for it to be still considered noise
+MAX_NOISE_AREA = 280  # Max area (pixels) of a slice for it to be still considered noise
 
 DELTAX, DELTAY = (0, 0)  # (20, 50) # How close in both directions a slice can be to another to be considered the same image
 IMAGEX, IMAGEY = (3000, 1200)  # Size of image to use when segmenting the image.
@@ -363,14 +363,31 @@ class ImageSegmenter(object):
     @staticmethod
     def _reconstruct_images_from_slices(box_slices):
         """
-        Iterative process to continuously add intersecting  
-        :param box_slices: List of slice tuples considered as bounding boxes for an image. 
-        :return: a new list of bounding boxes that are the reconstructed bounding boxes for the images in the photo. 
+        Iterative process to continuously add intersecting
+        :param box_slices: List of slice tuples considered as bounding boxes for an image.
+        :return: a new list of bounding boxes that are the reconstructed bounding boxes for the images in the photo.
         """
         prev_len = len(box_slices)
         curr_len = len(box_slices)
         flag = True
+        tf_noise = list()
 
+        for rect in box_slices:
+            if ImageSegmenter.is_noise(rect):
+                tf_noise.append(True)
+            else:
+                tf_noise.append(False)
+
+        b_slice = list()
+        j = 0
+        while j < (len(tf_noise)):
+            if tf_noise[j] == False:
+                b_slice.append(box_slices[j])
+            else:
+                b_slice
+            j = j + 1
+
+        box_slices = b_slice
 
         for rect in box_slices:
             if ImageSegmenter.is_noise(rect):
