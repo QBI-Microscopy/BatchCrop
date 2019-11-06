@@ -47,7 +47,7 @@ class ImageSegmentation(object):
         #This means instead of being eg. 593 wide it is 640 wide, meaning scaling relative to this value is incorrect.
         #It appears to be exponential scaling with each resolution level though so I will try this instead.
 
-        exp_scalefactor = [1,2,4,8,16,32,64,128,256]
+        exp_scalefactor = [1,2,4,8,16,32,64,128,256,512,1024]
 
         #scale_width = (width / self.width)
         #scale_height = (height / self.height)
@@ -55,7 +55,7 @@ class ImageSegmentation(object):
         #    scale_width = scalefactor
         #    scale_height = scalefactor
 
-        scale_width = exp_scalefactor[(maxr -1 - r)]
+        scale_width = exp_scalefactor[(maxr - 1 - r)]
         scale_height = exp_scalefactor[(maxr - 1 - r)]
 
         msg = 'Scalefactors: wx%d hx%d [%d x %d] with border=%d to initial [%d x %d] offset=%s' % (
