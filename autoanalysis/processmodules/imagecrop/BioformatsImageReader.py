@@ -28,7 +28,7 @@ class BioformatsImageReader(object):
 
                 self.output_folder = image_folder
 
-            self.basicmeta = bioformats.javabridge.jutil.to_string(
+            self.basicmeta = javabridge.jutil.to_string(
                 bioformats.formatreader.make_iformat_reader_class().getMetadata(bioformats.ImageReader(imgfile).rdr)).split(',')
             self.basicmeta = sorted(self.basicmeta)
             self.omemeta = bioformats.get_omexml_metadata(imgfile).split("></")
