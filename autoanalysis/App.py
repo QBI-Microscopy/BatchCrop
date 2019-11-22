@@ -40,6 +40,11 @@ from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
+import javabridge
+import bioformats.formatreader
+javabridge.start_vm(run_headless=True, class_path=bioformats.JARS)
+
+
 __version__ = '1.1.0'
 DEBUG = 1
 COLWIDTH=400 #DISPLAY COLUMNS
@@ -664,6 +669,7 @@ class AppFrame(wx.Frame):
         ret = dial.ShowModal()
 
         if ret == wx.ID_YES:
+            javabridge.kill_vm()
             self.Destroy()
 
         else:

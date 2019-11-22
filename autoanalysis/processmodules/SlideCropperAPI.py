@@ -85,7 +85,7 @@ class SlideCropperAPI(object):
                 darkbg = self.cfg['DARK_BG_THRESHOLD']
                 offset = float(self.cfg['OFFSET'])
                 resolution = self.cfg['RESOLUTION']
-                mim = BioformatsImageReader(self.imgfile,self.outputdir)
+                mim = BioformatsImageReader(self.imgfile, self.outputdir)
                 mim.make_metadata()
                 tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax, lightbg, darkbg, offset, resolution)
                 pid_list = tic.crop_input_images()

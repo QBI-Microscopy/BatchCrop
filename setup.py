@@ -51,9 +51,9 @@ if sys.platform == 'win32':
     base = 'Win32GUI'
 ufuncs_version='_ufuncs.cp36-win_amd64.pyd' #'_ufuncs.cp36-win32.pyd'
 build_exe_options = {
-    'includes': ['idna.idnadata', "numpy", "h5py","packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
+    'includes': ['idna.idnadata', "numpy", "javabridge", "bioformats", "h5py", "html", "packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
-    'packages': ['wx','sqlite3','scipy', 'numpy.core._methods', 'numpy.lib.format','matplotlib','matplotlib.backends.backend_agg','skimage'],
+    'packages': ['wx','sqlite3','scipy', 'numpy.core._methods', 'html.parser', 'numpy.lib.format','matplotlib','matplotlib.backends.backend_agg','skimage'],
     'include_files': ['autoanalysis/',join(mainpython, 'DLLs', 'sqlite3.dll'),
                       (join(venvpython, 'scipy', 'special', ufuncs_version), '_ufuncs.pyd')],
     'include_msvcr': 1
