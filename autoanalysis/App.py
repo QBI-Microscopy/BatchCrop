@@ -42,7 +42,6 @@ from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, Proce
 
 import javabridge
 import bioformats.formatreader
-javabridge.start_vm(run_headless=True, class_path=bioformats.JARS)
 
 
 __version__ = '1.1.0'
@@ -56,6 +55,7 @@ class HomePanel(WelcomePanel):
 
     # ----------------------------------------------------------------------
     def __init__(self, parent):
+        javabridge.start_vm(run_headless=True, class_path=bioformats.JARS)
         super(HomePanel, self).__init__(parent)
         img = wx.Bitmap(1, 1)
         img.LoadFile(join(findResourceDir(), 'loadimage.bmp'), wx.BITMAP_TYPE_BMP)
