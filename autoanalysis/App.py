@@ -669,7 +669,6 @@ class AppFrame(wx.Frame):
         ret = dial.ShowModal()
 
         if ret == wx.ID_YES:
-            javabridge.kill_vm()
             self.Destroy()
 
         else:
