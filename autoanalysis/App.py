@@ -40,10 +40,6 @@ from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
-import javabridge
-import bioformats.formatreader
-
-
 __version__ = '1.1.0'
 DEBUG = 1
 COLWIDTH=400 #DISPLAY COLUMNS
@@ -55,7 +51,6 @@ class HomePanel(WelcomePanel):
 
     # ----------------------------------------------------------------------
     def __init__(self, parent):
-        javabridge.start_vm(run_headless=True, class_path=bioformats.JARS)
         super(HomePanel, self).__init__(parent)
         img = wx.Bitmap(1, 1)
         img.LoadFile(join(findResourceDir(), 'loadimage.bmp'), wx.BITMAP_TYPE_BMP)

@@ -3,6 +3,7 @@ import os
 from os.path import basename, splitext, join, exists
 
 import javabridge
+import bioformats
 import bioformats.formatreader
 
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
@@ -24,14 +25,21 @@ class BioformatsImageReader(object):
                     os.makedirs(image_folder)
 
                 self.output_folder = image_folder
-            javabridge.jutil.attach()
+
+            try:
+                javabridge.start_vm(run_headless=True, class_path=javabridge.JARS)
+                javabridge.attach()
+            except Exception as e:
+                raise (e)
+
+            javabridge.attach()
             self.basicmeta = javabridge.jutil.to_string(
                 bioformats.formatreader.make_iformat_reader_class().getMetadata(bioformats.ImageReader(imgfile).rdr)).split(',')
             self.basicmeta = sorted(self.basicmeta)
             self.omemeta = bioformats.get_omexml_metadata(imgfile).split("></")
             self.omemeta1 = self.omemeta[0].split(".xsd")
             self.omemeta2 = self.omemeta[1:]
-            javabridge.jutil.detach()
+            #javabridge.detach()
         except Exception as e:
             raise (e)
 
