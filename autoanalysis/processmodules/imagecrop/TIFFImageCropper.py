@@ -123,6 +123,7 @@ class TIFFImageCropper(object):
             outputfile = join(self.output_folder, basename(input_image.get_name()) + "_" + str(box_index + 1) + ".tiff")
             if exists(outputfile):
                 os.remove(outputfile)
+
             # for r_lev in range(input_image.get_resolution_levels())[0:1]:
             # Get appropriately scaled ROI for the given dimension.
             resolution_dimensions = dims[r_lev]
@@ -141,16 +142,18 @@ class TIFFImageCropper(object):
                 msg = "Cannot crop image with size >2Gpx, decreasing resolution by one"
                 logging.info(msg)
                 print(msg)
-                segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
+
+            segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
                                                                 r_lev, len(dims), self.border_factor, self.offset,
                                                                 input_image.chunks)[box_index]
-                print('Segment:', segment)
-                # Use all z, c & t planes of the image.
-                image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
-                msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (
-                    image_width, image_height, z, c, t, segment[3] - segment[1], segment[2] - segment[0])
-                print(msg)
-                logging.info(msg)
+            print('Segment:', segment)
+            # Use all z, c & t planes of the image.
+            image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
+            msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (
+                image_width, image_height, z, c, t, segment[3] - segment[1], segment[2] - segment[0])
+            print(msg)
+            logging.info(msg)
+
             # image data with dimensions [c,x,y,z,t]
             #  Check if enough memory on computer to load into disk
 
@@ -187,6 +190,7 @@ class TIFFImageCropper(object):
                                     tf.newFrame()
                                     im.close()
                                     rtn = 1
+
                             except Exception as e:
                                 msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                 outputfile, e.args[0])
@@ -224,11 +228,13 @@ class TIFFImageCropper(object):
                                     # tf.newFrame()
                                     im.close()
                                     rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                     outputfile, e.args[0])
                                     print(msg)
                                     logging.error(msg)
+
                             else:
                                 try:
                                     for chan in range(c):
@@ -237,6 +243,7 @@ class TIFFImageCropper(object):
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                     outputfile, e.args[0])
@@ -253,6 +260,7 @@ class TIFFImageCropper(object):
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                     outputfile, e.args[0])
@@ -263,14 +271,6 @@ class TIFFImageCropper(object):
 
                 else:
                     raise OSError('Memory insufficient to generate images')
-
-
-
-
-
-
-
-
 
         elif self.resolution == 'Low':
             r_lev = 3
@@ -306,7 +306,7 @@ class TIFFImageCropper(object):
 
                         image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
                                                                                     t=[0, t],
-                                                                                    c=[channs,channs+1],
+                                                                                    c=[channs, channs+1],
                                                                                     z=[0, z],
                                                                                     y=[segment[1], segment[3]],
                                                                                     x=[segment[0], segment[2]])
@@ -324,6 +324,7 @@ class TIFFImageCropper(object):
                                     tf.newFrame()
                                     im.close()
                                     rtn = 1
+
                             except Exception as e:
                                 msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                     outputfile, e.args[0])
@@ -366,6 +367,7 @@ class TIFFImageCropper(object):
                                         outputfile, e.args[0])
                                     print(msg)
                                     logging.error(msg)
+
                             else:
                                 try:
                                     for chan in range(c):
@@ -374,12 +376,12 @@ class TIFFImageCropper(object):
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                         outputfile, e.args[0])
                                     print(msg)
                                     logging.error(msg)
-
 
                         else:
                             if True:
@@ -390,6 +392,7 @@ class TIFFImageCropper(object):
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                         outputfile, e.args[0])
@@ -408,6 +411,7 @@ class TIFFImageCropper(object):
                 os.remove(outputfile)
             # for r_lev in range(input_image.get_resolution_levels())[0:1]:
             # Get appropriately scaled ROI for the given dimension.
+
             resolution_dimensions = dims[r_lev]
             segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
                                                             r_lev, len(dims), self.border_factor, self.offset,
@@ -417,126 +421,132 @@ class TIFFImageCropper(object):
             image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
             msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (
                 image_width, image_height, z, c, t, segment[3] - segment[1], segment[2] - segment[0])
+
             print(msg)
             logging.info(msg)
             if float((segment[2] - segment[0])) * float((segment[3] - segment[1])) > 2000000000:
                 r_lev = r_lev + 1
                 msg = "Cannot crop image with size >2Gpx, decreasing resoltion by one"
-                logging.info(msg)
-                print(msg)
-                segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
-                                                                r_lev, len(dims), self.border_factor, self.offset,
-                                                                input_image.chunks)[box_index]
-                print('Segment:', segment)
-                # Use all z, c & t planes of the image.
-                image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
-                msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (
-                    image_width, image_height, z, c, t, segment[3] - segment[1], segment[2] - segment[0])
                 print(msg)
                 logging.info(msg)
+
+            segment = self.segmentation.get_scaled_segments(resolution_dimensions[0], resolution_dimensions[1],
+                                                            r_lev, len(dims), self.border_factor, self.offset,
+                                                            input_image.chunks)[box_index]
+
+            print('Segment:', segment)
+            # Use all z, c & t planes of the image.
+            image_width, image_height, z, c, t = input_image.resolution_dimensions(r_lev)
+            msg = 'Image: w=%d,h=%d,z=%d,c=%d,t=%d  segment dims: %d x %d' % (
+                image_width, image_height, z, c, t, segment[3] - segment[1], segment[2] - segment[0])
+            print(msg)
+            logging.info(msg)
             # image data with dimensions [c,x,y,z,t]
             #  Check if enough memory on computer to load into disk
 
                 # IF IT IS A MULTI-Z LEVEL STACK SPLIT INTO MULTIPLE CHANNELS WITH TIFF STACK PER CHANNEL APPEND TIFF
 
-                if z > 1:
-                    for channs in range(c):
-                        outputfile = join(self.output_folder,
-                                          basename(input_image.get_name()) + "_" + str(
-                                              box_index + 1) + "Channel_" + str(channs) + ".tiff")
+            if z > 1:
+                for channs in range(c):
+                    outputfile = join(self.output_folder,
+                                      basename(input_image.get_name()) + "_" + str(
+                                          box_index + 1) + "Channel_" + str(channs) + ".tiff")
 
-                        mempercent = psutil.virtual_memory().percent
-                        if mempercent < self.maxmemory:
-
-                            image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
-                                                                                        t=[0, t],
-                                                                                        c=[channs,channs+1],
-                                                                                        z=[0, z],
-                                                                                        y=[segment[1], segment[3]],
-                                                                                        x=[segment[0], segment[2]])
-
-                            # Appended Tiff
-                            msg = "CropSingleImage: Writing file: %s [level %d]" % (outputfile, r_lev)
-                            logging.info(msg)
-                            print(msg)
-                            with TIFF(outputfile, False) as tf:
-
-                                try:
-                                    for zplanes in range(z):
-                                        im = Image.fromarray(image_data[:, :, zplanes, 0, 0], mode="L")
-                                        im.save(tf)
-                                        tf.newFrame()
-                                        im.close()
-                                        rtn = 1
-                                except Exception as e:
-                                    msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
-                                        outputfile, e.args[0])
-                                    print(msg)
-                                    logging.error(msg)
-
-                            del image_data
-
-                        else:
-                            raise OSError('Memory insufficient to generate images')
-
-                else:
                     mempercent = psutil.virtual_memory().percent
                     if mempercent < self.maxmemory:
                         image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
                                                                                     t=[0, t],
-                                                                                    c=[0, c],
+                                                                                    c=[channs,channs+1],
                                                                                     z=[0, z],
                                                                                     y=[segment[1], segment[3]],
                                                                                     x=[segment[0], segment[2]])
 
                         # Appended Tiff
-                        msg = "CropSingleImage: Writing file: %s [level %d]" % (outputfile, r_lev)
+                        msg: str = "CropSingleImage: Writing file: %s [level %d]" % (outputfile, r_lev)
                         logging.info(msg)
                         print(msg)
                         with TIFF(outputfile, False) as tf:
-                            if c == 3:
-                                if image_data.size<2000000000:
-                                    try:
-                                        im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                                        im.save(tf)
-                                        # tf.newFrame()
-                                        im.close()
-                                        rtn = 1
-                                    except Exception as e:
-                                        msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
-                                        print(msg)
-                                        logging.error(msg)
-                                else:
-                                    try:
-                                        for chan in range(c):
-                                            im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                            im.save(tf)
-                                            tf.newFrame()
-                                            im.close()
-                                            rtn = 1
-                                    except Exception as e:
-                                        msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
-                                        print(msg)
-                                        logging.error(msg)
+                            try:
+                                for zplanes in range(z):
+                                    im = Image.fromarray(image_data[:, :, zplanes, 0, 0], mode="L")
+                                    im.save(tf)
+                                    tf.newFrame()
+                                    im.close()
+                                    rtn = 1
 
-                            else:
-                                if True:
-                                    try:
-                                        for chan in range(c):
-                                            im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                            im.save(tf)
-                                            tf.newFrame()
-                                            im.close()
-                                            rtn = 1
-                                    except Exception as e:
-                                        msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
-                                        print(msg)
-                                        logging.error(msg)
+                            except Exception as e:
+                                msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
+                                    outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
 
                         del image_data
 
                     else:
                         raise OSError('Memory insufficient to generate images')
+
+            else:
+                mempercent = psutil.virtual_memory().percent
+                if mempercent < self.maxmemory:
+                    image_data = input_image.get_euclidean_subset_in_resolution(r=r_lev,
+                                                                                t=[0, t],
+                                                                                c=[0, c],
+                                                                                z=[0, z],
+                                                                                y=[segment[1], segment[3]],
+                                                                                x=[segment[0], segment[2]])
+
+                    # Appended Tiff
+                    msg = "CropSingleImage: Writing file: %s [level %d]" % (outputfile, r_lev)
+                    logging.info(msg)
+                    print(msg)
+                    with TIFF(outputfile, False) as tf:
+                        if c == 3:
+                            if image_data.size<2000000000:
+                                try:
+                                    im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
+                                    im.save(tf)
+                                    # tf.newFrame()
+                                    im.close()
+                                    rtn = 1
+
+                                except Exception as e:
+                                    msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                    print(msg)
+                                    logging.error(msg)
+
+                            else:
+                                try:
+                                    for chan in range(c):
+                                        im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
+                                        im.save(tf)
+                                        tf.newFrame()
+                                        im.close()
+                                        rtn = 1
+
+                                except Exception as e:
+                                    msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                    print(msg)
+                                    logging.error(msg)
+
+                        else:
+                            if True:
+                                try:
+                                    for chan in range(c):
+                                        im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
+                                        im.save(tf)
+                                        tf.newFrame()
+                                        im.close()
+                                        rtn = 1
+
+                                except Exception as e:
+                                    msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
+                                    print(msg)
+                                    logging.error(msg)
+
+                    del image_data
+
+                else:
+                    raise OSError('Memory insufficient to generate images')
 
             r_lev = 3
             outputfile = join(self.output_folder,
@@ -626,11 +636,13 @@ class TIFFImageCropper(object):
                                     # tf.newFrame()
                                     im.close()
                                     rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                         outputfile, e.args[0])
                                     print(msg)
                                     logging.error(msg)
+
                             else:
                                 try:
                                     for chan in range(c):
@@ -639,6 +651,7 @@ class TIFFImageCropper(object):
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                         outputfile, e.args[0])
@@ -655,6 +668,7 @@ class TIFFImageCropper(object):
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
+
                                 except Exception as e:
                                     msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
                                         outputfile, e.args[0])
