@@ -119,9 +119,9 @@ def create_parser():
                 Crops serial section images in large image files into separate images
                 
                  ''')
-    parser.add_argument('--datafile', action='store', help='Data file', default="nono 4 hong 001-4~B.ims")
+    parser.add_argument('--datafile', action='store', help='Data file', default="Matisse 1~B.ims")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="C:\\Users\\uqathom9\\Documents\\Microscopy\\BatchCrop")
-    parser.add_argument('--inputdir', action='store', help='Input directory', default="C:\\Users\\uqathom9\\Desktop")
+    parser.add_argument('--inputdir', action='store', help='Input directory', default="C:\\Users\\uqathom9\\Desktop\Batchcrop")
     parser.add_argument('--imagetype', action='store', help='Type of images to processed', default='.ims')
 
     return parser

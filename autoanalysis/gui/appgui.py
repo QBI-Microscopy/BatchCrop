@@ -33,7 +33,7 @@ class ConfigPanel ( wx.Panel ):
 		self.m_staticline14 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		bSizer17.Add( self.m_staticline14, 0, wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_status = wx.StaticText( self, wx.ID_ANY, u"These variables are required by the processing modules (change only the value not the name).  Enter new values and click Save Changes.", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_status = wx.StaticText( self, wx.ID_ANY, u"These variables are required by the processing modules (change only the value not the name). \nThese values can only be changed in the database when the program is 'Run as administrator'. \nEnter new values and click Save Changes, then relaunch the program normally.", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_status.Wrap( 600 )
 		self.m_status.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 93, 90, False, wx.EmptyString ) )
 		

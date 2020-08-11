@@ -11,7 +11,7 @@ K_Clusters = 2
 BGPCOUNT = 80  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
 # background
 SENSITIVITY_THRESHOLD = .01  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
-MAX_NOISE_AREA = 280  # Max area (pixels) of a slice for it to be still considered noise
+MAX_NOISE_AREA = 280 # Max area (pixels) of a slice for it to be still considered noise
 
 DELTAX, DELTAY = (0, 0)  # (20, 50) # How close in both directions a slice can be to another to be considered the same image
 IMAGEX, IMAGEY = (3000, 1200)  # Size of image to use when segmenting the image.
@@ -73,7 +73,7 @@ class ImageSegmenter(object):
             channel_image = ndimage.median_filter(channel_image, sizefoot)
             channel_image = adjust_gamma(channel_image, gamma=1.4, gain=1)
             histogram = ImageSegmenter._image_histogram(channel_image)
-            t0_min = threshold_mean(channel_image)
+            t0_min = threshold_mean(channel_image[0:np.argwhere(channel_image).max(0)[0],0:np.argwhere(channel_image).max(0)[1]])
             has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
         else:
             channel_image = ImageSegmenter._optimal_thresholding_channel_image(image_array)
@@ -109,10 +109,10 @@ class ImageSegmenter(object):
 
         if image.ndim == 3:
             background_vector = image[background_corner_index_x_list, background_corner_index_y_list, :]
-            return np.mean(np.mean(background_vector, axis=1), axis=0)
+            return np.median(np.median(background_vector, axis=1), axis=0)
         else:
             background_vector = image[background_corner_index_x_list, background_corner_index_y_list]
-            return np.mean(background_vector)
+            return np.median(background_vector)
 
     @staticmethod
     def _construct_mean_channelled_image(image):
