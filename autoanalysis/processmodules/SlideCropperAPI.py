@@ -87,7 +87,8 @@ class SlideCropperAPI(object):
                 resolution = self.cfg['RESOLUTION']
                 mim = BioformatsImageReader(self.imgfile, self.outputdir)
                 mim.make_metadata()
-                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax, lightbg, darkbg, offset, resolution)
+                xyres = mim.get_xyres()
+                tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax, lightbg, darkbg, offset, resolution, xyres)
                 pid_list = tic.crop_input_images()
                 tic.image.close_file()
                 msg = 'Run: cropping done - new images in %s [%d pages]' % (self.outputdir, pid_list)

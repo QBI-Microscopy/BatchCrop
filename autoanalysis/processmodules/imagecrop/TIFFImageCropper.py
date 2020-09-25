@@ -19,13 +19,14 @@ class TIFFImageCropper(object):
     ImageSegmentation object applies to each x-y plane and the output is in TIFF format. 
     """
 
-    def __init__(self, imgfile, border_factor, output_path, memmax, lightbg, darkbg, offset, resolution):
+    def __init__(self, imgfile, border_factor, output_path, memmax, lightbg, darkbg, offset, resolution, xyres):
         self.maxmemory = memmax
         self.lightbg = lightbg
         self.darkbg = darkbg
         self.border_factor = border_factor
         self.offset = offset
         self.resolution = resolution
+        self.xyres = xyres
         self.imgfile = imgfile
         try:
             self.image = I.ImarisImage(self.imgfile)
@@ -48,6 +49,7 @@ class TIFFImageCropper(object):
                 logging.info(msg)
             else:
                 raise ValueError('Segmentation failed')
+            #self.xyres = ...
         except Exception as e:
             raise (e)
 
@@ -186,7 +188,7 @@ class TIFFImageCropper(object):
                             try:
                                 for zplanes in range(z):
                                     im = Image.fromarray(image_data[:, :, zplanes, 0, 0], mode="L")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]), resolution_unit=3)
                                     tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -224,7 +226,7 @@ class TIFFImageCropper(object):
                             if image_data.size < 2000000000:
                                 try:
                                     im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     # tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -239,7 +241,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -256,7 +258,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]), resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -320,7 +322,7 @@ class TIFFImageCropper(object):
                             try:
                                 for zplanes in range(z):
                                     im = Image.fromarray(image_data[:, :, zplanes, 0, 0], mode="L")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -358,7 +360,7 @@ class TIFFImageCropper(object):
                             if image_data.size < 2000000000:
                                 try:
                                     im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     # tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -372,7 +374,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -388,7 +390,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -469,7 +471,7 @@ class TIFFImageCropper(object):
                             try:
                                 for zplanes in range(z):
                                     im = Image.fromarray(image_data[:, :, zplanes, 0, 0], mode="L")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -504,7 +506,7 @@ class TIFFImageCropper(object):
                             if image_data.size<2000000000:
                                 try:
                                     im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     # tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -518,7 +520,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -533,7 +535,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -595,7 +597,7 @@ class TIFFImageCropper(object):
                             try:
                                 for zplanes in range(z):
                                     im = Image.fromarray(image_data[:, :, zplanes, 0, 0], mode="L")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -632,7 +634,7 @@ class TIFFImageCropper(object):
                             if image_data.size < 2000000000:
                                 try:
                                     im = Image.fromarray(image_data[:, :, 0, :, 0], mode="RGB")
-                                    im.save(tf)
+                                    im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                     # tf.newFrame()
                                     im.close()
                                     rtn = 1
@@ -647,7 +649,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -664,7 +666,7 @@ class TIFFImageCropper(object):
                                 try:
                                     for chan in range(c):
                                         im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf)
+                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
                                         tf.newFrame()
                                         im.close()
                                         rtn = 1
@@ -674,7 +676,6 @@ class TIFFImageCropper(object):
                                         outputfile, e.args[0])
                                     print(msg)
                                     logging.error(msg)
-
                     del image_data
 
                 else:

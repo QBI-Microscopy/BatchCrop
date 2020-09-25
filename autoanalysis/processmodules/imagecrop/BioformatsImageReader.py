@@ -2,6 +2,7 @@ import logging
 import os
 from os.path import basename, splitext, join, exists
 
+import re
 import javabridge
 import bioformats
 import bioformats.formatreader
@@ -63,3 +64,10 @@ class BioformatsImageReader(object):
         print(msg)
         logging.info(msg)
         return rtn
+
+    def get_xyres(self):
+        temp = re.findall('PhysicalSizeX="........',bioformats.get_omexml_metadata(self.imgfile),flags=0)
+        xyres = []
+        for i in temp:
+            xyres.append(1/(float(i.split('"')[1]) / 10000))
+        return xyres
