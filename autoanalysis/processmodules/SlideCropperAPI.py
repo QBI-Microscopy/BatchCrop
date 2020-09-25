@@ -87,6 +87,7 @@ class SlideCropperAPI(object):
                 resolution = self.cfg['RESOLUTION']
                 mim = BioformatsImageReader(self.imgfile, self.outputdir)
                 mim.make_metadata()
+                # get resolution in px/cm for all resolution levels
                 xyres = mim.get_xyres()
                 tic = TIFFImageCropper(self.imgfile, border_factor, self.outputdir, memmax, lightbg, darkbg, offset, resolution, xyres)
                 pid_list = tic.crop_input_images()
