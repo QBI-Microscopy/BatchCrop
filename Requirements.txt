@@ -20,7 +20,7 @@ jsonschema==2.6.0
 jupyter-core==4.4.0
 kiwisolver==1.0.1
 linecache2==1.0.0
-lxml==4.2.0
+lxml==4.6.2
 macholib==1.9
 MarkupSafe==1.0
 matplotlib==2.2.2
