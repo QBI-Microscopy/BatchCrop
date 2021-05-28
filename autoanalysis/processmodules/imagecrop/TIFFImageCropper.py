@@ -8,6 +8,7 @@ import psutil
 from PIL import Image
 from PIL.TiffImagePlugin import AppendingTiffWriter as TIFF
 from skimage.filters import threshold_minimum
+import tifffile
 
 import autoanalysis.processmodules.imagecrop.ImarisImage as I
 from autoanalysis.processmodules.imagecrop.ImageSegmenter import ImageSegmenter
@@ -530,20 +531,23 @@ class TIFFImageCropper(object):
                                     print(msg)
                                     logging.error(msg)
 
-                        else:
-                            if True:
-                                try:
-                                    for chan in range(c):
-                                        im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
-                                        im.save(tf,resolution=round(self.xyres[r_lev]),resolution_unit=3)
-                                        tf.newFrame()
-                                        im.close()
-                                        rtn = 1
-
-                                except Exception as e:
-                                    msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (outputfile, e.args[0])
-                                    print(msg)
-                                    logging.error(msg)
+                    with tifffile.TiffWriter(outputfile, bigtiff=True, imagej=True) as tif:
+                        if True:
+                            try:
+                                for chan in range(c):
+                                    # im = Image.fromarray(image_data[:, :, 0, chan, 0], mode="L")
+                                    tif.save(image_data[:, :, 0, chan, 0], photometric='minisblack',
+                                             contiguous=True, dtype='uint8', resolution=(
+                                        float(self.xyres[r_lev] / 10000), float(self.xyres[r_lev]) / 10000),
+                                             metadata={'DimensionOrder': 'XYZTC',
+                                                       'spacing': 10000 / self.xyres[r_lev], 'unit': 'um'})
+                                    # im.close()
+                                    rtn = 1
+                            except Exception as e:
+                                msg = 'Image error:%s  Could not create multi-page TIFF: %s' % (
+                                outputfile, e.args[0])
+                                print(msg)
+                                logging.error(msg)
 
                     del image_data
 
