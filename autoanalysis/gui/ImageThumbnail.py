@@ -1,5 +1,5 @@
 import numpy as np
-import skimage.external.tifffile as tf
+import tifffile as tf
 import wx
 import traceback
 from autoanalysis.processmodules.imagecrop.ImarisImage import ImarisImage

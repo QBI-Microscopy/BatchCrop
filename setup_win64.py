@@ -42,14 +42,14 @@ from App import __version__
 application_title = 'QBI Batch SlideCropper'
 main_python_file = join('autoanalysis','App.py')
 venvpython = join(sys.prefix,'Lib','site-packages')
-mainpython = "D:\\Programs\\Python36"
+mainpython = "C:\\Program Files\\Python37"
 
 os.environ['TCL_LIBRARY'] = join(mainpython, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = join(mainpython, 'tcl', 'tk8.6')
 base = None
 if sys.platform == 'win32':
     base = 'Win32GUI'
-ufuncs_version='_ufuncs.cp36-win_amd64.pyd' #'_ufuncs.cp36-win32.pyd'
+ufuncs_version='_ufuncs.cp37-win_amd64.pyd' #'_ufuncs.cp36-win32.pyd'
 build_exe_options = {
     'includes': ['idna.idnadata', "numpy", "plotly","pandas", "packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
@@ -89,7 +89,7 @@ setup(
 )
 
 #Rename ckdtree
-os_version='exe.win-amd64-3.6' #'exe.win32-3.6'
-ckd_version= 'cKDTree.cp36-win_amd64.pyd' #'cKDTree.cp36-win32.pyd'
+os_version='exe.win-amd64-3.7' #'exe.win32-3.7'
+ckd_version= 'cKDTree.cp37-win_amd64.pyd' #'cKDTree.cp37-win32.pyd'
 shutil.move(join('build',os_version,'lib','scipy','spatial',ckd_version), join('build',os_version,'lib','scipy','spatial','ckdtree.pyd'))
 shutil.copyfile(join('build',os_version,'lib','scipy','spatial','ckdtree.pyd'), join('build',os_version,'lib','scipy','spatial',ckd_version))

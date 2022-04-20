@@ -28,7 +28,7 @@ class BioformatsImageReader(object):
                 self.output_folder = image_folder
 
             try:
-                javabridge.start_vm(run_headless=True, class_path=javabridge.JARS)
+                javabridge.start_vm(run_headless=True, class_path=bioformats.JARS)
                 javabridge.attach()
             except Exception as e:
                 raise (e)

@@ -40,7 +40,7 @@ from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
-__version__ = '1.1.3'
+__version__ = '1.2.0'
 DEBUG = 1
 COLWIDTH=400 #DISPLAY COLUMNS
 ########################################################################
@@ -138,8 +138,8 @@ class Config(ConfigPanel):
         configid = self.controller.currentconfig
         configlist = []
         data = self.m_grid1.GetTable()
-        for rownum in range(0, data.GetRowsCount()):
-            if not data.IsEmptyCell(rownum, 0):
+        for rownum in range(0, data.GetNumberRows()):
+            if not data.GetValue(rownum,1) == '':
                 configlist.append((self.m_grid1.GetCellValue(rownum, 0), self.m_grid1.GetCellValue(rownum, 1), configid,
                                    self.m_grid1.GetCellValue(rownum, 2)))
         # print('Saved config:', configlist)

@@ -3,7 +3,7 @@ from __future__ import print_function
 from glob import iglob
 from os.path import join, exists
 
-import skimage.external.tifffile as tf
+import tifffile as tf
 import wx
 
 
