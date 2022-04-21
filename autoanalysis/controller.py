@@ -177,7 +177,7 @@ class Controller():
         ctr = 0
         increment = 5
         tcount = 90
-        while t.isAlive():
+        while t.is_alive():
             time.sleep(increment)
 
             # Check CPU usage
