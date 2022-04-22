@@ -26,7 +26,7 @@ matplotlib==2.2.2
 modulegraph==0.16
 nbformat==4.4.0
 networkx==2.1
-numpy==1.17.0
+numpy==1.21.0
 packaging==17.1
 pandas==0.23.0
 patsy==0.5.0
