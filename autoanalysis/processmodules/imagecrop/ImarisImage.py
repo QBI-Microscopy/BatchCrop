@@ -235,7 +235,7 @@ class ImarisImage(object):
         """
         self.file.close()
 
-    def get_multichannel_segmentation_image(self):
+    def get_multichannel_segmentation_image(self, xyres):
         """
         :return: A 2D image used for segmentation with separate channels as the first dimension on the stack (c,y,x)  
         """
@@ -247,4 +247,6 @@ class ImarisImage(object):
                 else:
                     #np.concatenate((image_array, self.get_two_dim_data(self.segment_resolution, c=i)), axis=0)
                     image_array = np.dstack((image_array, self.get_two_dim_data(self.segment_resolution, c=i)))
+        seg_img_dims = tuple(round((xyres[self.segment_resolution] / xyres[0]) * x) for x in self.image_dimensions()[0])
+        image_array = image_array[0:seg_img_dims[0],0:seg_img_dims[1],:]
         return image_array

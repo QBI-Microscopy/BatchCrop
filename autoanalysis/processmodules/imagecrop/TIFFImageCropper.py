@@ -66,7 +66,7 @@ class TIFFImageCropper(object):
         #     image = I.ImarisImage(self.imgfile)
         # else:
         # image = self.image
-        segmentations = ImageSegmenter.segment_image(self.image.get_multichannel_segmentation_image(), self.lightbg,
+        segmentations = ImageSegmenter.segment_image(self.image.get_multichannel_segmentation_image(self.xyres), self.lightbg,
                                                      self.darkbg)
         # if image is not None:
         #     image.close_file()

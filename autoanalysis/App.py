@@ -40,7 +40,7 @@ from autoanalysis.controller import EVT_RESULT, Controller
 from autoanalysis.utils import findResourceDir
 from autoanalysis.gui.appgui import ConfigPanel, FilesPanel, WelcomePanel, ProcessPanel, dlgLogViewer
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 DEBUG = 1
 COLWIDTH=400 #DISPLAY COLUMNS
 ########################################################################
