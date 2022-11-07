@@ -8,7 +8,7 @@ from skimage.filters import threshold_minimum, threshold_otsu, threshold_triangl
 from autoanalysis.processmodules.imagecrop.ImageSegmentation import ImageSegmentation
 
 K_Clusters = 2
-BGPCOUNT = 80  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
+BGPCOUNT = 40  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
 # background
 SENSITIVITY_THRESHOLD = .01  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
 MAX_NOISE_AREA = 280 # Max area (pixels) of a slice for it to be still considered noise
@@ -101,11 +101,23 @@ class ImageSegmenter(object):
         background_corner_index_y_list = []
 
         # Add indices for each corner of the image
-        for i in range(BGPCOUNT):
-            background_corner_index_x_list.append(i)
-            background_corner_index_y_list.append(i)
-            background_corner_index_x_list.append(x_dim - (i + 1))
-            background_corner_index_y_list.append(y_dim - (i + 1))
+        minAxis = min(x_dim,y_dim)
+        for i in range(round(minAxis*0.05)+1):
+            for j in range(round(minAxis * 0.05) + 1):
+                background_corner_index_x_list.append(i)
+                background_corner_index_y_list.append(j)
+                background_corner_index_x_list.append(x_dim - (i + 1))
+                background_corner_index_y_list.append(y_dim - (j + 1))
+                background_corner_index_x_list.append(i)
+                background_corner_index_y_list.append(y_dim - (j + 1))
+                background_corner_index_y_list.append(j)
+                background_corner_index_x_list.append(x_dim - (i + 1))
+
+        # for i in range(BGPCOUNT):
+        #     background_corner_index_x_list.append(i)
+        #     background_corner_index_y_list.append(i)
+        #     background_corner_index_x_list.append(x_dim - (i + 1))
+        #     background_corner_index_y_list.append(y_dim - (i + 1))
 
         if image.ndim == 3:
             background_vector = image[background_corner_index_x_list, background_corner_index_y_list, :]
