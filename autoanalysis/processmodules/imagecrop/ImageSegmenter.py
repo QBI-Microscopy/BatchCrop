@@ -43,7 +43,7 @@ class ImageSegmenter(object):
         # Step 2
         opened_image = ImageSegmenter._image_dilation(binary_image)
         closed_image = ImageSegmenter._noise_reduction(opened_image)
-        binary_image = ndimage.binary_fill_holes(closed_image.astype(np.int))
+        binary_image = ndimage.binary_fill_holes(closed_image.astype(int))
 
         #opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
@@ -251,8 +251,8 @@ class ImageSegmenter(object):
         """
         struct_size = 2  # max(round(binary_image.size / 8000000), 2)
         structure = np.ones((struct_size, struct_size))
-        #binary_image = ndimage.gaussian_filter(binary_image.astype(np.int),sigma=0.1)
-        return ndimage.binary_erosion(binary_image.astype(np.int), structure=structure)
+        #binary_image = ndimage.gaussian_filter(binary_image.astype(int),sigma=0.1)
+        return ndimage.binary_erosion(binary_image.astype(int), structure=structure)
 
 
     @staticmethod
@@ -266,7 +266,7 @@ class ImageSegmenter(object):
         structure = np.ones((2, 2))  # ((struct_size, struct_size))
         yy = np.zeros(binary_image.shape, dtype=np.uint8)
         return ndimage.binary_dilation((yy + binary_image), structure=structure).astype(yy.dtype)
-        #return ndimage.median_filter(binary_image.astype(np.int), size=[1, 1])
+        #return ndimage.median_filter(binary_image.astype(int), size=[1, 1])
 
     @staticmethod
     def _apply_object_detection(morphological_image):
@@ -344,8 +344,8 @@ class ImageSegmenter(object):
         if (s1[0].stop < s2[0].start) | (s1[0].start > s2[0].stop):
             return False
 
-        xx = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(np.int)
-        yy = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(np.int)
+        xx = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(int)
+        yy = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(int)
         xx[s1[0].start:s1[0].stop, s1[1].start:s1[1].stop] = 1
         yy[s2[0].start:s2[0].stop, s2[1].start:s2[1].stop] = 1
         zz = xx + yy
